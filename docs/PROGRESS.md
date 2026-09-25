@@ -2,7 +2,7 @@
 
 Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen zadatak.
 
-**Trenutna faza:** 1
+**Trenutna faza:** 2
 
 ## Faza 0 — Postavka
 - [x] Next.js + TS + Tailwind + ESLint (pnpm)
@@ -11,10 +11,10 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - [x] .env.local u .gitignore, trivijalan test
 
 ## Faza 1 — Editor
-- [ ] /write/demo sa TipTap, bez toolbar-a, serif, centrirana kolona
-- [ ] Footer: reči + „✦ Treba mi impuls”
-- [ ] Svetla/tamna tema
-- [ ] countWords + testovi
+- [x] /write/demo sa TipTap, bez toolbar-a, serif, centrirana kolona
+- [x] Footer: reči + „✦ Treba mi impuls”
+- [x] Svetla/tamna tema
+- [x] countWords + testovi
 
 ## Faza 2 — Struktura + čuvanje
 - [ ] Dexie šema v1 + repo funkcije + testovi
@@ -50,6 +50,10 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - 2026-09-25: `@tiptap/pm` dodat eksplicitno — obavezan peer za `@tiptap/react` v3.
 - 2026-09-25: Zod je v4 — pri pisanju šema (Faza 3) koristiti v4 API.
 - 2026-09-25: tsconfig ima i `noUncheckedIndexedAccess` radi sigurnosti pri radu sa nizovima.
+- 2026-09-25: Font Literata preko `next/font/google` (self-hosted pri build-u, latin-ext + ćirilica), fallback Georgia.
+- 2026-09-25: StarterKit bez code, codeBlock, horizontalRule i link — samo proza; H1 samo nivo 1.
+- 2026-09-25: Tema preko CSS promenljivih + Tailwind `@theme inline` (`bg-paper`, `text-ink`, `text-muted`); samo `prefers-color-scheme`, bez ručnog prekidača.
+- 2026-09-25: „reč/reči” se sklanja u `copy.editor.wordsToday(n)`.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

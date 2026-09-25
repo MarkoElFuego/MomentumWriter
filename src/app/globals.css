@@ -1,1 +1,80 @@
 @import "tailwindcss";
+
+:root {
+  --paper: #fbfaf7;
+  --ink: #1f1d1a;
+  --muted: #8a857c;
+  --focus: #8a857c;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1a1917;
+    --ink: #e6e1d8;
+    --muted: #7d786f;
+    --focus: #a39d92;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --font-serif: var(--font-literata), Georgia, "Times New Roman", serif;
+}
+
+/* Editor: samo tekst i kursor. */
+.prose-editor {
+  font-family: var(--font-serif);
+  font-size: 1.1875rem;
+  line-height: 1.75;
+  caret-color: var(--ink);
+  outline: none;
+  min-height: 60vh;
+}
+
+.prose-editor p {
+  margin: 0 0 1em;
+}
+
+.prose-editor h1 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0 0 2.5em;
+}
+
+.prose-editor blockquote {
+  border-left: 2px solid var(--muted);
+  padding-left: 1em;
+  font-style: italic;
+}
+
+.prose-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* Tiha dugmad: vidljiva tek kad zatrebaju, fokus uvek jasan. */
+.ui-button {
+  border-radius: 0.375rem;
+  color: var(--muted);
+  transition: color 120ms ease;
+}
+
+.ui-button:hover {
+  color: var(--ink);
+}
+
+.ui-button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  color: var(--ink);
+}

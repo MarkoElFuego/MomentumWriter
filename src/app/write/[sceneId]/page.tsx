@@ -1,6 +1,6 @@
-import { copy } from "@/lib/copy";
+import { WriteScreen } from "@/components/editor/WriteScreen";
 
-// Editor stiže u Fazi 1.
+// Faza 1: sceneId se još ne koristi — sadržaj živi samo u memoriji do Faze 2.
 export default function WritePage() {
-  return <main className="p-6">{copy.placeholder.comingSoon}</main>;
+  return <WriteScreen />;
 }
