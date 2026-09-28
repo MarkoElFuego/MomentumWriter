@@ -1,0 +1,58 @@
+import { describe, expect, it } from "vitest";
+import { parseSparkResponse } from "./schemas";
+
+const validPush = {
+  items: [
+    { kind: "inner", text: "Čega se Marko zapravo plaši kad Ana ćuti?" },
+    { kind: "outer", text: "Šta ako neko pokuca baš sada?" },
+    { kind: "shift", text: "Probaj scenu kroz zvuk kiše umesto kroz pogled." },
+  ],
+};
+
+describe("parseSparkResponse", () => {
+  it("accepts a valid push with 3 items", () => {
+    const result = parseSparkResponse("push", JSON.stringify(validPush));
+    expect(result).toEqual({ ok: true, data: validPush });
+  });
+
+  it("rejects a push with 2 items", () => {
+    const twoItems = { items: validPush.items.slice(0, 2) };
+    expect(parseSparkResponse("push", JSON.stringify(twoItems))).toEqual({ ok: false, reason: "schema" });
+  });
+
+  it("parses a reply wrapped in ```json fences", () => {
+    const raw = "```json\n" + JSON.stringify(validPush) + "\n```";
+    expect(parseSparkResponse("push", raw).ok).toBe(true);
+  });
+
+  it("rejects text that is not JSON", () => {
+    expect(parseSparkResponse("complicate", "Evo pitanja: zašto?")).toEqual({
+      ok: false,
+      reason: "invalid-json",
+    });
+  });
+
+  it("clips overlong items at a word boundary instead of rejecting them", () => {
+    const long = `Zašto ${"Marko ".repeat(60)}ćuti?`;
+    const result = parseSparkResponse("complicate", JSON.stringify({ question: long }));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.question.length).toBeLessThanOrEqual(220);
+    expect(result.data.question).toMatch(/Marko…$/);
+  });
+
+  it("clips resume summary lines to 160 characters", () => {
+    const line = "Marko je otišao iz grada. ".repeat(10);
+    const raw = JSON.stringify({ summary: [line, "Kod kuće je.", "Pismo nije otvoreno."], openQuestion: "Ko je poslao pismo?" });
+    const result = parseSparkResponse("resume", raw);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.summary[0]!.length).toBeLessThanOrEqual(160);
+  });
+
+  it("rejects missing fields and unknown kinds", () => {
+    expect(parseSparkResponse("missing", JSON.stringify({ observation: "Nema mirisa." })).ok).toBe(false);
+    const badKind = { items: validPush.items.map((item) => ({ ...item, kind: "other" })) };
+    expect(parseSparkResponse("push", JSON.stringify(badKind)).ok).toBe(false);
+  });
+});
