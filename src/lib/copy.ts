@@ -39,6 +39,30 @@ export const copy = {
     renameLabel: "Novi naziv",
     close: "Zatvori",
   },
+  spark: {
+    dialogLabel: "Sparing partner",
+    shortcut: "Ctrl/Cmd+J",
+    tools: {
+      push: "✦ Poguraj me",
+      complicate: "⚔ Zakomplikuj",
+      missing: "👁 Šta mi nedostaje?",
+    },
+    kinds: {
+      inner: "Iznutra",
+      outer: "Spolja",
+      shift: "Pomeri fokus",
+    },
+    loading: "Razmišljam…",
+    again: "Još jednom",
+    back: "Drugi alat",
+    close: "Zatvori",
+    empty: "Napiši prvo nekoliko rečenica — onda imam na šta da reagujem.",
+    errors: {
+      offline: "Nema veze sa internetom. Tvoj tekst je bezbedan — probaj kad se veza vrati.",
+      timeout: "Ovog puta mi treba predugo. Probaj ponovo za trenutak.",
+      unavailable: "Sad nemam dobar odgovor. Probaj ponovo za trenutak.",
+    },
+  },
   write: {
     notFound: "Ova scena ne postoji.",
     loadFailed: "Scena trenutno ne može da se učita. Osveži stranicu.",

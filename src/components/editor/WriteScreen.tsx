@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Editor as TiptapEditor, JSONContent } from "@tiptap/react";
+import { SparkPalette } from "@/components/spark/SparkPalette";
 import { StructurePanel } from "@/components/structure/StructurePanel";
 import { useAutosave } from "@/hooks/useAutosave";
 import { copy } from "@/lib/copy";
@@ -13,6 +14,7 @@ import { saveScene } from "@/lib/db/scenes";
 import { openScene, type OpenedScene } from "@/lib/db/session";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
+import { extractContext } from "@/lib/text/extractContext";
 import { Editor } from "./Editor";
 import { EditorFooter } from "./EditorFooter";
 import { EditorHeader } from "./EditorHeader";
@@ -51,6 +53,8 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
     open: false,
     autoFocus: false,
   });
+  // Cursor position and context are frozen when the palette opens.
+  const [spark, setSpark] = useState<{ pos: number; context: string } | null>(null);
   const latest = useRef<{ content: JSONContent; wordCount: number } | null>(null);
   const editorRef = useRef<TiptapEditor | null>(null);
 
@@ -102,18 +106,43 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
     [panel.open, setPanelOpen],
   );
 
+  const openSpark = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const pos = editor.state.selection.from;
+    setSpark({ pos, context: extractContext(editor.state.doc, pos) });
+  }, []);
+
+  const closeSpark = useCallback(() => {
+    const editor = editorRef.current;
+    // If the writer already clicked back into the text, don't yank the cursor.
+    if (spark && editor && !editor.isFocused) {
+      editor.chain().focus().setTextSelection(spark.pos).run();
+    }
+    setSpark(null);
+  }, [spark]);
+
+  const toggleSpark = useCallback(
+    () => (spark ? closeSpark() : openSpark()),
+    [spark, closeSpark, openSpark],
+  );
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      // event.code keeps the shortcut on layouts where "\" needs AltGr (e.g. Serbian).
-      const isBackslash = event.key === "\\" || event.code === "Backslash";
-      if ((event.ctrlKey || event.metaKey) && isBackslash) {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      // event.code keeps shortcuts working where "\" needs AltGr (Serbian Latin)
+      // or J is a different letter (Cyrillic).
+      if (event.key === "\\" || event.code === "Backslash") {
         event.preventDefault();
         togglePanel();
+      } else if (event.key.toLowerCase() === "j" || event.code === "KeyJ") {
+        event.preventDefault();
+        toggleSpark();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [togglePanel]);
+  }, [togglePanel, toggleSpark]);
 
   const navigate = useCallback(
     async (targetId: ID) => {
@@ -157,7 +186,7 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
           onChanged={() => void refreshTitles()}
         />
       )}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative flex min-w-0 flex-1 flex-col">
         <EditorHeader
           chapterTitle={chapterTitle}
           saveStatus={status}
@@ -174,7 +203,16 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
             />
           </div>
         </main>
-<EditorFooter wordsToday={wordsToday} />
+        {spark && (
+          <SparkPalette
+            context={spark.context}
+            bookTitle={data.book.title}
+            chapterTitle={chapterTitle}
+            sceneTitle={data.scene.title}
+            onClose={closeSpark}
+          />
+        )}
+        <EditorFooter wordsToday={wordsToday} sparkOpen={spark !== null} onSpark={toggleSpark} />
       </div>
     </div>
   );

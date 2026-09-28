@@ -2,11 +2,11 @@
 
 Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen zadatak.
 
-**Trenutna faza:** 3
+**Trenutna faza:** 4
 
 ## Faza 0 — Postavka
 - [x] Next.js + TS + Tailwind + ESLint (pnpm)
-- [x] Zavisnosti: TipTap, Dexie, Zod, Anthropic SDK, Vitest, fake-indexeddb
+- [x] Zavisnosti: TipTap, Dexie, Zod, OpenAI SDK (ranije Anthropic), Vitest, fake-indexeddb
 - [x] Struktura foldera + copy.ts + skripte
 - [x] .env.local u .gitignore, trivijalan test
 
@@ -24,10 +24,10 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - [x] DailyStat → pravi „reči danas”
 
 ## Faza 3 — Sparing partner
-- [ ] extractContext + testovi
-- [ ] prompts / schemas / guardrail + testovi
-- [ ] POST /api/spark
-- [ ] Spark paleta (Ctrl/Cmd+J, 3 alata, Esc, fokus nazad)
+- [x] extractContext + testovi
+- [x] prompts / schemas / guardrail + testovi
+- [x] POST /api/spark
+- [x] Spark paleta (Ctrl/Cmd+J, 3 alata, Esc, fokus nazad)
 
 ## Faza 4 — Resume
 - [ ] ResumeState + lastSentence + testovi
@@ -64,6 +64,13 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - 2026-09-25: Stanje panela (otvoren/zatvoren) u `sessionStorage` — samo UI, ne sadržaj; stranica se remontira pri promeni scene.
 - 2026-09-25: `···` meni sadrži: status čuvanja, „Struktura”, „Sve knjige”. Brisanje knjiga/poglavlja/scena namerno još ne postoji.
 - 2026-09-25: `newId()` ima fallback jer `crypto.randomUUID` ne postoji na http preko LAN IP-a (npr. telefon).
+- 2026-09-28: AI provajder promenjen sa Anthropic na OpenAI (korisnik ima GPT ključ): paket `openai`, `OPENAI_API_KEY`, model `gpt-6-luna` (najjeftiniji), JSON mode + Zod.
+- 2026-09-28: `extractContext` uzima cele pasuse od kursora unazad; pasus koji ne staje seče se na početku rečenice. Sečenje po reči (sa „…”) samo ako je pasus kod kursora jedna preduga rečenica. Prima bilo šta sa `textBetween` (ProseMirror `Node`).
+- 2026-09-28: Stavke duže od 220 (siže 160) znakova se **odsecaju** na granici reči sa „…”, ne odbacuju — AGENTS §7 ima prednost nad `.max()` iz AI_PROMPTS šeme. Deljenje na rečenice je u `lib/text/sentences.ts` (koriste ga extractContext i guardrail).
+- 2026-09-28: Guardrail za kopiranje poredi nizove od 8 reči malim slovima, bez interpunkcije; `kind` polje se ne proverava.
+- 2026-09-28: `/api/spark`: logika u `lib/ai/spark.ts` (poziv modela ubačen spolja radi testova), SDK samo u `lib/ai/openai.ts` sa `maxRetries: 0`. Jedan rok od 15 s važi za oba pokušaja; timeout se ne ponavlja. Server ponovo seče kontekst na `AI_CONTEXT_WORDS`. Greške: 400 `bad-request`, 500 `config`, 502 `unavailable`, 504 `timeout`. Razlog odbijanja se loguje u terminal (`[spark] …`).
+- 2026-09-28: gpt-6-luna odbija `temperature` ≠ 1 → ne šaljemo je; `max_completion_tokens` 400 → 1200 jer se razmišljanje modela računa u limit. Prazan odgovor se loguje sa `finish_reason`.
+- 2026-09-28: Spark paleta: kontekst i pozicija kursora se zamrzavaju pri otvaranju; zatvaranje vraća kursor na tu poziciju samo ako autor u međuvremenu nije kliknuo u tekst. Nema zatvaranja klikom van palete (kartice mogu da ostanu otvorene dok pišeš). Dodato dugme „Drugi alat” pored „Još jednom”/„Zatvori”. Ctrl+J hvata i `event.code === "KeyJ"` (ćirilični raspored). Firefox Ctrl+J (Downloads) proveriti u Fazi 5.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->
