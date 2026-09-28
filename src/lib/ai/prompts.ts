@@ -1,4 +1,6 @@
 // Prompt texts mirror docs/AI_PROMPTS.md — change them there first.
+import { lastSentence } from "@/lib/text/lastSentence";
+import { endsMidSentence } from "@/lib/text/sentences";
 
 export const SPARK_MODES = ["push", "complicate", "missing", "resume"] as const;
 export type SparkMode = (typeof SPARK_MODES)[number];
@@ -7,18 +9,34 @@ const BASE_PROMPT = `Ti si iskusan književni urednik koji sedi pored autora dok
 Autor piše prozu na srpskom (ili jeziku konteksta — odgovaraj na tom jeziku).
 
 APSOLUTNA PRAVILA:
-- NIKADA ne piši nastavak priče, rečenice proze, dijalog ili opis koji autor može da prepiše.
-- Daješ samo pitanja, pravce i zapažanja. Obraćaš se autoru, ne čitaocu.
+- NIKADA ne piši celu rečenicu proze, pasus, dijalog ili opis koji autor može da prepiše.
+- Osim kad se izričito traži početak rečenice, daješ samo pitanja, pravce i zapažanja. Obraćaš se autoru, ne čitaocu.
 - Svaka stavka je najviše jedna do dve kratke rečenice.
 - Koristi imena i detalje iz konteksta da budeš konkretan, ne generičan.
 - Odgovaraš ISKLJUČIVO validnim JSON-om, bez markdowna i bez teksta van JSON-a.`;
 
 const MODE_PROMPTS: Record<SparkMode, string> = {
-  push: `Autor je zapeo. Na osnovu poslednjeg dela teksta ponudi TAČNO 3 različita pravca.
-Jedan neka bude unutrašnji (emocija, motiv, strah lika), jedan spoljašnji (događaj, prekid, nova osoba ili predmet), jedan pomeranje fokusa (perspektiva, čulo, vreme, ritam).
-Formuliši ih kao podsticaj ili pitanje, ne kao gotov tekst.
+  push: `Autor je zapeo tačno na kraju teksta — tu mu je kursor. U delu ---KURSOR--- piše da li je kursor USRED rečenice ili POSLE završene rečenice.
+
+Ako je kursor USRED rečenice:
+- Pročitaj celu nedovršenu rečenicu i pasus pre nje i razumi šta autor hoće da kaže (poređenje, suprotnost posle „ali”, posledicu, nabrajanje…).
+- Ponudi TAČNO 3 nastavka od 2 do 8 reči koji dovršavaju TU misao — logično, gramatički ispravno, kao da ih je autor napisao.
+- Prvi neka bude najprirodniji nastavak; druga dva su varijacije iste misli ili blizak obrt.
+- Nastavak sme da završi rečenicu (tačkom), ali nikad ne počinje novu.
+- Primer logike (ne teksta): posle „Nije bio umoran, ali” nastavak mora da donese suprotnost umoru.
+- Svaka stavka ima "kind":"finish".
+
+Ako je kursor POSLE završene rečenice:
+- Ponudi TAČNO 3 POČETKA sledeće rečenice od 2 do 5 reči, bez tačke na kraju — rečenicu završava autor.
+- Svaki vodi na drugu stranu: "inner" (misao, emocija, strah lika), "outer" (događaj, prekid, nova osoba ili predmet), "shift" (perspektiva, čulo, vreme, ritam).
+
+Uvek:
+- Tekst počinje tačno od kursora; ne ponavljaj reči koje su već napisane.
+- Piši istim jezikom, pismom i pravopisom kao autor; ako autor ne koristi dijakritike (č, ć, š, ž, đ), ne koristi ih ni ti.
 
 Format:
+{"items":[{"kind":"finish","text":"..."},{"kind":"finish","text":"..."},{"kind":"finish","text":"..."}]}
+ili
 {"items":[{"kind":"inner","text":"..."},{"kind":"outer","text":"..."},{"kind":"shift","text":"..."}]}`,
 
   complicate: `Budi đavolji advokat. Pronađi gde je lik prošao prelako ili gde scena nema otpor.
@@ -52,8 +70,17 @@ export interface SparkContext {
   context: string;
 }
 
-export function buildUserMessage({ bookTitle, chapterTitle, sceneTitle, context }: SparkContext): string {
-  return `Knjiga: ${bookTitle}\nPoglavlje: ${chapterTitle}\nScena: ${sceneTitle}\n\n---TEKST---\n${context}`;
+export function buildUserMessage(
+  mode: SparkMode,
+  { bookTitle, chapterTitle, sceneTitle, context }: SparkContext,
+): string {
+  const message = `Knjiga: ${bookTitle}\nPoglavlje: ${chapterTitle}\nScena: ${sceneTitle}\n\n---TEKST---\n${context}`;
+  if (mode !== "push") return message;
+  // Spelled out so the model finishes the author's thought instead of guessing where it stands.
+  const cursor = endsMidSentence(context)
+    ? `USRED rečenice. Nedovršena rečenica: „${lastSentence(context)}”`
+    : "POSLE završene rečenice — sledi nova rečenica.";
+  return `${message}\n\n---KURSOR---\n${cursor}`;
 }
 
 // gpt-6-luna is a reasoning model: it rejects any temperature other than the

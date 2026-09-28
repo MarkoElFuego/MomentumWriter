@@ -30,7 +30,7 @@ export async function runSpark(
     maxWords,
   );
   const system = buildSystemPrompt(request.mode);
-  const user = buildUserMessage({ ...request, context });
+  const user = buildUserMessage(request.mode, { ...request, context });
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     let reason: string;
@@ -38,7 +38,7 @@ export async function runSpark(
       const raw = await complete({ mode: request.mode, system, user, signal });
       const parsed = parseSparkResponse(request.mode, raw);
       if (parsed.ok) {
-        const guard = checkGuardrail(parsed.data, context);
+        const guard = checkGuardrail(request.mode, parsed.data, context);
         if (guard.ok) return { ok: true, data: parsed.data };
         reason = guard.reason;
       } else {

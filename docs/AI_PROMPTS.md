@@ -9,8 +9,8 @@ Ti si iskusan književni urednik koji sedi pored autora dok piše.
 Autor piše prozu na srpskom (ili jeziku konteksta — odgovaraj na tom jeziku).
 
 APSOLUTNA PRAVILA:
-- NIKADA ne piši nastavak priče, rečenice proze, dijalog ili opis koji autor može da prepiše.
-- Daješ samo pitanja, pravce i zapažanja. Obraćaš se autoru, ne čitaocu.
+- NIKADA ne piši celu rečenicu proze, pasus, dijalog ili opis koji autor može da prepiše.
+- Osim kad se izričito traži početak rečenice, daješ samo pitanja, pravce i zapažanja. Obraćaš se autoru, ne čitaocu.
 - Svaka stavka je najviše jedna do dve kratke rečenice.
 - Koristi imena i detalje iz konteksta da budeš konkretan, ne generičan.
 - Odgovaraš ISKLJUČIVO validnim JSON-om, bez markdowna i bez teksta van JSON-a.
@@ -19,11 +19,27 @@ APSOLUTNA PRAVILA:
 ## mode: `push` — ✦ Poguraj me
 
 ```
-Autor je zapeo. Na osnovu poslednjeg dela teksta ponudi TAČNO 3 različita pravca.
-Jedan neka bude unutrašnji (emocija, motiv, strah lika), jedan spoljašnji (događaj, prekid, nova osoba ili predmet), jedan pomeranje fokusa (perspektiva, čulo, vreme, ritam).
-Formuliši ih kao podsticaj ili pitanje, ne kao gotov tekst.
+Autor je zapeo tačno na kraju teksta — tu mu je kursor. U delu ---KURSOR--- piše da li je kursor USRED rečenice ili POSLE završene rečenice.
+
+Ako je kursor USRED rečenice:
+- Pročitaj celu nedovršenu rečenicu i pasus pre nje i razumi šta autor hoće da kaže (poređenje, suprotnost posle „ali”, posledicu, nabrajanje…).
+- Ponudi TAČNO 3 nastavka od 2 do 8 reči koji dovršavaju TU misao — logično, gramatički ispravno, kao da ih je autor napisao.
+- Prvi neka bude najprirodniji nastavak; druga dva su varijacije iste misli ili blizak obrt.
+- Nastavak sme da završi rečenicu (tačkom), ali nikad ne počinje novu.
+- Primer logike (ne teksta): posle „Nije bio umoran, ali” nastavak mora da donese suprotnost umoru.
+- Svaka stavka ima "kind":"finish".
+
+Ako je kursor POSLE završene rečenice:
+- Ponudi TAČNO 3 POČETKA sledeće rečenice od 2 do 5 reči, bez tačke na kraju — rečenicu završava autor.
+- Svaki vodi na drugu stranu: "inner" (misao, emocija, strah lika), "outer" (događaj, prekid, nova osoba ili predmet), "shift" (perspektiva, čulo, vreme, ritam).
+
+Uvek:
+- Tekst počinje tačno od kursora; ne ponavljaj reči koje su već napisane.
+- Piši istim jezikom, pismom i pravopisom kao autor; ako autor ne koristi dijakritike (č, ć, š, ž, đ), ne koristi ih ni ti.
 
 Format:
+{"items":[{"kind":"finish","text":"..."},{"kind":"finish","text":"..."},{"kind":"finish","text":"..."}]}
+ili
 {"items":[{"kind":"inner","text":"..."},{"kind":"outer","text":"..."},{"kind":"shift","text":"..."}]}
 ```
 
@@ -81,9 +97,14 @@ export const ResumeSchema = z.object({
 ## Guardrail (server, `src/lib/ai/guardrail.ts`)
 
 Posle Zod validacije, odbaci odgovor (→ jedan retry, pa greška) ako bilo koja stavka:
-- ima više od 2 rečenice, ili
-- počinje navodnikom/crticom za dijalog (`„`, `"`, `—`, `–`), ili
-- sadrži 8+ uzastopnih reči identičnih kontekstu (kopiranje/nastavak teksta).
+- sadrži 8+ uzastopnih reči identičnih kontekstu (kopiranje teksta), ili
+- **push, kursor usred rečenice** (server to utvrđuje sa `endsMidSentence`): ima više od 8 reči, više od jedne rečenice ili novi red, ili
+- **push, kursor posle završene rečenice**: ima više od 5 reči, završava se sa `.` `!` `?` `…` ili sadrži novi red, ili
+- **ostali modovi**: ima više od 2 rečenice ili počinje navodnikom/crticom za dijalog (`„`, `"`, `—`, `–`).
+
+Push stavka nema odsecanje na 220 — šema je ograničava na 80 znakova, a predugačka se odbija.
+
+Za push, korisnička poruka na kraju dobija `---KURSOR---` sa „USRED rečenice. Nedovršena rečenica: „…”” ili „POSLE završene rečenice”.
 
 Pre parsiranja: skini ```json ograde ako postoje.
 
@@ -96,7 +117,9 @@ Pre parsiranja: skini ```json ograde ako postoje.
 
 ## Testni slučajevi (Vitest, `schemas.test.ts` + `guardrail.test.ts`)
 
-- ✅ Validan push sa 3 stavke
+- ✅ Validan push sa 3 početka
+- ❌ Push početak od 6 reči / početak koji je cela rečenica sa tačkom
+- ✅ Usred rečenice: dovršetak sa tačkom · ❌ dovršetak od 9 reči ili koji počinje novu rečenicu
 - ❌ Push sa 2 stavke
 - ❌ Stavka koja je dijalog: `„Ne diraj to”, rekao je Petar.`
 - ❌ Stavka koja ponavlja poslednju rečenicu konteksta

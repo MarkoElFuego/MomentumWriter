@@ -3,9 +3,9 @@ import { parseSparkResponse } from "./schemas";
 
 const validPush = {
   items: [
-    { kind: "inner", text: "Čega se Marko zapravo plaši kad Ana ćuti?" },
-    { kind: "outer", text: "Šta ako neko pokuca baš sada?" },
-    { kind: "shift", text: "Probaj scenu kroz zvuk kiše umesto kroz pogled." },
+    { kind: "inner", text: "a Marko se plašio" },
+    { kind: "outer", text: "kad je neko pokucao" },
+    { kind: "shift", text: "Napolju je kiša" },
   ],
 };
 
@@ -48,6 +48,11 @@ describe("parseSparkResponse", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.summary[0]!.length).toBeLessThanOrEqual(160);
+  });
+
+  it("rejects a push item over 80 characters instead of clipping it", () => {
+    const long = { items: [...validPush.items.slice(0, 2), { kind: "shift", text: "a".repeat(81) }] };
+    expect(parseSparkResponse("push", JSON.stringify(long))).toEqual({ ok: false, reason: "schema" });
   });
 
   it("rejects missing fields and unknown kinds", () => {

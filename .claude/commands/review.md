@@ -1,6 +1,6 @@
 Pregledaj izmene od poslednjeg commita (`git diff` i `git status`) i proveri ih protiv `AGENTS.md`:
 
-- [ ] Da li bilo gde AI generiše prozu koja može da uđe u rukopis? (mora biti NE)
+- [ ] Da li AI igde ubacuje u rukopis išta osim izabranog predloga iz ✦ Poguraj me (dovršetak rečenice ≤ 8 reči ili početak ≤ 5 reči)? (mora biti NE)
 - [ ] Da li je na ekranu za pisanje dodat neki novi element bez odobrenja?
 - [ ] Da li postoji način da se tekst izgubi (nema autosave, nema migracije, greška se guta)?
 - [ ] Da li se server kod / API ključ importuje u klijent?

@@ -25,8 +25,12 @@ const item = (max = 220) =>
     z.string().min(3).max(max),
   );
 
+// Push items (finishing the sentence or starting the next) are never clipped:
+// a cut-off suggestion reads wrong, so it is rejected instead.
 export const PushSchema = z.object({
-  items: z.array(z.object({ kind: z.enum(["inner", "outer", "shift"]), text: item() })).length(3),
+  items: z
+    .array(z.object({ kind: z.enum(["finish", "inner", "outer", "shift"]), text: z.string().trim().min(1).max(80) }))
+    .length(3),
 });
 export const ComplicateSchema = z.object({ question: item() });
 export const MissingSchema = z.object({ observation: item(), question: item() });

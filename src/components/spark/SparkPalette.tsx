@@ -44,14 +44,25 @@ interface SparkPaletteProps {
   bookTitle: string;
   chapterTitle: string;
   sceneTitle: string;
+  /** Push only: the author picked a starter; the palette closes afterwards. */
+  onInsert: (starter: string) => void;
   onClose: () => void;
 }
 
-export function SparkPalette({ context, anchor, bookTitle, chapterTitle, sceneTitle, onClose }: SparkPaletteProps) {
+export function SparkPalette({
+  context,
+  anchor,
+  bookTitle,
+  chapterTitle,
+  sceneTitle,
+  onInsert,
+  onClose,
+}: SparkPaletteProps) {
   const [view, setView] = useState<View>({ kind: "menu" });
   const rootRef = useRef<HTMLDivElement>(null);
   const firstToolRef = useRef<HTMLButtonElement>(null);
   const againRef = useRef<HTMLButtonElement>(null);
+  const firstStarterRef = useRef<HTMLButtonElement>(null);
   const request = useRef<AbortController | null>(null);
 
   const run = useCallback(
@@ -80,9 +91,10 @@ export function SparkPalette({ context, anchor, bookTitle, chapterTitle, sceneTi
   // Keep keyboard focus inside the palette as its content changes.
   useEffect(() => {
     if (view.kind === "menu") firstToolRef.current?.focus();
-    else if (view.kind === "result" || view.kind === "error") againRef.current?.focus();
+    else if (view.kind === "result") (firstStarterRef.current ?? againRef.current)?.focus();
+    else if (view.kind === "error") againRef.current?.focus();
     else rootRef.current?.focus();
-  }, [view.kind]);
+  }, [view]);
 
   // Window-level so Esc works even while focus sits on the loading skeleton.
   useEffect(() => {
@@ -106,11 +118,14 @@ export function SparkPalette({ context, anchor, bookTitle, chapterTitle, sceneTi
         anchor ? "" : "absolute bottom-16 right-6 w-[min(24rem,calc(100%-3rem))]"
       }`}
       onKeyDown={(event) => {
-        if (view.kind !== "menu") return;
-        const tool = TOOLS[Number(event.key) - 1];
-        if (tool && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+        const index = Number(event.key) - 1;
+        if (view.kind === "menu" && TOOLS[index]) {
           event.preventDefault();
-          void run(tool);
+          void run(TOOLS[index]);
+        } else if (view.kind === "result" && "items" in view.data && view.data.items[index]) {
+          event.preventDefault();
+          onInsert(view.data.items[index].text);
         }
       }}
     >
@@ -144,8 +159,13 @@ export function SparkPalette({ context, anchor, bookTitle, chapterTitle, sceneTi
         <div className="px-1 py-1">
           <p className="px-2 pb-2 text-muted">{copy.spark.tools[view.tool]}</p>
           <div aria-live="polite" aria-busy={view.kind === "loading"}>
-            {view.kind === "loading" && <Skeleton lines={view.tool === "push" ? 3 : 1} />}
-            {view.kind === "result" && <Cards data={view.data} />}
+            {view.kind === "loading" && <Skeleton lines={view.tool === "push" ? 3 : 1} short={view.tool === "push"} />}
+            {view.kind === "result" &&
+              ("items" in view.data ? (
+                <Starters items={view.data.items} firstRef={firstStarterRef} onPick={onInsert} />
+              ) : (
+                <Cards data={view.data} />
+              ))}
             {view.kind === "error" && <p className="px-2 py-2 text-muted">{copy.spark.errors[view.error]}</p>}
           </div>
           {view.kind !== "loading" && (
@@ -162,11 +182,14 @@ export function SparkPalette({ context, anchor, bookTitle, chapterTitle, sceneTi
   );
 }
 
-function Skeleton({ lines }: { lines: number }) {
+function Skeleton({ lines, short = false }: { lines: number; short?: boolean }) {
   return (
     <div className="flex flex-col gap-2" aria-label={copy.spark.loading}>
       {Array.from({ length: lines }, (_, i) => (
-        <div key={i} className="h-14 rounded-md bg-muted/15 motion-safe:animate-pulse" />
+        <div
+          key={i}
+          className={`${short ? "h-9" : "h-14"} rounded-md bg-muted/15 motion-safe:animate-pulse`}
+        />
       ))}
     </div>
   );
@@ -181,16 +204,46 @@ function Card({ label, children }: { label?: string; children: React.ReactNode }
   );
 }
 
-// Read-only on purpose: nothing here can be inserted into the manuscript.
-function Cards({ data }: { data: SparkResponse }) {
+type StarterItem = SparkResponse<"push">["items"][number];
+
+// The only AI text that may enter the manuscript: a short starter the author finishes.
+function Starters({
+  items,
+  firstRef,
+  onPick,
+}: {
+  items: StarterItem[];
+  firstRef: React.Ref<HTMLButtonElement>;
+  onPick: (starter: string) => void;
+}) {
+  return (
+    <div>
+      <p className="px-2 pb-2 text-xs text-muted">{copy.spark.starterHint}</p>
+      <ul className="flex flex-col gap-1">
+        {items.map((item, i) => (
+          <li key={item.kind}>
+            <button
+              ref={i === 0 ? firstRef : undefined}
+              type="button"
+              className="ui-button flex w-full items-baseline gap-3 rounded-md border border-muted/20 px-3 py-2 text-left"
+              aria-keyshortcuts={String(i + 1)}
+              onClick={() => onPick(item.text)}
+            >
+              <span className="opacity-70">{i + 1}</span>
+              <span className="flex-1 font-serif text-base text-ink">…{item.text}</span>
+              <span className="text-xs uppercase tracking-wider">{copy.spark.kinds[item.kind]}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// Editorial notes are read-only on purpose: they can never enter the manuscript.
+function Cards({ data }: { data: Exclude<SparkResponse, SparkResponse<"push">> }) {
   return (
     <div className="flex flex-col gap-2">
-      {"items" in data &&
-        data.items.map((item) => (
-          <Card key={item.kind} label={copy.spark.kinds[item.kind]}>
-            {item.text}
-          </Card>
-        ))}
       {"observation" in data && (
         <Card>
           <p>{data.observation}</p>

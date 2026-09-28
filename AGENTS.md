@@ -10,7 +10,7 @@ Detalji: `docs/PRODUCT.md` · Arhitektura: `docs/ARCHITECTURE.md` · AI promptov
 
 ## 2. Zlatna pravila (ne krši ih nikad)
 
-1. **AI ne piše prozu.** Nijedna funkcija ne sme da generiše nastavak teksta, pasus, dijalog ili rečenicu koja se ubacuje u rukopis. AI vraća samo pitanja, pravce i zapažanja (max 1–2 rečenice po stavci). Ne postoji dugme „ubaci u tekst”.
+1. **AI ne piše prozu umesto autora.** Jedini izuzetak: **✦ Poguraj me** nudi 3 predloga koje autor bira — **dovršetak započete rečenice** (najviše 8 reči, samo ta jedna rečenica) ili **početak sledeće** (najviše 5 reči, bez tačke; završava je autor). Ništa se ne ubacuje samo. AI nikad ne piše pasus, više rečenica ili dijalog; nema „nastavi tekst” ni „prepiši”. Ostali alati vraćaju samo pitanja, pravce i zapažanja (max 1–2 rečenice po stavci) i ne mogu da se ubace u tekst. *(Izmenjeno 2026-09-28, odluka autora.)*
 2. **Editor je svetinja.** Na ekranu za pisanje: tekst, kursor, brojač reči danas, jedno AI dugme. Ništa više bez eksplicitnog odobrenja.
 3. **Tekst korisnika se nikad ne gubi.** Autosave (debounce ~800 ms) + save na `visibilitychange`/`beforeunload`. Svaka izmena modela podataka mora imati Dexie migraciju.
 4. **Bez gamifikacije u Duolingo stilu.** Nema streak-ova, plamenčića, kažnjavanja, crvenih upozorenja.

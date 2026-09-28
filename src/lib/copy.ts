@@ -48,10 +48,12 @@ export const copy = {
       missing: "👁 Šta mi nedostaje?",
     },
     kinds: {
+      finish: "Dovrši",
       inner: "Iznutra",
       outer: "Spolja",
       shift: "Pomeri fokus",
     },
+    starterHint: "Izaberi nastavak — dalje pišeš ti.",
     loading: "Razmišljam…",
     again: "Još jednom",
     back: "Drugi alat",

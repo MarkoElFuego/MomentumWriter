@@ -15,6 +15,7 @@ import { openScene, type OpenedScene } from "@/lib/db/session";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
 import { extractContext } from "@/lib/text/extractContext";
+import { joinStarter } from "@/lib/text/joinStarter";
 import { lastSentence } from "@/lib/text/lastSentence";
 import { Editor } from "./Editor";
 import { EditorFooter } from "./EditorFooter";
@@ -39,6 +40,14 @@ function writePanelOpen(open: boolean) {
   }
 }
 
+interface SparkSession {
+  pos: number;
+  /** The document at open time — tells us whether `pos` is still valid. */
+  doc: TiptapEditor["state"]["doc"];
+  context: string;
+  anchor: SparkAnchor | null;
+}
+
 type LoadState =
   | { kind: "loading" }
   | { kind: "missing" }
@@ -55,9 +64,7 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
     autoFocus: false,
   });
   // Cursor position and context are frozen when the palette opens.
-  const [spark, setSpark] = useState<{ pos: number; context: string; anchor: SparkAnchor | null } | null>(
-    null,
-  );
+  const [spark, setSpark] = useState<SparkSession | null>(null);
   const latest = useRef<{ content: JSONContent; wordCount: number } | null>(null);
   const editorRef = useRef<TiptapEditor | null>(null);
 
@@ -132,7 +139,7 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
     } catch {
       // View not laid out yet — the palette falls back to the footer corner.
     }
-    setSpark({ pos, context: extractContext(editor.state.doc, pos), anchor });
+    setSpark({ pos, doc: editor.state.doc, context: extractContext(editor.state.doc, pos), anchor });
   }, []);
 
   const closeSpark = useCallback(() => {
@@ -143,6 +150,24 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
     }
     setSpark(null);
   }, [spark]);
+
+  const insertStarter = useCallback(
+    (starter: string) => {
+      const editor = editorRef.current;
+      if (!spark || !editor) return;
+      // If the writer typed while the palette was open, the frozen spot moved.
+      const pos = editor.state.doc === spark.doc ? spark.pos : editor.state.selection.from;
+      const text = joinStarter(editor.state.doc.textBetween(Math.max(0, pos - 1), pos), starter);
+      editor
+        .chain()
+        .focus()
+        .insertContentAt(pos, { type: "text", text })
+        .setTextSelection(pos + text.length)
+        .run();
+      setSpark(null);
+    },
+    [spark],
+  );
 
   const toggleSpark = useCallback(
     () => (spark ? closeSpark() : openSpark()),
@@ -230,6 +255,7 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
           <SparkPalette
             context={spark.context}
             anchor={spark.anchor}
+            onInsert={insertStarter}
             bookTitle={data.book.title}
             chapterTitle={chapterTitle}
             sceneTitle={data.scene.title}

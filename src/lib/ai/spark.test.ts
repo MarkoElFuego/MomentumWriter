@@ -69,6 +69,23 @@ describe("runSpark", () => {
     expect(complete).toHaveBeenCalledTimes(1);
   });
 
+  it("tells the model where the cursor stands for push", async () => {
+    const push = JSON.stringify({
+      items: [
+        { kind: "finish", text: "nakupi se do velikog iznosa." },
+        { kind: "finish", text: "na kraju je to plata." },
+        { kind: "finish", text: "nisu mali kad se saberu." },
+      ],
+    });
+    const complete = completer(push);
+    const open = { ...request, mode: "push" as const, context: "Kisa je stala. Govorila je da su to mali iznosi ali" };
+    expect((await runSpark(open, complete, neverAborted())).ok).toBe(true);
+    const user = complete.mock.calls[0]![0].user;
+    expect(user).toContain(
+      "---KURSOR---\nUSRED rečenice. Nedovršena rečenica: „Govorila je da su to mali iznosi ali”",
+    );
+  });
+
   it("trims the context to maxWords before sending", async () => {
     const complete = completer(good);
     const long = { ...request, context: `${"Staro. ".repeat(50)}\n\nPetar čeka.` };
