@@ -15,7 +15,7 @@ Procena: v0.1 ≈ 6 faza, 1–2 večeri po fazi.
 **Prompt:**
 ```
 Pročitaj AGENTS.md i docs/ARCHITECTURE.md. Postavi prazan Next.js 15 projekat (App Router, TypeScript strict, Tailwind, ESLint) sa pnpm u ovom folderu, ne briši postojeće .md fajlove.
-Dodaj: Vitest (+ fake-indexeddb), Zod, Dexie, TipTap (@tiptap/react, @tiptap/starter-kit, @tiptap/extension-placeholder), @anthropic-ai/sdk.
+Dodaj: Vitest (+ fake-indexeddb), Zod, Dexie, TipTap (@tiptap/react, @tiptap/starter-kit, @tiptap/extension-placeholder), openai.
 Napravi strukturu foldera iz AGENTS.md sa praznim placeholder fajlovima, src/lib/copy.ts, i skripte dev/build/lint/typecheck/test.
 Dodaj .env.local u .gitignore. Napravi jedan trivijalan test da Vitest radi.
 ```
@@ -64,7 +64,7 @@ Faza 2 iz docs/PLAN.md. Implementiraj Dexie šemu tačno po docs/ARCHITECTURE.md
 Faza 3 iz docs/PLAN.md. Implementiraj AI sparing partnera tačno po docs/AI_PROMPTS.md:
 - lib/text/extractContext.ts (+ testovi): poslednjih AI_CONTEXT_WORDS reči pre kursora
 - lib/ai/prompts.ts, schemas.ts, guardrail.ts (+ testovi iz AI_PROMPTS.md)
-- POST /api/spark: Zod ulaz, poziv Anthropic API-ja, parsiranje, guardrail, jedan retry, timeout 15s
+- POST /api/spark: Zod ulaz, poziv OpenAI API-ja, parsiranje, guardrail, jedan retry, timeout 15s
 - Spark paleta: Ctrl/Cmd+J ili klik na "✦ Treba mi impuls" otvara mali lebdeći prozor iznad footera sa 3 alata: 1 ✦ Poguraj me, 2 ⚔ Zakomplikuj, 3 👁 Šta mi nedostaje?  (izbor brojem ili klikom; Esc zatvara)
 - Rezultat: kratke kartice, skeleton dok čeka. Kartice se NE ubacuju u tekst. Dugme "Još jednom" i "Zatvori".
 - Fokus se posle zatvaranja vraća u editor na istu poziciju.

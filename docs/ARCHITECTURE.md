@@ -5,7 +5,7 @@
 ```
 Browser (Next.js klijent)
  ├─ TipTap editor ──► Dexie (IndexedDB)  ← sav rukopis živi lokalno
- ├─ Spark paleta ──► POST /api/spark ──► Anthropic API
+ ├─ Spark paleta ──► POST /api/spark ──► OpenAI API
  └─ Resume ekran ──► Dexie (resumeState) + /api/spark (mode: resume)
 ```
 

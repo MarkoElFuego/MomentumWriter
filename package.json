@@ -12,13 +12,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.128.0",
     "@tiptap/extension-placeholder": "^3.31.3",
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
     "dexie": "^4.4.6",
     "next": "15",
+    "openai": "^7.23.0",
     "react": "19",
     "react-dom": "19",
     "zod": "^4.6.5"

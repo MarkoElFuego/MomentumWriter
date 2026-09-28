@@ -23,7 +23,7 @@ Detalji: `docs/PRODUCT.md` · Arhitektura: `docs/ARCHITECTURE.md` · AI promptov
 - TipTap (ProseMirror) za editor
 - Dexie.js (IndexedDB) za lokalno čuvanje — **ne** localStorage za sadržaj
 - Zustand za UI stanje (samo ako zatreba)
-- Anthropic SDK (`@anthropic-ai/sdk`) preko server route-a; model iz `AI_MODEL` env promenljive
+- OpenAI SDK (`openai`) preko server route-a; ključ iz `OPENAI_API_KEY`, model iz `AI_MODEL` env promenljive
 - Zod za validaciju AI odgovora i API ulaza
 - Vitest za unit testove
 - Paket menadžer: **pnpm**
@@ -76,7 +76,7 @@ src/
 
 - Jedan endpoint: `POST /api/spark` sa `mode: "push" | "complicate" | "missing" | "resume"`.
 - Kontekst: poslednjih ~400 reči pre kursora (vidi `lib/text/extractContext.ts`). Ne šalji celu knjigu.
-- Model mora da vrati JSON; parsiraj kroz Zod. Na grešku: jedan retry, pa ljubazna poruka u UI.
+- Model mora da vrati JSON: koristi JSON mode (`response_format: { type: "json_object" }`) i svejedno parsiraj kroz Zod. Na grešku: jedan retry, pa ljubazna poruka u UI.
 - Server odseca stavke duže od 220 karaktera i odbacuje odgovor koji liči na prozu (vidi `docs/AI_PROMPTS.md` → „Guardrail”).
 - Timeout 15 s. Prikaži skeleton dok čekaš. Esc zatvara paletu.
 
