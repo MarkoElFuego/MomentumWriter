@@ -62,8 +62,8 @@ Klik → editor, kursor tačno gde si stao.
 
 ## Roadmap
 
-- **v0.1** — editor, Book→Chapter→Scene, `Ctrl+J` sparing partner, Resume, lokalno čuvanje + autosave
-- **v0.2** — Revision/Hemingway mode, `[[likovi]]`, stranice + kalendar, export (Markdown/DOCX)
+- **v0.1** — editor, Book→Chapter→Scene, `Ctrl+J`/`Tab` sparing partner, Revision/Hemingway mode (pomereno iz v0.2, odluka 2026-09-28), Resume, lokalno čuvanje + autosave
+- **v0.2** — `[[likovi]]`, stranice + kalendar, export (Markdown/DOCX)
 - **v0.3** — nalozi (Supabase), sync, email „nezavršena rečenica” + nedeljni pregled narativa, magic link
 
 ## Test uspeha za v0.1

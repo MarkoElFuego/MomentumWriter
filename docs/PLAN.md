@@ -110,7 +110,7 @@ Faza 5 iz docs/PLAN.md. Samo poliranje, bez novih funkcija:
 1. **Stranice umesto reči** — „+ 1 stranica” svakih 300 reči, mala animacija papira na gomilu
 2. **Kalendar** na početnom ekranu (tačkice po danima, „6 dana pisanja · 4.280 novih reči · 12 stranica”)
 3. **`[[likovi]]`** — TipTap mention ekstenzija, kartica lika, AI dobija listu likova u kontekstu
-4. **Revision mode** — Hemingway stil: duge rečenice, pasiv, prilozi (lokalno, bez AI-ja)
+4. **Revision mode** — pomereno u v0.1, Faza 3.5 (odluka 2026-09-28)
 5. **Export u DOCX**
 
 ## v0.3 (cloud + povratak mejlom)

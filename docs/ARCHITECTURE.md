@@ -98,6 +98,7 @@ Pri otvaranju knjige: ako `resumeState.lastWrittenAt` je stariji od **6 sati** �
 
 | Prečica | Akcija |
 |---|---|
+| `Tab` (u editoru) | Spark paleta na mestu kursora; `Shift+Tab` i dalje izlazi iz editora |
 | `Ctrl/Cmd + J` | Spark paleta (preventDefault; testiraj u Chrome, Firefox, Safari) |
 | `1`–`4` (dok je paleta otvorena) | Izbor alata |
 | `Esc` | Zatvori paletu |

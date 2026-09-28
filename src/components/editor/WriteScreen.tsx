@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Editor as TiptapEditor, JSONContent } from "@tiptap/react";
-import { SparkPalette } from "@/components/spark/SparkPalette";
+import { SparkPalette, type SparkAnchor } from "@/components/spark/SparkPalette";
 import { StructurePanel } from "@/components/structure/StructurePanel";
 import { useAutosave } from "@/hooks/useAutosave";
 import { copy } from "@/lib/copy";
@@ -55,7 +55,9 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
     autoFocus: false,
   });
   // Cursor position and context are frozen when the palette opens.
-  const [spark, setSpark] = useState<{ pos: number; context: string } | null>(null);
+  const [spark, setSpark] = useState<{ pos: number; context: string; anchor: SparkAnchor | null } | null>(
+    null,
+  );
   const latest = useRef<{ content: JSONContent; wordCount: number } | null>(null);
   const editorRef = useRef<TiptapEditor | null>(null);
 
@@ -123,7 +125,14 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
     const editor = editorRef.current;
     if (!editor) return;
     const pos = editor.state.selection.from;
-    setSpark({ pos, context: extractContext(editor.state.doc, pos) });
+    let anchor: SparkAnchor | null = null;
+    try {
+      const { left, top, bottom } = editor.view.coordsAtPos(pos);
+      anchor = { left, top, bottom };
+    } catch {
+      // View not laid out yet — the palette falls back to the footer corner.
+    }
+    setSpark({ pos, context: extractContext(editor.state.doc, pos), anchor });
   }, []);
 
   const closeSpark = useCallback(() => {
@@ -210,6 +219,7 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
             <Editor
               initialContent={data.scene.content}
               onChange={handleChange}
+              onTab={openSpark}
               onReady={(editor) => {
                 editorRef.current = editor;
               }}
@@ -219,6 +229,7 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
         {spark && (
           <SparkPalette
             context={spark.context}
+            anchor={spark.anchor}
             bookTitle={data.book.title}
             chapterTitle={chapterTitle}
             sceneTitle={data.scene.title}

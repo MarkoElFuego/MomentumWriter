@@ -41,7 +41,7 @@ export const copy = {
   },
   spark: {
     dialogLabel: "Sparing partner",
-    shortcut: "Ctrl/Cmd+J",
+    shortcut: "Tab · Ctrl/Cmd+J",
     tools: {
       push: "✦ Poguraj me",
       complicate: "⚔ Zakomplikuj",

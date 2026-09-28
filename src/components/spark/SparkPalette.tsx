@@ -16,15 +16,38 @@ type View =
   | { kind: "result"; tool: Tool; data: SparkResponse }
   | { kind: "error"; tool: Tool; error: SparkClientError };
 
+// Viewport coordinates of the cursor line (ProseMirror coordsAtPos).
+export interface SparkAnchor {
+  left: number;
+  top: number;
+  bottom: number;
+}
+
+const WIDTH = 384;
+const GAP = 8;
+const EDGE = 16;
+// Roughly the height of three cards plus actions.
+const ROOM_BELOW = 300;
+
+// Just under the cursor line, or above it when the line is near the bottom.
+function placeAt(anchor: SparkAnchor): React.CSSProperties {
+  const width = Math.min(WIDTH, window.innerWidth - 2 * EDGE);
+  const left = Math.min(Math.max(anchor.left, EDGE), window.innerWidth - width - EDGE);
+  return window.innerHeight - anchor.bottom >= ROOM_BELOW
+    ? { position: "fixed", left, top: anchor.bottom + GAP, width }
+    : { position: "fixed", left, bottom: window.innerHeight - anchor.top + GAP, width };
+}
+
 interface SparkPaletteProps {
   context: string;
+  anchor: SparkAnchor | null;
   bookTitle: string;
   chapterTitle: string;
   sceneTitle: string;
   onClose: () => void;
 }
 
-export function SparkPalette({ context, bookTitle, chapterTitle, sceneTitle, onClose }: SparkPaletteProps) {
+export function SparkPalette({ context, anchor, bookTitle, chapterTitle, sceneTitle, onClose }: SparkPaletteProps) {
   const [view, setView] = useState<View>({ kind: "menu" });
   const rootRef = useRef<HTMLDivElement>(null);
   const firstToolRef = useRef<HTMLButtonElement>(null);
@@ -78,7 +101,10 @@ export function SparkPalette({ context, bookTitle, chapterTitle, sceneTitle, onC
       role="dialog"
       aria-label={copy.spark.dialogLabel}
       tabIndex={-1}
-      className="absolute bottom-16 right-6 z-30 w-[min(24rem,calc(100%-3rem))] rounded-md border border-muted/30 bg-paper p-2 text-sm shadow-sm outline-none"
+      style={anchor ? placeAt(anchor) : undefined}
+      className={`z-30 rounded-md border border-muted/30 bg-paper p-2 text-sm shadow-sm outline-none ${
+        anchor ? "" : "absolute bottom-16 right-6 w-[min(24rem,calc(100%-3rem))]"
+      }`}
       onKeyDown={(event) => {
         if (view.kind !== "menu") return;
         const tool = TOOLS[Number(event.key) - 1];

@@ -29,6 +29,10 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - [x] POST /api/spark
 - [x] Spark paleta (Ctrl/Cmd+J, 3 alata, Esc, fokus nazad)
 
+## Faza 3.5 — Dorade (odluke korisnika)
+- [x] Tab → Spark meni na mestu kursora
+- [ ] Revision mode (Hemingway) — pomereno iz v0.2
+
 ## Faza 4 — Resume
 - [x] ResumeState + lastSentence + testovi
 - [ ] Pravilo 6h → /resume
@@ -72,6 +76,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - 2026-09-28: gpt-6-luna odbija `temperature` ≠ 1 → ne šaljemo je; `max_completion_tokens` 400 → 1200 jer se razmišljanje modela računa u limit. Prazan odgovor se loguje sa `finish_reason`.
 - 2026-09-28: Spark paleta: kontekst i pozicija kursora se zamrzavaju pri otvaranju; zatvaranje vraća kursor na tu poziciju samo ako autor u međuvremenu nije kliknuo u tekst. Nema zatvaranja klikom van palete (kartice mogu da ostanu otvorene dok pišeš). Dodato dugme „Drugi alat” pored „Još jednom”/„Zatvori”. Ctrl+J hvata i `event.code === "KeyJ"` (ćirilični raspored). Firefox Ctrl+J (Downloads) proveriti u Fazi 5.
 - 2026-09-28: `resumeState` se upisuje u istoj transakciji kao `saveScene` (opcioni `cursor` argument); pozicija i poslednja rečenica se čitaju pri save-u, ne na svaki taster. `openQuestion`/`openQuestionFor` se čuvaju pri prepisivanju. `lastSentence` uzima poslednji pasus → poslednju (i nedovršenu) rečenicu; duga rečenica čuva **kraj** sa „…” na početku. Bez migracije — tabela postoji od v1.
+- 2026-09-28: Korisnik tražio (1) meni na Tab dok kuca i (2) Hemingway parametre. Odluke: Tab u editoru otvara Spark paletu **na kursoru** (i Ctrl+J/dugme sada otvaraju na kursoru; `coordsAtPos`, iznad reda ako dole nema mesta); Shift+Tab ostaje za izlaz iz editora; u paleti Tab šeta po dugmadi, zatvara Esc. Revision mode (Hemingway) pomeren iz v0.2 u Fazu 3.5 kao **poseban režim**, ne stalni panel dok se piše.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->
