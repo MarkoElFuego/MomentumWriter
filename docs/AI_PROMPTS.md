@@ -90,8 +90,8 @@ Pre parsiranja: skini ```json ograde ako postoje.
 ## Parametri poziva
 
 - `model: process.env.AI_MODEL`
-- `max_tokens: 400`
-- `temperature: 0.9` za push/complicate/missing, `0.3` za resume
+- `max_completion_tokens: 1200` — gpt-6-luna je model koji „razmišlja”, a skriveno razmišljanje se računa u limit; vidljiv odgovor i dalje drži šema
+- bez `temperature` — gpt-6-luna prihvata samo podrazumevanu vrednost (1)
 - Korisnička poruka: `Knjiga: {bookTitle}\nPoglavlje: {chapterTitle}\nScena: {sceneTitle}\n\n---TEKST---\n{context}`
 
 ## Testni slučajevi (Vitest, `schemas.test.ts` + `guardrail.test.ts`)

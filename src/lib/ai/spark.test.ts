@@ -1,0 +1,81 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { countWords } from "@/lib/text/countWords";
+import type { SparkRequest } from "./schemas";
+import { runSpark, type Completer } from "./spark";
+
+const request: SparkRequest = {
+  mode: "complicate",
+  context: "Petar je stajao na pragu i gledao u mračno dvorište.",
+  bookTitle: "Kiša",
+  chapterTitle: "Poglavlje I",
+  sceneTitle: "Scena 1",
+};
+
+const good = JSON.stringify({ question: "Šta ako Petar ne sme da uđe u kuću?" });
+
+// Returns the given replies in order; an Error entry is thrown instead.
+function completer(...replies: (string | Error)[]) {
+  return vi.fn<Completer>(async () => {
+    const reply = replies.shift();
+    if (reply instanceof Error) throw reply;
+    return reply ?? "";
+  });
+}
+
+const neverAborted = () => new AbortController().signal;
+
+describe("runSpark", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  it("returns parsed data from the first good reply", async () => {
+    const complete = completer(good);
+    const result = await runSpark(request, complete, neverAborted());
+    expect(result).toEqual({ ok: true, data: { question: "Šta ako Petar ne sme da uđe u kuću?" } });
+    expect(complete).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries once after invalid JSON", async () => {
+    const complete = completer("nije json", good);
+    expect((await runSpark(request, complete, neverAborted())).ok).toBe(true);
+    expect(complete).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries once when the guardrail rejects prose", async () => {
+    const complete = completer(JSON.stringify({ question: "„Ne diraj to”, rekao je Petar." }), good);
+    expect((await runSpark(request, complete, neverAborted())).ok).toBe(true);
+    expect(complete).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries once after a request error", async () => {
+    const complete = completer(new Error("network"), good);
+    expect((await runSpark(request, complete, neverAborted())).ok).toBe(true);
+  });
+
+  it("gives up as unavailable after two bad replies", async () => {
+    const complete = completer("loše", "opet loše", good);
+    expect(await runSpark(request, complete, neverAborted())).toEqual({ ok: false, error: "unavailable" });
+    expect(complete).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports a timeout without retrying", async () => {
+    const controller = new AbortController();
+    const complete = vi.fn<Completer>(async () => {
+      controller.abort();
+      throw new Error("aborted");
+    });
+    expect(await runSpark(request, complete, controller.signal)).toEqual({ ok: false, error: "timeout" });
+    expect(complete).toHaveBeenCalledTimes(1);
+  });
+
+  it("trims the context to maxWords before sending", async () => {
+    const complete = completer(good);
+    const long = { ...request, context: `${"Staro. ".repeat(50)}\n\nPetar čeka.` };
+    await runSpark(long, complete, neverAborted(), 5);
+    const user = complete.mock.calls[0]![0].user;
+    const sent = user.split("---TEKST---\n")[1]!;
+    expect(countWords(sent)).toBeLessThanOrEqual(5);
+    expect(sent.endsWith("Petar čeka.")).toBe(true);
+  });
+});
