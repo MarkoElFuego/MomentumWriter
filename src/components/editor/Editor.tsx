@@ -1,19 +1,22 @@
 "use client";
 
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, useEditor, type Editor as TiptapEditor, type JSONContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { copy } from "@/lib/copy";
 
 interface EditorProps {
-  onTextChange: (text: string) => void;
+  initialContent: JSONContent;
+  onChange: (content: JSONContent, text: string) => void;
+  onReady?: (editor: TiptapEditor) => void;
 }
 
-export function Editor({ onTextChange }: EditorProps) {
+export function Editor({ initialContent, onChange, onReady }: EditorProps) {
   const editor = useEditor({
     // Next.js renders on the server first; TipTap must mount on the client only.
     immediatelyRender: false,
     autofocus: "end",
+    content: initialContent,
     extensions: [
       StarterKit.configure({
         heading: { levels: [1] },
@@ -28,7 +31,9 @@ export function Editor({ onTextChange }: EditorProps) {
     editorProps: {
       attributes: { class: "prose-editor", spellcheck: "true", lang: "sr" },
     },
-    onUpdate: ({ editor }) => onTextChange(editor.getText({ blockSeparator: "\n" })),
+    onCreate: ({ editor }) => onReady?.(editor),
+    onUpdate: ({ editor }) =>
+      onChange(editor.getJSON(), editor.getText({ blockSeparator: "\n" })),
   });
 
   return <EditorContent editor={editor} />;

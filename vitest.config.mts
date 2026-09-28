@@ -8,5 +8,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // In-memory IndexedDB for Dexie repo tests.
+    setupFiles: ["fake-indexeddb/auto"],
+    restoreMocks: true,
   },
 });

@@ -2,7 +2,7 @@
 
 Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen zadatak.
 
-**Trenutna faza:** 2
+**Trenutna faza:** 3
 
 ## Faza 0 — Postavka
 - [x] Next.js + TS + Tailwind + ESLint (pnpm)
@@ -17,11 +17,11 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - [x] countWords + testovi
 
 ## Faza 2 — Struktura + čuvanje
-- [ ] Dexie šema v1 + repo funkcije + testovi
-- [ ] Početna: lista knjiga, „Nova knjiga”
-- [ ] Autosave (debounce + flush) + status
-- [ ] Panel strukture (Ctrl/Cmd+\)
-- [ ] DailyStat → pravi „reči danas”
+- [x] Dexie šema v1 + repo funkcije + testovi
+- [x] Početna: lista knjiga, „Nova knjiga”
+- [x] Autosave (debounce + flush) + status
+- [x] Panel strukture (Ctrl/Cmd+\)
+- [x] DailyStat → pravi „reči danas”
 
 ## Faza 3 — Sparing partner
 - [ ] extractContext + testovi
@@ -54,6 +54,16 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - 2026-09-25: StarterKit bez code, codeBlock, horizontalRule i link — samo proza; H1 samo nivo 1.
 - 2026-09-25: Tema preko CSS promenljivih + Tailwind `@theme inline` (`bg-paper`, `text-ink`, `text-muted`); samo `prefers-color-scheme`, bez ručnog prekidača.
 - 2026-09-25: „reč/reči” se sklanja u `copy.editor.wordsToday(n)`.
+- 2026-09-25: Dexie v1 uključuje i `resumeState` tabelu (prazna do Faze 4) da ne bi trebala migracija.
+- 2026-09-25: `saveScene` u jednoj transakciji čuva scenu + `endWordTotal`; ako dan pređe ponoć tokom pisanja, novi dan kreće od totala pre tog save-a.
+- 2026-09-25: `openScene` (lib/db/session.ts) pri otvaranju upisuje `startWordTotal`; footer računa „reči danas” uživo (ostale scene + trenutna).
+- 2026-09-25: Autosave: neuspeli save se ne guta — status „Čuvanje nije uspelo”, retry na 3 s, a `beforeunload` traži potvrdu samo ako je poslednji save pao.
+- 2026-09-25: Otvaranje knjige vodi na prvu scenu dok Faza 4 ne doda poziciju kursora.
+- 2026-09-25: Preimenovanje: dupli klik ili F2; Enter čuva, Esc odustaje. Knjiga se preimenuje u vrhu panela.
+- 2026-09-25: Ctrl/Cmd+\ proverava i `event.code === "Backslash"` — na srpskom rasporedu taj taster je „ž”.
+- 2026-09-25: Stanje panela (otvoren/zatvoren) u `sessionStorage` — samo UI, ne sadržaj; stranica se remontira pri promeni scene.
+- 2026-09-25: `···` meni sadrži: status čuvanja, „Struktura”, „Sve knjige”. Brisanje knjiga/poglavlja/scena namerno još ne postoji.
+- 2026-09-25: `newId()` ima fallback jer `crypto.randomUUID` ne postoji na http preko LAN IP-a (npr. telefon).
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

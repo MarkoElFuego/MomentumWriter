@@ -1,6 +1,7 @@
 import { WriteScreen } from "@/components/editor/WriteScreen";
 
-// Faza 1: sceneId se još ne koristi — sadržaj živi samo u memoriji do Faze 2.
-export default function WritePage() {
-  return <WriteScreen />;
+export default async function WritePage({ params }: { params: Promise<{ sceneId: string }> }) {
+  const { sceneId } = await params;
+  // key: a new scene always gets a fresh editor and autosave.
+  return <WriteScreen key={sceneId} sceneId={sceneId} />;
 }
