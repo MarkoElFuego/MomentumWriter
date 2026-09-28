@@ -30,7 +30,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - [x] Spark paleta (Ctrl/Cmd+J, 3 alata, Esc, fokus nazad)
 
 ## Faza 4 — Resume
-- [ ] ResumeState + lastSentence + testovi
+- [x] ResumeState + lastSentence + testovi
 - [ ] Pravilo 6h → /resume
 - [ ] Resume ekran (radi i bez AI-ja)
 - [ ] 4. alat „↩ Vrati me u priču”
@@ -71,6 +71,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - 2026-09-28: `/api/spark`: logika u `lib/ai/spark.ts` (poziv modela ubačen spolja radi testova), SDK samo u `lib/ai/openai.ts` sa `maxRetries: 0`. Jedan rok od 15 s važi za oba pokušaja; timeout se ne ponavlja. Server ponovo seče kontekst na `AI_CONTEXT_WORDS`. Greške: 400 `bad-request`, 500 `config`, 502 `unavailable`, 504 `timeout`. Razlog odbijanja se loguje u terminal (`[spark] …`).
 - 2026-09-28: gpt-6-luna odbija `temperature` ≠ 1 → ne šaljemo je; `max_completion_tokens` 400 → 1200 jer se razmišljanje modela računa u limit. Prazan odgovor se loguje sa `finish_reason`.
 - 2026-09-28: Spark paleta: kontekst i pozicija kursora se zamrzavaju pri otvaranju; zatvaranje vraća kursor na tu poziciju samo ako autor u međuvremenu nije kliknuo u tekst. Nema zatvaranja klikom van palete (kartice mogu da ostanu otvorene dok pišeš). Dodato dugme „Drugi alat” pored „Još jednom”/„Zatvori”. Ctrl+J hvata i `event.code === "KeyJ"` (ćirilični raspored). Firefox Ctrl+J (Downloads) proveriti u Fazi 5.
+- 2026-09-28: `resumeState` se upisuje u istoj transakciji kao `saveScene` (opcioni `cursor` argument); pozicija i poslednja rečenica se čitaju pri save-u, ne na svaki taster. `openQuestion`/`openQuestionFor` se čuvaju pri prepisivanju. `lastSentence` uzima poslednji pasus → poslednju (i nedovršenu) rečenicu; duga rečenica čuva **kraj** sa „…” na početku. Bez migracije — tabela postoji od v1.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

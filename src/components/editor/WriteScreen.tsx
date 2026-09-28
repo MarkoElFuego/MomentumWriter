@@ -15,6 +15,7 @@ import { openScene, type OpenedScene } from "@/lib/db/session";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
 import { extractContext } from "@/lib/text/extractContext";
+import { lastSentence } from "@/lib/text/lastSentence";
 import { Editor } from "./Editor";
 import { EditorFooter } from "./EditorFooter";
 import { EditorHeader } from "./EditorHeader";
@@ -80,7 +81,19 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
 
   const save = useCallback(async () => {
     if (!latest.current) return;
-    await saveScene(sceneId, latest.current.content, latest.current.wordCount, localDateKey());
+    // Read the cursor at save time (after the debounce), not on every keystroke.
+    const editor = editorRef.current;
+    const cursor = editor && {
+      pos: editor.state.selection.from,
+      lastSentence: lastSentence(editor.state.doc.textBetween(0, editor.state.selection.from, "\n\n")),
+    };
+    await saveScene(
+      sceneId,
+      latest.current.content,
+      latest.current.wordCount,
+      localDateKey(),
+      cursor ?? undefined,
+    );
   }, [sceneId]);
 
   const { status, schedule, flush } = useAutosave(save);

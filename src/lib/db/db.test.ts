@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { bookWordTotal, createBook, firstSceneId, getBook, listBooks, renameBook } from "./books";
 import { createChapter, listChapters, renameChapter } from "./chapters";
 import { getDailyStat } from "./dailyStats";
+import { getResumeState } from "./resume";
 import { db } from "./schema";
 import { createScene, getScene, listScenes, listScenesByBook, renameScene, saveScene } from "./scenes";
 import { openScene } from "./session";
@@ -124,5 +125,50 @@ describe("saving and words today", () => {
 
   it("returns undefined for a missing scene", async () => {
     expect(await openScene("missing", "2026-09-25")).toBeUndefined();
+  });
+});
+
+describe("resume state", () => {
+  it("records scene, cursor, last sentence and time on save", async () => {
+    const { book, scene } = await createBook();
+    await saveScene(scene.id, doc("Petar je zastao."), 3, "2026-09-25", {
+      pos: 17,
+      lastSentence: "Petar je zastao.",
+    });
+
+    const state = await getResumeState(book.id);
+    expect(state).toMatchObject({
+      bookId: book.id,
+      sceneId: scene.id,
+      cursorPos: 17,
+      lastSentence: "Petar je zastao.",
+    });
+    expect(state!.lastWrittenAt).toBe((await getScene(scene.id))!.updatedAt);
+  });
+
+  it("moves the resume point on later saves but keeps the cached open question", async () => {
+    const { book, chapter, scene } = await createBook();
+    await saveScene(scene.id, doc("x"), 1, "2026-09-25", { pos: 2, lastSentence: "x" });
+    await db.resumeState.update(book.id, { openQuestion: "Ko je na vratima?", openQuestionFor: "abc" });
+    const first = (await getResumeState(book.id))!.lastWrittenAt;
+
+    const other = await createScene(chapter.id);
+    await saveScene(other.id, doc("y z"), 2, "2026-09-25", { pos: 4, lastSentence: "y z" });
+
+    const state = await getResumeState(book.id);
+    expect(state).toMatchObject({
+      sceneId: other.id,
+      cursorPos: 4,
+      lastSentence: "y z",
+      openQuestion: "Ko je na vratima?",
+      openQuestionFor: "abc",
+    });
+    expect(state!.lastWrittenAt).toBeGreaterThan(first);
+  });
+
+  it("leaves the resume point alone when saving without a cursor", async () => {
+    const { book, scene } = await createBook();
+    await saveScene(scene.id, doc("x"), 1, "2026-09-25");
+    expect(await getResumeState(book.id)).toBeUndefined();
   });
 });

@@ -59,9 +59,14 @@ export async function renameScene(id: ID, title: string): Promise<void> {
   await db.scenes.update(id, { title, updatedAt: Date.now() });
 }
 
+export interface CursorSnapshot {
+  pos: number;
+  lastSentence: string;
+}
+
 /**
- * Saves scene content and keeps today's stat in sync, all in one transaction
- * so the word totals can never drift from the text.
+ * Saves scene content and keeps today's stat (and, given a cursor, the resume
+ * point) in sync, all in one transaction so they can never drift from the text.
  * Returns the new word total of the whole book.
  */
 export async function saveScene(
@@ -69,8 +74,9 @@ export async function saveScene(
   content: JSONContent,
   wordCount: number,
   date: string,
+  cursor?: CursorSnapshot,
 ): Promise<number> {
-  return db.transaction("rw", db.scenes, db.books, db.dailyStats, async () => {
+  return db.transaction("rw", [db.scenes, db.books, db.dailyStats, db.resumeState], async () => {
     const scene = await db.scenes.get(id);
     if (!scene) throw new Error(`Scene ${id} not found`);
 
@@ -86,6 +92,19 @@ export async function saveScene(
     await db.scenes.update(id, { content, wordCount, updatedAt: now });
     await db.dailyStats.update([date, scene.bookId], { endWordTotal: newTotal });
     await db.books.update(scene.bookId, { updatedAt: now });
+
+    if (cursor) {
+      // Keep the cached open question; Resume checks it against the context hash.
+      const previous = await db.resumeState.get(scene.bookId);
+      await db.resumeState.put({
+        ...previous,
+        bookId: scene.bookId,
+        sceneId: id,
+        cursorPos: cursor.pos,
+        lastSentence: cursor.lastSentence,
+        lastWrittenAt: now,
+      });
+    }
     return newTotal;
   });
 }
