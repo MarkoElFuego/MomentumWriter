@@ -15,9 +15,12 @@ describe("parseSparkResponse", () => {
     expect(result).toEqual({ ok: true, data: validPush });
   });
 
-  it("rejects a push with 2 items", () => {
+  it("accepts a push with 1–3 items but not 0 or 4", () => {
     const twoItems = { items: validPush.items.slice(0, 2) };
-    expect(parseSparkResponse("push", JSON.stringify(twoItems))).toEqual({ ok: false, reason: "schema" });
+    expect(parseSparkResponse("push", JSON.stringify(twoItems)).ok).toBe(true);
+    expect(parseSparkResponse("push", JSON.stringify({ items: [] })).ok).toBe(false);
+    const four = { items: [...validPush.items, validPush.items[0]] };
+    expect(parseSparkResponse("push", JSON.stringify(four))).toEqual({ ok: false, reason: "schema" });
   });
 
   it("parses a reply wrapped in ```json fences", () => {

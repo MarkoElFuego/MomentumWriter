@@ -8,9 +8,11 @@ import { copy } from "@/lib/copy";
 interface EditorMenuProps {
   saveStatus: SaveStatus;
   onToggleStructure: () => void;
+  ghostEnabled: boolean;
+  onToggleGhost: () => void;
 }
 
-export function EditorMenu({ saveStatus, onToggleStructure }: EditorMenuProps) {
+export function EditorMenu({ saveStatus, onToggleStructure, ghostEnabled, onToggleGhost }: EditorMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -66,6 +68,14 @@ export function EditorMenu({ saveStatus, onToggleStructure }: EditorMenuProps) {
           >
             <span>{copy.menu.structure}</span>
             <span className="opacity-70">{copy.menu.structureShortcut}</span>
+          </button>
+          <button
+            type="button"
+            aria-pressed={ghostEnabled}
+            className="ui-button block w-full px-3 py-2 text-left"
+            onClick={onToggleGhost}
+          >
+            {ghostEnabled ? copy.menu.ghostOn : copy.menu.ghostOff}
           </button>
           <Link href="/" className="ui-button block px-3 py-2">
             {copy.menu.allBooks}

@@ -2,7 +2,8 @@
 import { lastSentence } from "@/lib/text/lastSentence";
 import { endsMidSentence } from "@/lib/text/sentences";
 
-export const SPARK_MODES = ["push", "complicate", "missing", "resume"] as const;
+// "ghost" is the automatic gray completion while typing; the rest are palette tools.
+export const SPARK_MODES = ["push", "complicate", "missing", "resume", "ghost"] as const;
 export type SparkMode = (typeof SPARK_MODES)[number];
 
 const BASE_PROMPT = `Ti si iskusan književni urednik koji sedi pored autora dok piše.
@@ -20,9 +21,10 @@ const MODE_PROMPTS: Record<SparkMode, string> = {
 
 Ako je kursor USRED rečenice:
 - Pročitaj celu nedovršenu rečenicu i pasus pre nje i razumi šta autor hoće da kaže (poređenje, suprotnost posle „ali”, posledicu, nabrajanje…).
-- Ponudi TAČNO 3 nastavka od 2 do 8 reči koji dovršavaju TU misao — logično, gramatički ispravno, kao da ih je autor napisao.
+- Ponudi TAČNO 3 nastavka koji dovršavaju TU misao — logično, gramatički ispravno, kao da ih je autor napisao.
+- Dužina: najbolje 2–5 reči; kraće je bolje ako je misao dovršena; NIKAD više od 7 reči.
 - Prvi neka bude najprirodniji nastavak; druga dva su varijacije iste misli ili blizak obrt.
-- Nastavak sme da završi rečenicu (tačkom), ali nikad ne počinje novu.
+- Stavi tačku samo ako se rečenica tu prirodno završava; nikad ne počinji novu rečenicu.
 - Primer logike (ne teksta): posle „Nije bio umoran, ali” nastavak mora da donese suprotnost umoru.
 - Svaka stavka ima "kind":"finish".
 
@@ -38,6 +40,18 @@ Format:
 {"items":[{"kind":"finish","text":"..."},{"kind":"finish","text":"..."},{"kind":"finish","text":"..."}]}
 ili
 {"items":[{"kind":"inner","text":"..."},{"kind":"outer","text":"..."},{"kind":"shift","text":"..."}]}`,
+
+  ghost: `Autor upravo piše i kursor mu je USRED rečenice (vidi ---KURSOR---). Predložićeš kako da dovrši tu rečenicu; tvoj predlog se prikazuje sivo posle kursora i autor ga prihvata ili ignoriše.
+- Pročitaj nedovršenu rečenicu i tekst pre nje i razumi šta autor hoće da kaže (poređenje, suprotnost posle „ali”, posledicu, nabrajanje…).
+- Ponudi TAČNO 3 nastavka koji dovršavaju TU misao — logično, gramatički ispravno, kao da ih je autor napisao.
+- Dužina: najbolje 2–5 reči; kraće je bolje ako je misao dovršena; NIKAD više od 7 reči.
+- Prvi je najprirodniji, očekivan nastavak. Drugi je blag obrt iste misli. Treći dovršava misao kroz čulni detalj (zvuk, dodir, miris, svetlo).
+- Stavi tačku samo ako se rečenica tu prirodno završava; nikad ne počinji novu rečenicu.
+- Tekst počinje tačno od kursora; ne ponavljaj reči koje su već napisane.
+- Piši istim jezikom, pismom i pravopisom kao autor; ako autor ne koristi dijakritike (č, ć, š, ž, đ), ne koristi ih ni ti.
+
+Format:
+{"items":[{"kind":"finish","text":"..."},{"kind":"finish","text":"..."},{"kind":"finish","text":"..."}]}`,
 
   complicate: `Budi đavolji advokat. Pronađi gde je lik prošao prelako ili gde scena nema otpor.
 Postavi JEDNO neprijatno pitanje koje scenu čini težom za lika.
@@ -75,7 +89,7 @@ export function buildUserMessage(
   { bookTitle, chapterTitle, sceneTitle, context }: SparkContext,
 ): string {
   const message = `Knjiga: ${bookTitle}\nPoglavlje: ${chapterTitle}\nScena: ${sceneTitle}\n\n---TEKST---\n${context}`;
-  if (mode !== "push") return message;
+  if (mode !== "push" && mode !== "ghost") return message;
   // Spelled out so the model finishes the author's thought instead of guessing where it stands.
   const cursor = endsMidSentence(context)
     ? `USRED rečenice. Nedovršena rečenica: „${lastSentence(context)}”`

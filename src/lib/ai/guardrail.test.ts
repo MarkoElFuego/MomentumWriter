@@ -5,79 +5,85 @@ import type { SparkResponse } from "./schemas";
 const context =
   "Kiša je padala celu noć. Petar je stajao na pragu i gledao u mračno dvorište iza stare kuće.";
 
-const push = (text: string): SparkResponse<"push"> => ({
-  items: [
-    { kind: "inner", text: "a onda se setio" },
-    { kind: "outer", text },
-    { kind: "shift", text: "Iza njega, u kuhinji," },
-  ],
+type Items = SparkResponse<"push">["items"];
+const starters = (...texts: string[]): SparkResponse<"push"> => ({
+  items: texts.map((text, i) => ({ kind: (["inner", "outer", "shift"] as const)[i]!, text })),
 });
+const finishes = (...texts: string[]): SparkResponse<"push"> => ({
+  items: texts.map((text) => ({ kind: "finish" as const, text })),
+});
+const kept = (result: ReturnType<typeof checkGuardrail>): string[] =>
+  result.ok && "items" in result.data ? (result.data.items as Items).map((item) => item.text) : [];
 
 const question = (text: string): SparkResponse<"complicate"> => ({ question: text });
 
-describe("checkGuardrail — push starters", () => {
-  it("accepts three short unfinished starters", () => {
-    expect(checkGuardrail("push", push("kad je neko pokucao"), context)).toEqual({ ok: true });
+describe("checkGuardrail — push starters (after a full stop)", () => {
+  it("keeps three short unfinished starters", () => {
+    const result = checkGuardrail("push", starters("a onda se setio", "kad je neko pokucao", "Iza njega, u kuhinji,"), context);
+    expect(kept(result)).toEqual(["a onda se setio", "kad je neko pokucao", "Iza njega, u kuhinji,"]);
   });
 
   it("allows a starter that opens dialogue", () => {
-    expect(checkGuardrail("push", push("— Ko je tamo,"), context).ok).toBe(true);
+    expect(kept(checkGuardrail("push", starters("— Ko je tamo,"), context))).toEqual(["— Ko je tamo,"]);
   });
 
-  it("rejects a starter longer than 5 words", () => {
-    expect(checkGuardrail("push", push("kad je neko tiho pokucao na vrata"), context)).toEqual({
+  it("drops only the bad starters and keeps the rest", () => {
+    const result = checkGuardrail(
+      "push",
+      starters("kad je neko tiho pokucao na vrata", "Vrata su se otvorila.", "a onda se setio"),
+      context,
+    );
+    expect(kept(result)).toEqual(["a onda se setio"]);
+  });
+
+  it("rejects the reply when no starter survives, with the first reason", () => {
+    expect(checkGuardrail("push", starters("kad je neko tiho pokucao na vrata", "i onda\nnista"), context)).toEqual({
       ok: false,
       reason: "starter-too-long",
     });
-  });
-
-  it("rejects a starter that is a finished sentence", () => {
-    expect(checkGuardrail("push", push("Vrata su se otvorila."), context)).toEqual({
+    expect(checkGuardrail("push", starters("Ko je to bio?”"), context)).toEqual({
       ok: false,
       reason: "starter-complete",
     });
-    expect(checkGuardrail("push", push("Ko je to bio?”"), context).ok).toBe(false);
   });
 
-  it("rejects a starter spanning lines", () => {
-    expect(checkGuardrail("push", push("i onda\nnista"), context).ok).toBe(false);
+  it("drops duplicate suggestions", () => {
+    expect(kept(checkGuardrail("push", starters("a onda", "a onda", "kad je"), context))).toEqual(["a onda", "kad je"]);
   });
 });
 
-describe("checkGuardrail — push finishing an open sentence", () => {
+describe("checkGuardrail — finishing an open sentence (push and ghost)", () => {
   const open = "Cesto mu je ponavljala da su to mali iznosi ali";
-  const finish = (text: string): SparkResponse<"push"> => ({
-    items: [
-      { kind: "finish", text: "nakupi se do velikog iznosa." },
-      { kind: "finish", text },
-      { kind: "finish", text: "na kraju godine to je plata" },
-    ],
+
+  it("keeps short finishes, with or without a period", () => {
+    const result = checkGuardrail("push", finishes("nakupi se do velikog iznosa.", "kad se saberu", "nije malo."), open);
+    expect(kept(result)).toEqual(["nakupi se do velikog iznosa.", "kad se saberu", "nije malo."]);
   });
 
-  it("accepts short finishes, including ones that close the sentence", () => {
-    expect(checkGuardrail("push", finish("kad se saberu, nije malo."), open)).toEqual({ ok: true });
+  it("allows 7 words and drops 8", () => {
+    const seven = "kad se sve sabere na kraju godine";
+    const eight = "kad se sve to sabere na kraju godine";
+    expect(kept(checkGuardrail("ghost", finishes(seven, eight), open))).toEqual([seven]);
   });
 
-  it("rejects a finish longer than 8 words", () => {
-    expect(checkGuardrail("push", finish("kad se sve to sabere na kraju svake godine"), open)).toEqual({
-      ok: false,
-      reason: "finish-too-long",
-    });
-  });
-
-  it("rejects a finish that goes on into a new sentence", () => {
-    expect(checkGuardrail("push", finish("nakupi se. Onda je cutala."), open)).toEqual({
+  it("drops a finish that goes on into a new sentence", () => {
+    expect(checkGuardrail("ghost", finishes("nakupi se. Onda je cutala."), open)).toEqual({
       ok: false,
       reason: "finish-new-sentence",
     });
+  });
+
+  it("ghost always follows the finish rules, even if the context ends with a period", () => {
+    expect(kept(checkGuardrail("ghost", finishes("na kraju godine je to plata."), context))).toEqual([
+      "na kraju godine je to plata.",
+    ]);
   });
 });
 
 describe("checkGuardrail — editorial modes", () => {
   it("accepts short questions that use names from the context", () => {
-    expect(checkGuardrail("complicate", question("Šta ako se u dvorištu upali svetlo?"), context)).toEqual({
-      ok: true,
-    });
+    const data = question("Šta ako se u dvorištu upali svetlo?");
+    expect(checkGuardrail("complicate", data, context)).toEqual({ ok: true, data });
   });
 
   it("rejects an item that is dialogue", () => {
@@ -102,9 +108,7 @@ describe("checkGuardrail — editorial modes", () => {
   });
 
   it("allows a short quote of fewer than 8 words from the context", () => {
-    expect(checkGuardrail("complicate", question("Zašto baš „stajao na pragu”, a ne ušao?"), context).ok).toBe(
-      true,
-    );
+    expect(checkGuardrail("complicate", question("Zašto baš „stajao na pragu”, a ne ušao?"), context).ok).toBe(true);
   });
 
   it("rejects items with more than 2 sentences", () => {

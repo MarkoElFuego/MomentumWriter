@@ -86,10 +86,17 @@ describe("runSpark", () => {
     );
   });
 
+  it("makes a single attempt when asked to (ghost)", async () => {
+    const complete = completer("loše", good);
+    const result = await runSpark(request, complete, neverAborted(), { attempts: 1 });
+    expect(result).toEqual({ ok: false, error: "unavailable" });
+    expect(complete).toHaveBeenCalledTimes(1);
+  });
+
   it("trims the context to maxWords before sending", async () => {
     const complete = completer(good);
     const long = { ...request, context: `${"Staro. ".repeat(50)}\n\nPetar čeka.` };
-    await runSpark(long, complete, neverAborted(), 5);
+    await runSpark(long, complete, neverAborted(), { maxWords: 5 });
     const user = complete.mock.calls[0]![0].user;
     const sent = user.split("---TEKST---\n")[1]!;
     expect(countWords(sent)).toBeLessThanOrEqual(5);

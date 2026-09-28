@@ -23,9 +23,10 @@ Autor je zapeo tačno na kraju teksta — tu mu je kursor. U delu ---KURSOR--- p
 
 Ako je kursor USRED rečenice:
 - Pročitaj celu nedovršenu rečenicu i pasus pre nje i razumi šta autor hoće da kaže (poređenje, suprotnost posle „ali”, posledicu, nabrajanje…).
-- Ponudi TAČNO 3 nastavka od 2 do 8 reči koji dovršavaju TU misao — logično, gramatički ispravno, kao da ih je autor napisao.
+- Ponudi TAČNO 3 nastavka koji dovršavaju TU misao — logično, gramatički ispravno, kao da ih je autor napisao.
+- Dužina: najbolje 2–5 reči; kraće je bolje ako je misao dovršena; NIKAD više od 7 reči.
 - Prvi neka bude najprirodniji nastavak; druga dva su varijacije iste misli ili blizak obrt.
-- Nastavak sme da završi rečenicu (tačkom), ali nikad ne počinje novu.
+- Stavi tačku samo ako se rečenica tu prirodno završava; nikad ne počinji novu rečenicu.
 - Primer logike (ne teksta): posle „Nije bio umoran, ali” nastavak mora da donese suprotnost umoru.
 - Svaka stavka ima "kind":"finish".
 
@@ -41,6 +42,24 @@ Format:
 {"items":[{"kind":"finish","text":"..."},{"kind":"finish","text":"..."},{"kind":"finish","text":"..."}]}
 ili
 {"items":[{"kind":"inner","text":"..."},{"kind":"outer","text":"..."},{"kind":"shift","text":"..."}]}
+```
+
+## mode: `ghost` — sivi tekst dok pišeš
+
+Klijent ga traži sam, posle 1,5 s pauze, samo kad je kursor usred rečenice na kraju pasusa. Kontekst `AI_GHOST_CONTEXT_WORDS` (~150 reči), 1 pokušaj, timeout 6 s; guardrail uvek po pravilima za dovršetak (≤ 7 reči, jedna rečenica). Korisnička poruka dobija isti `---KURSOR---` red kao push.
+
+```
+Autor upravo piše i kursor mu je USRED rečenice (vidi ---KURSOR---). Predložićeš kako da dovrši tu rečenicu; tvoj predlog se prikazuje sivo posle kursora i autor ga prihvata ili ignoriše.
+- Pročitaj nedovršenu rečenicu i tekst pre nje i razumi šta autor hoće da kaže (poređenje, suprotnost posle „ali”, posledicu, nabrajanje…).
+- Ponudi TAČNO 3 nastavka koji dovršavaju TU misao — logično, gramatički ispravno, kao da ih je autor napisao.
+- Dužina: najbolje 2–5 reči; kraće je bolje ako je misao dovršena; NIKAD više od 7 reči.
+- Prvi je najprirodniji, očekivan nastavak. Drugi je blag obrt iste misli. Treći dovršava misao kroz čulni detalj (zvuk, dodir, miris, svetlo).
+- Stavi tačku samo ako se rečenica tu prirodno završava; nikad ne počinji novu rečenicu.
+- Tekst počinje tačno od kursora; ne ponavljaj reči koje su već napisane.
+- Piši istim jezikom, pismom i pravopisom kao autor; ako autor ne koristi dijakritike (č, ć, š, ž, đ), ne koristi ih ni ti.
+
+Format:
+{"items":[{"kind":"finish","text":"..."},{"kind":"finish","text":"..."},{"kind":"finish","text":"..."}]}
 ```
 
 ## mode: `complicate` — ⚔ Zakomplikuj
@@ -96,9 +115,11 @@ export const ResumeSchema = z.object({
 
 ## Guardrail (server, `src/lib/ai/guardrail.ts`)
 
-Posle Zod validacije, odbaci odgovor (→ jedan retry, pa greška) ako bilo koja stavka:
+**push / ghost:** svaka stavka se proverava posebno — loše se izbacuju, a odgovor se odbija (→ retry za push, ništa za ghost) tek kad ne ostane nijedna. Duplikati se izbacuju. Šema prima 1–3 stavke.
+
+**Ostali modovi:** posle Zod validacije, odbaci ceo odgovor (→ jedan retry, pa greška) ako bilo koja stavka:
 - sadrži 8+ uzastopnih reči identičnih kontekstu (kopiranje teksta), ili
-- **push, kursor usred rečenice** (server to utvrđuje sa `endsMidSentence`): ima više od 8 reči, više od jedne rečenice ili novi red, ili
+- **push, kursor usred rečenice** (server to utvrđuje sa `endsMidSentence`): ima više od 7 reči, više od jedne rečenice ili novi red, ili
 - **push, kursor posle završene rečenice**: ima više od 5 reči, završava se sa `.` `!` `?` `…` ili sadrži novi red, ili
 - **ostali modovi**: ima više od 2 rečenice ili počinje navodnikom/crticom za dijalog (`„`, `"`, `—`, `–`).
 

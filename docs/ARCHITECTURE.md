@@ -98,7 +98,10 @@ Pri otvaranju knjige: ako `resumeState.lastWrittenAt` je stariji od **6 sati** �
 
 | Prečica | Akcija |
 |---|---|
-| `Tab` (u editoru) | Spark paleta na mestu kursora; `Shift+Tab` i dalje izlazi iz editora |
+| `Tab` (u editoru) | Prihvati sivi tekst ako je vidljiv; inače Spark paleta na mestu kursora. `Shift+Tab` i dalje izlazi iz editora |
+| `Ctrl/Cmd + →` (sivi tekst vidljiv) | Prihvati jednu reč sivog teksta |
+| `↓` / `↑` (sivi tekst vidljiv, više predloga) | Sledeći / prethodni od 3 predloga; brojač „1/3” iza sivog teksta |
+| `Esc` (sivi tekst vidljiv) | Skloni sivi tekst |
 | `Ctrl/Cmd + J` | Spark paleta (preventDefault; testiraj u Chrome, Firefox, Safari) |
 | `1`–`4` (dok je paleta otvorena) | Izbor alata |
 | `Esc` | Zatvori paletu |

@@ -5,6 +5,21 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useEffect, useRef } from "react";
 import { copy } from "@/lib/copy";
+import {
+  acceptGhost,
+  acceptGhostWord,
+  clearGhost,
+  GhostText,
+  hasGhost,
+  hasGhostChoices,
+  stepGhost,
+} from "./ghostText";
+
+// Runs a key action and tells ProseMirror the key was handled.
+function run(action: () => void): true {
+  action();
+  return true;
+}
 
 interface EditorProps {
   initialContent: JSONContent;
@@ -35,13 +50,29 @@ export function Editor({ initialContent, onChange, onReady, onTab }: EditorProps
         link: false,
       }),
       Placeholder.configure({ placeholder: copy.editor.placeholder }),
+      GhostText,
     ],
     editorProps: {
       attributes: { class: "prose-editor", spellcheck: "true", lang: "sr" },
-      // Plain Tab opens the Spark palette; Shift+Tab still leaves the editor.
-      handleKeyDown: (_view, event) => {
-        const plainTab =
-          event.key === "Tab" && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey;
+      handleKeyDown: (view, event) => {
+        const mod = event.ctrlKey || event.metaKey;
+        const plainTab = event.key === "Tab" && !event.shiftKey && !mod && !event.altKey;
+
+        // A visible gray completion owns Tab, Ctrl/Cmd+→, ↓/↑ and Esc.
+        if (hasGhost(view.state)) {
+          const bare = !mod && !event.altKey && !event.shiftKey;
+          if (plainTab) return run(() => acceptGhost(view));
+          if (mod && !event.altKey && !event.shiftKey && event.key === "ArrowRight") {
+            return run(() => acceptGhostWord(view));
+          }
+          if (bare && hasGhostChoices(view.state)) {
+            if (event.key === "ArrowDown") return run(() => stepGhost(view, 1));
+            if (event.key === "ArrowUp") return run(() => stepGhost(view, -1));
+          }
+          if (event.key === "Escape") return run(() => clearGhost(view));
+        }
+
+        // Otherwise plain Tab opens the Spark palette; Shift+Tab still leaves the editor.
         if (!plainTab || !onTabRef.current) return false;
         event.preventDefault();
         onTabRef.current();

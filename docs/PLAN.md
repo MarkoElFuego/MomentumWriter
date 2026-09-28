@@ -70,7 +70,7 @@ Faza 3 iz docs/PLAN.md. Implementiraj AI sparing partnera tačno po docs/AI_PROM
 - Fokus se posle zatvaranja vraća u editor na istu poziciju.
 Alat "↩ Vrati me u priču" pravimo u Fazi 4.
 ```
-**Gotovo kada:** `Ctrl+J`/`Tab` → `1` usred rečenice daje 3 dovršetka moje misli (≤ 8 reči), posle tačke 3 početka sledeće (≤ 5 reči); izbor se ubacuje na kursor (izmenjeno 2026-09-28) · ostali alati nisu proza · bez interneta dobijam ljubaznu poruku, ne pad aplikacije · kursor ostaje gde je bio.
+**Gotovo kada:** `Ctrl+J`/`Tab` → `1` usred rečenice daje 3 dovršetka moje misli (≤ 7 reči), posle tačke 3 početka sledeće (≤ 5 reči); izbor se ubacuje na kursor (izmenjeno 2026-09-28) · ostali alati nisu proza · bez interneta dobijam ljubaznu poruku, ne pad aplikacije · kursor ostaje gde je bio.
 
 ---
 

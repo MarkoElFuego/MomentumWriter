@@ -32,7 +32,10 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 ## Faza 3.5 — Dorade (odluke korisnika)
 - [x] Tab → Spark meni na mestu kursora
 - [x] ✦ Poguraj me → dovrši započetu rečenicu / početak sledeće (autor bira)
-- [ ] Revision mode (Hemingway) — pomereno iz v0.2
+- [x] Dopune kao sivi tekst (pauza 1,5 s, Tab / Ctrl+→ / ↓↑, prekidač u ···)
+- [ ] 🖋 Urednik (Ctrl+E): beleške na margini (+ lokalne mere: duge rečenice, ponavljanja)
+- [ ] 🖋 Urednik: rad na izabranoj rečenici (Pojačaj · Skrati · Konkretnije · Ritam; Prihvati/Odbaci)
+- [ ] 🖋 Urednik: ocena scene (●●○ dimenzije, jedna pohvala + jedna stvar za popravku)
 
 ## Faza 4 — Resume
 - [x] ResumeState + lastSentence + testovi
@@ -80,6 +83,9 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - 2026-09-28: Korisnik tražio (1) meni na Tab dok kuca i (2) Hemingway parametre. Odluke: Tab u editoru otvara Spark paletu **na kursoru** (i Ctrl+J/dugme sada otvaraju na kursoru; `coordsAtPos`, iznad reda ako dole nema mesta); Shift+Tab ostaje za izlaz iz editora; u paleti Tab šeta po dugmadi, zatvara Esc. Revision mode (Hemingway) pomeren iz v0.2 u Fazu 3.5 kao **poseban režim**, ne stalni panel dok se piše.
 - 2026-09-28: **Zlatno pravilo 1 izmenjeno (odluka autora, opcija B):** ✦ Poguraj me vraća 3 *početka* rečenice (2–5 reči, bez tačke na kraju, istim pismom/pravopisom kao autor). Izbor (1/2/3 ili klik) ubacuje početak na kursor kao čist tekst + razmak; rečenicu autor završava sam. Ubacuje se na zamrznutu poziciju ako se dokument nije menjao, inače na trenutni kursor; Ctrl+Z vraća. Guardrail je sada po modu: push = max 5 reči, bez završne interpunkcije, bez novog reda, bez odsecanja (šema max 60 znakova); ostali modovi kao pre. Zakomplikuj / Šta mi nedostaje ostaju pitanja bez ubacivanja.
 - 2026-09-28: Probom na pravom tekstu predlozi su bili van konteksta — prompt je forsirao 3 „različita pravca” i usred rečenice. Sada server (`endsMidSentence`) razlikuje: **usred rečenice** → 3 dovršetka *iste misli* (≤ 8 reči, sme tačka, jedna rečenica, `kind: finish`, prvi najprirodniji); **posle tačke** → 3 početka na različite strane (≤ 5 reči, bez tačke). Nedovršena rečenica se eksplicitno šalje u `---KURSOR---`. Pravilo 1 u AGENTS.md prošireno u skladu s tim.
+- 2026-09-28: **Pravilo 1 je sada „AI predlaže, autor odlučuje”** (autor usvojio): ništa bez eksplicitnog prihvatanja; dopune do kraja rečenice; prepravke postojećeg teksta samo u Urednik režimu uz Prihvati/Odbaci (original prvi); kritika samo u Urednik režimu. **Urednik režim zamenjuje Revision mode** — Hemingway mere postaju deo beleški na margini.
+- 2026-09-28: Sivi tekst (`mode: "ghost"`): posle 1,5 s pauze, samo usred rečenice na kraju pasusa bez selekcije; 3 nastavka (očekivan / obrt / čulni), prikazuje se prvi. Tab prihvata, Ctrl/Cmd+→ reč po reč, ↓/↑ menja predlog (autor izabrao umesto Alt+]; ←/→ ostaju za kursor; brojač „1/3”), Esc/kucanje sklanja; Tab bez sivog teksta i dalje otvara paletu. Zahtev se otkazuje na svaki taster, odgovor za promenjen tekst se baca, greške su tihe. Server: `AI_GHOST_CONTEXT_WORDS` (150), 1 pokušaj, timeout 6 s. Prekidač „Dopune” u ··· meniju, u `localStorage` (`momentum:ghost`, UI podešavanje). Paleta otvorena → nema sivog teksta. Merenje: bez podešavanja Luna je davala 3,5–5,7 s (i 504), pa ghost šalje `reasoning_effort` iz `AI_GHOST_REASONING_EFFORT` (podrazumevano `low`; gpt-6-luna odbija `minimal` — podržava none/low/medium/high/xhigh).
+- 2026-09-28: Sivi tekst se ponekad nije pojavljivao (`finish-too-long` → ceo odgovor odbijen, ghost nema retry) i trajao je 4–8 s i sa `low`. Sada: guardrail za push/ghost **filtrira po stavci** (loše i duplikati ispadaju, odbija se tek kad ne ostane nijedna), šema prima 1–3 stavke; dovršetak **najbolje 2–5 reči, najviše 7** (bilo 8), tačka samo ako se rečenica prirodno završava; ghost podrazumevano `reasoning_effort: none` (ako kvalitet padne → `low` u `.env.local`).
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

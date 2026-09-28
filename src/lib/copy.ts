@@ -15,6 +15,8 @@ export const copy = {
   menu: {
     structure: "Struktura",
     structureShortcut: "Ctrl/Cmd+\\",
+    ghostOn: "Dopune: uključene",
+    ghostOff: "Dopune: isključene",
     allBooks: "Sve knjige",
   },
   save: {

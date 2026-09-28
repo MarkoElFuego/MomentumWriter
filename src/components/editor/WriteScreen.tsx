@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor as TiptapEditor, JSONContent } from "@tiptap/react";
 import { SparkPalette, type SparkAnchor } from "@/components/spark/SparkPalette";
 import { StructurePanel } from "@/components/structure/StructurePanel";
 import { useAutosave } from "@/hooks/useAutosave";
+import { useGhostText } from "@/hooks/useGhostText";
 import { copy } from "@/lib/copy";
 import { getChapter } from "@/lib/db/chapters";
 import type { ID } from "@/lib/db/schema";
@@ -40,6 +41,25 @@ function writePanelOpen(open: boolean) {
   }
 }
 
+// Gray completions on/off — a per-browser UI preference, not manuscript content.
+const GHOST_KEY = "momentum:ghost";
+
+function readGhostEnabled(): boolean {
+  try {
+    return localStorage.getItem(GHOST_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+function writeGhostEnabled(enabled: boolean) {
+  try {
+    localStorage.setItem(GHOST_KEY, enabled ? "1" : "0");
+  } catch {
+    // UI preference only — safe to ignore.
+  }
+}
+
 interface SparkSession {
   pos: number;
   /** The document at open time — tells us whether `pos` is still valid. */
@@ -67,6 +87,26 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
   const [spark, setSpark] = useState<SparkSession | null>(null);
   const latest = useRef<{ content: JSONContent; wordCount: number } | null>(null);
   const editorRef = useRef<TiptapEditor | null>(null);
+  // State copy of the editor so hooks can subscribe once it exists.
+  const [editor, setEditor] = useState<TiptapEditor | null>(null);
+  const [ghostEnabled, setGhostEnabled] = useState(true);
+
+  useEffect(() => setGhostEnabled(readGhostEnabled()), []);
+
+  const toggleGhost = useCallback(() => {
+    setGhostEnabled((enabled) => {
+      writeGhostEnabled(!enabled);
+      return !enabled;
+    });
+  }, []);
+
+  const ready = state.kind === "ready" ? state.data : null;
+  const titles = useMemo(
+    () =>
+      ready ? { bookTitle: ready.book.title, chapterTitle, sceneTitle: ready.scene.title } : null,
+    [ready, chapterTitle],
+  );
+  useGhostText(editor, ghostEnabled && spark === null, titles);
 
   useEffect(() => {
     let cancelled = false;
@@ -238,6 +278,8 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
           chapterTitle={chapterTitle}
           saveStatus={status}
           onToggleStructure={togglePanel}
+          ghostEnabled={ghostEnabled}
+          onToggleGhost={toggleGhost}
         />
         <main className="flex-1 overflow-y-auto px-6">
           <div className="mx-auto max-w-[66ch] py-16">
@@ -245,8 +287,9 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
               initialContent={data.scene.content}
               onChange={handleChange}
               onTab={openSpark}
-              onReady={(editor) => {
-                editorRef.current = editor;
+              onReady={(instance) => {
+                editorRef.current = instance;
+                setEditor(instance);
               }}
             />
           </div>

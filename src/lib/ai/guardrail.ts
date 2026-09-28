@@ -3,7 +3,7 @@ import { endsMidSentence, SENTENCE_END, splitSentences } from "@/lib/text/senten
 import type { SparkMode } from "./prompts";
 import type { SparkResponse } from "./schemas";
 
-// Golden rule 1: the AI never writes prose for the author. Push may finish the
+// Golden rule 1: AI suggests, the author decides. Push and ghost may finish the
 // sentence the author left open, or offer a *starter* for the next one; every
 // other mode gets only questions and notes. These checks catch replies that
 // slipped past the prompt.
@@ -11,24 +11,38 @@ const MAX_SENTENCES = 2;
 const DIALOGUE_START = /^[„"—–]/;
 const COPY_RUN = 8;
 const MAX_STARTER_WORDS = 5;
-const MAX_FINISH_WORDS = 8;
+const MAX_FINISH_WORDS = 7;
 
-export type GuardrailResult = { ok: true } | { ok: false; reason: string };
+/** On success `data` holds only what may be shown — bad suggestions are dropped. */
+export type GuardrailResult = { ok: true; data: SparkResponse } | { ok: false; reason: string };
 
 export function checkGuardrail(mode: SparkMode, data: SparkResponse, context: string): GuardrailResult {
   const contextRuns = wordRuns(normalizeWords(context));
-  const pushCheck = endsMidSentence(context) ? finishProblem : starterProblem;
+  const copiesContext = (text: string) => [...wordRuns(normalizeWords(text))].some((run) => contextRuns.has(run));
+
+  // Suggestions are judged one by one: two good ones beat an empty screen.
+  if ((mode === "push" || mode === "ghost") && "items" in data) {
+    // Ghost is only ever requested mid-sentence, so it always follows the finish rules.
+    const check = mode === "ghost" || endsMidSentence(context) ? finishProblem : starterProblem;
+    const seen = new Set<string>();
+    let firstReason: string | null = null;
+    const items = data.items.filter((item) => {
+      const text = item.text.trim();
+      const reason = check(text) ?? (copiesContext(text) ? "copies-context" : null);
+      firstReason ??= reason;
+      if (reason || seen.has(text)) return false;
+      seen.add(text);
+      return true;
+    });
+    return items.length > 0 ? { ok: true, data: { items } } : { ok: false, reason: firstReason ?? "empty" };
+  }
 
   for (const raw of collectTexts(data)) {
     const text = raw.trim();
-    const reason = mode === "push" ? pushCheck(text) : noteProblem(text);
+    const reason = noteProblem(text) ?? (copiesContext(text) ? "copies-context" : null);
     if (reason) return { ok: false, reason };
-    if ([...wordRuns(normalizeWords(text))].some((run) => contextRuns.has(run))) {
-      return { ok: false, reason: "copies-context" };
-    }
   }
-
-  return { ok: true };
+  return { ok: true, data };
 }
 
 // Finishing the open sentence: short, and it may close that sentence but not start another.

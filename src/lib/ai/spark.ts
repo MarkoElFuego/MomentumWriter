@@ -15,13 +15,18 @@ export type SparkResult =
   | { ok: true; data: SparkResponse }
   | { ok: false; error: "timeout" | "unavailable" };
 
-const MAX_ATTEMPTS = 2;
+export interface SparkOptions {
+  /** Context budget in words (AI_CONTEXT_WORDS / AI_GHOST_CONTEXT_WORDS). */
+  maxWords?: number;
+  /** 2 = one retry. Ghost uses 1: a late completion is worse than none. */
+  attempts?: number;
+}
 
 export async function runSpark(
   request: SparkRequest,
   complete: Completer,
   signal: AbortSignal,
-  maxWords = 400,
+  { maxWords = 400, attempts = 2 }: SparkOptions = {},
 ): Promise<SparkResult> {
   // The client already trims, but the server is what pays for tokens.
   const context = extractContext(
@@ -32,14 +37,14 @@ export async function runSpark(
   const system = buildSystemPrompt(request.mode);
   const user = buildUserMessage(request.mode, { ...request, context });
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
     let reason: string;
     try {
       const raw = await complete({ mode: request.mode, system, user, signal });
       const parsed = parseSparkResponse(request.mode, raw);
       if (parsed.ok) {
         const guard = checkGuardrail(request.mode, parsed.data, context);
-        if (guard.ok) return { ok: true, data: parsed.data };
+        if (guard.ok) return { ok: true, data: guard.data };
         reason = guard.reason;
       } else {
         reason = parsed.reason;

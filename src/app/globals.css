@@ -78,3 +78,17 @@
   outline-offset: 2px;
   color: var(--ink);
 }
+
+/* Sivi predlog posle kursora — samo prikaz, nije deo teksta. */
+.ghost-text {
+  color: var(--muted);
+  pointer-events: none;
+  user-select: none;
+}
+
+.ghost-count {
+  margin-left: 0.5em;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.7em;
+  opacity: 0.6;
+}

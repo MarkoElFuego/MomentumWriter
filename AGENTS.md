@@ -10,7 +10,7 @@ Detalji: `docs/PRODUCT.md` · Arhitektura: `docs/ARCHITECTURE.md` · AI promptov
 
 ## 2. Zlatna pravila (ne krši ih nikad)
 
-1. **AI ne piše prozu umesto autora.** Jedini izuzetak: **✦ Poguraj me** nudi 3 predloga koje autor bira — **dovršetak započete rečenice** (najviše 8 reči, samo ta jedna rečenica) ili **početak sledeće** (najviše 5 reči, bez tačke; završava je autor). Ništa se ne ubacuje samo. AI nikad ne piše pasus, više rečenica ili dijalog; nema „nastavi tekst” ni „prepiši”. Ostali alati vraćaju samo pitanja, pravce i zapažanja (max 1–2 rečenice po stavci) i ne mogu da se ubace u tekst. *(Izmenjeno 2026-09-28, odluka autora.)*
+1. **AI predlaže, autor odlučuje.** Ništa ne ulazi u tekst bez eksplicitnog prihvatanja (Tab, broj, klik, „Prihvati”). Dopune idu najviše do kraja rečenice: **dovršetak započete rečenice** ≤ 7 reči (najbolje 2–5) (sivi tekst dok pišeš ili ✦ Poguraj me) ili **početak sledeće** ≤ 5 reči, bez tačke. Izmene postojećeg teksta postoje samo u **Urednik režimu**, uvek kao predlog sa „Prihvati / Odbaci”, a autorova originalna rečenica je uvek prva opcija. AI nikad ne piše cele pasuse, više rečenica, dijalog ni „nastavi tekst”. Kritika i ocene samo u Urednik režimu — nikad dok se piše. *(Izmenjeno 2026-09-28, odluka autora.)*
 2. **Editor je svetinja.** Na ekranu za pisanje: tekst, kursor, brojač reči danas, jedno AI dugme. Ništa više bez eksplicitnog odobrenja.
 3. **Tekst korisnika se nikad ne gubi.** Autosave (debounce ~800 ms) + save na `visibilitychange`/`beforeunload`. Svaka izmena modela podataka mora imati Dexie migraciju.
 4. **Bez gamifikacije u Duolingo stilu.** Nema streak-ova, plamenčića, kažnjavanja, crvenih upozorenja.
@@ -74,7 +74,7 @@ src/
 
 ## 7. AI pravila (tehnička)
 
-- Jedan endpoint: `POST /api/spark` sa `mode: "push" | "complicate" | "missing" | "resume"`.
+- Jedan endpoint: `POST /api/spark` sa `mode: "push" | "complicate" | "missing" | "resume" | "ghost"`. `ghost` (sivi tekst) koristi `AI_GHOST_CONTEXT_WORDS` (~150 reči), 1 pokušaj i timeout 6 s; zahtev se otkazuje čim autor nastavi da kuca.
 - Kontekst: poslednjih ~400 reči pre kursora (vidi `lib/text/extractContext.ts`). Ne šalji celu knjigu.
 - Model mora da vrati JSON: koristi JSON mode (`response_format: { type: "json_object" }`) i svejedno parsiraj kroz Zod. Na grešku: jedan retry, pa ljubazna poruka u UI.
 - Server odseca stavke duže od 220 karaktera i odbacuje odgovor koji liči na prozu (vidi `docs/AI_PROMPTS.md` → „Guardrail”).

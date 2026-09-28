@@ -25,12 +25,14 @@ const item = (max = 220) =>
     z.string().min(3).max(max),
   );
 
-// Push items (finishing the sentence or starting the next) are never clipped:
-// a cut-off suggestion reads wrong, so it is rejected instead.
+// Push/ghost items (finishing the sentence or starting the next) are never
+// clipped — a cut-off suggestion reads wrong — and the guardrail drops bad ones
+// individually, so 1–3 items is a valid answer.
 export const PushSchema = z.object({
   items: z
     .array(z.object({ kind: z.enum(["finish", "inner", "outer", "shift"]), text: z.string().trim().min(1).max(80) }))
-    .length(3),
+    .min(1)
+    .max(3),
 });
 export const ComplicateSchema = z.object({ question: item() });
 export const MissingSchema = z.object({ observation: item(), question: item() });
@@ -44,6 +46,7 @@ export const SCHEMAS = {
   complicate: ComplicateSchema,
   missing: MissingSchema,
   resume: ResumeSchema,
+  ghost: PushSchema,
 } satisfies Record<SparkMode, z.ZodType>;
 
 export type SparkResponse<M extends SparkMode = SparkMode> = z.infer<(typeof SCHEMAS)[M]>;
