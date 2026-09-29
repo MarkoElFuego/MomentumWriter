@@ -5,6 +5,7 @@ import type { Editor } from "@tiptap/react";
 import { clearGhost, hasGhost, showGhost, showHint } from "@/components/editor/ghostText";
 import { requestSpark } from "@/lib/ai/sparkClient";
 import { copy } from "@/lib/copy";
+import type { Language } from "@/lib/languages";
 import { cursorSituation } from "@/lib/text/ghost";
 import { extractContext } from "@/lib/text/extractContext";
 import { joinStarter } from "@/lib/text/joinStarter";
@@ -15,6 +16,7 @@ const CLIENT_CONTEXT_WORDS = 150;
 
 interface Titles {
   bookTitle: string;
+  language: Language;
   chapterTitle: string;
   sceneTitle: string;
 }

@@ -34,7 +34,7 @@ export async function runSpark(
     request.context.length,
     maxWords,
   );
-  const system = buildSystemPrompt(request.mode);
+  const system = buildSystemPrompt(request.mode, request.language);
   const user = buildUserMessage(request.mode, { ...request, context });
 
   for (let attempt = 1; attempt <= attempts; attempt++) {

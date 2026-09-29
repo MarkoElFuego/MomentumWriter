@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { SparkResponse } from "@/lib/ai/schemas";
 import { requestSpark, type SparkClientError } from "@/lib/ai/sparkClient";
 import { copy } from "@/lib/copy";
+import type { Language } from "@/lib/languages";
 
 // Resume ("↩ Vrati me u priču") joins in Phase 4.
 const TOOLS = ["push", "complicate", "missing"] as const;
@@ -42,6 +43,7 @@ interface SparkPaletteProps {
   context: string;
   anchor: SparkAnchor | null;
   bookTitle: string;
+  language: Language;
   chapterTitle: string;
   sceneTitle: string;
   /** Push only: the author picked a starter; the palette closes afterwards. */
@@ -53,6 +55,7 @@ export function SparkPalette({
   context,
   anchor,
   bookTitle,
+  language,
   chapterTitle,
   sceneTitle,
   onInsert,
@@ -73,7 +76,7 @@ export function SparkPalette({
       request.current = controller;
       setView({ kind: "loading", tool });
 
-      const body = { mode: tool, context, bookTitle, chapterTitle, sceneTitle };
+      const body = { mode: tool, context, bookTitle, chapterTitle, sceneTitle, language };
       const result = await requestSpark(body, controller.signal);
       if (controller.signal.aborted) return;
       setView(
@@ -82,7 +85,7 @@ export function SparkPalette({
           : { kind: "error", tool, error: result.error },
       );
     },
-    [context, bookTitle, chapterTitle, sceneTitle],
+    [context, bookTitle, chapterTitle, sceneTitle, language],
   );
 
   // Drop any in-flight request when the palette closes.

@@ -103,7 +103,14 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
   const ready = state.kind === "ready" ? state.data : null;
   const titles = useMemo(
     () =>
-      ready ? { bookTitle: ready.book.title, chapterTitle, sceneTitle: ready.scene.title } : null,
+      ready
+        ? {
+            bookTitle: ready.book.title,
+            language: ready.book.language,
+            chapterTitle,
+            sceneTitle: ready.scene.title,
+          }
+        : null,
     [ready, chapterTitle],
   );
   useGhostText(editor, ghostEnabled && spark === null, titles);
@@ -299,6 +306,7 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
             anchor={spark.anchor}
             onInsert={insertStarter}
             bookTitle={data.book.title}
+            language={data.book.language}
             chapterTitle={chapterTitle}
             sceneTitle={data.scene.title}
             onClose={closeSpark}

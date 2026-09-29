@@ -1,11 +1,14 @@
 import Dexie, { type EntityTable, type Table } from "dexie";
 import type { JSONContent } from "@tiptap/react";
+import { DEFAULT_LANGUAGE, type Language } from "@/lib/languages";
 
 export type ID = string;
 
 export interface Book {
   id: ID;
   title: string;
+  /** Picks the AI prompt add-ons and typography (lib/languages). */
+  language: Language;
   createdAt: number;
   updatedAt: number;
 }
@@ -68,6 +71,17 @@ export class MomentumDB extends Dexie {
       dailyStats: "[date+bookId], bookId",
       resumeState: "bookId",
     });
+    // v2: Book.language. No index, so the stores stay as in v1.
+    this.version(2)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table("books")
+          .toCollection()
+          .modify((book: Partial<Book>) => {
+            book.language ??= DEFAULT_LANGUAGE;
+          }),
+      );
   }
 }
 

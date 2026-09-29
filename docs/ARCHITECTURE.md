@@ -19,6 +19,7 @@ type ID = string; // crypto.randomUUID()
 interface Book {
   id: ID;
   title: string;
+  language: Language;  // "sr-Latn" (v2); bira jezički modul za AI i tipografiju
   createdAt: number;
   updatedAt: number;
 }
@@ -71,6 +72,8 @@ db.version(1).stores({
   dailyStats: "[date+bookId], bookId",
   resumeState: "bookId",
 });
+// v2: Book.language — bez novih indeksa; .upgrade() upisuje "sr-Latn" starim knjigama
+db.version(2).stores({}).upgrade(/* … */);
 ```
 Svaka promena šeme = nova `db.version(n)` sa `.upgrade()` — nikad ne menjaj postojeću verziju.
 
@@ -118,7 +121,27 @@ Ulaz (Zod):
   context: string,          // max ~3000 karaktera
   sceneTitle?: string,
   chapterTitle?: string,
-  bookTitle?: string
+  bookTitle?: string,
+  language?: "sr-Latn"      // iz book.language; bez njega važi DEFAULT_LANGUAGE
 }
 ```
 Izlaz: vidi `docs/AI_PROMPTS.md`. Greške: `{ error: "timeout" | "invalid_response" | "rate_limited" | "server" }` — UI prikazuje poruku iz `copy.ts`.
+
+## Jezici (`src/lib/languages/`)
+
+```
+src/lib/languages/
+  index.ts                 # LANGUAGES, DEFAULT_LANGUAGE, getLanguage(book.language)
+  sr-Latn/prompts.ts       # jezički redovi AI promptova
+  sr-Latn/typography.ts    # navodnici „ ”, crta za dijalog, prelom scene
+```
+
+Zajednička pravila promptova ostaju u `lib/ai/prompts.ts`; `buildSystemPrompt(mode, language)` ubacuje jezičke redove iz modula. UI tekst (`copy.ts`) je za sada samo srpski — jezik knjige ne menja jezik aplikacije.
+
+### Dodavanje novog jezika
+
+1. Napravi `src/lib/languages/<kod>/prompts.ts` i `typography.ts` po uzoru na `sr-Latn` (isti tipovi: `LanguagePrompts`, `Typography`).
+2. U `index.ts` dodaj kod u `LANGUAGES` i modul u `MODULES` — TypeScript javlja ako nešto fali.
+3. Ako jezik ima drugačija pravila za kraj rečenice ili navodnike, proveri `lib/text/sentences.ts` (`endsSentence`) i dodaj testove.
+4. Dodaj izbor jezika pri pravljenju knjige (UI) — tek kad bude potreban; `Book.language` već postoji, pa migracija nije potrebna.
+5. Pokreni `pnpm test` i ručno probaj sivi tekst i ✦ Poguraj me na tekstu tog jezika.

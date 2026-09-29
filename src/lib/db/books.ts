@@ -1,4 +1,5 @@
 import { copy } from "@/lib/copy";
+import { DEFAULT_LANGUAGE } from "@/lib/languages";
 import { newId } from "./id";
 import { db, ORDER_STEP, type Book, type Chapter, type ID, type Scene } from "./schema";
 import { newChapter } from "./chapters";
@@ -8,7 +9,7 @@ export async function createBook(
   title: string = copy.structure.defaultBookTitle,
 ): Promise<{ book: Book; chapter: Chapter; scene: Scene }> {
   const now = Date.now();
-  const book: Book = { id: newId(), title, createdAt: now, updatedAt: now };
+  const book: Book = { id: newId(), title, language: DEFAULT_LANGUAGE, createdAt: now, updatedAt: now };
   const chapter = newChapter(book.id, copy.structure.chapterTitle(1), ORDER_STEP, now);
   const scene = newScene(chapter, copy.structure.sceneTitle(1), ORDER_STEP, now);
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { LANGUAGES } from "@/lib/languages";
 import { SPARK_MODES, type SparkMode } from "./prompts";
 
 export const SparkRequestSchema = z.object({
@@ -7,6 +8,8 @@ export const SparkRequestSchema = z.object({
   bookTitle: z.string().max(200),
   chapterTitle: z.string().max(200),
   sceneTitle: z.string().max(200),
+  /** Book language; older clients omit it → DEFAULT_LANGUAGE. */
+  language: z.enum(LANGUAGES).optional(),
 });
 export type SparkRequest = z.infer<typeof SparkRequestSchema>;
 

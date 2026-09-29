@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSparkResponse } from "./schemas";
+import { parseSparkResponse, SparkRequestSchema } from "./schemas";
 
 const validPush = {
   items: [
@@ -62,5 +62,18 @@ describe("parseSparkResponse", () => {
     expect(parseSparkResponse("missing", JSON.stringify({ observation: "Nema mirisa." })).ok).toBe(false);
     const badKind = { items: validPush.items.map((item) => ({ ...item, kind: "other" })) };
     expect(parseSparkResponse("push", JSON.stringify(badKind)).ok).toBe(false);
+  });
+});
+
+describe("SparkRequestSchema", () => {
+  const request = { mode: "push", context: "Petar je", bookTitle: "", chapterTitle: "", sceneTitle: "" };
+
+  it("accepts a known language and requests without one", () => {
+    expect(SparkRequestSchema.safeParse({ ...request, language: "sr-Latn" }).success).toBe(true);
+    expect(SparkRequestSchema.safeParse(request).success).toBe(true);
+  });
+
+  it("rejects an unknown language", () => {
+    expect(SparkRequestSchema.safeParse({ ...request, language: "xx" }).success).toBe(false);
   });
 });

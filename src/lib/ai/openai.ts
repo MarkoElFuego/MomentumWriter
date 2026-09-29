@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import type { ReasoningEffort } from "openai/resources/shared";
 import { MAX_COMPLETION_TOKENS } from "./prompts";
+import { buildRequestParams } from "./requestParams";
 import type { Completer } from "./spark";
 
 // Server only — the only module that touches the API key.
@@ -25,16 +26,13 @@ export function createCompleter(): Completer {
 
   return async ({ mode, system, user, signal }) => {
     const completion = await client.chat.completions.create(
-      {
+      buildRequestParams({
         model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-        response_format: { type: "json_object" },
-        max_completion_tokens: MAX_COMPLETION_TOKENS,
-        ...(mode === "ghost" ? { reasoning_effort: ghostEffort } : {}),
-      },
+        system,
+        user,
+        maxCompletionTokens: MAX_COMPLETION_TOKENS,
+        effort: mode === "ghost" ? ghostEffort : undefined,
+      }),
       { signal },
     );
     const choice = completion.choices[0];

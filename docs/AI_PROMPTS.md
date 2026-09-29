@@ -1,6 +1,6 @@
 # AI_PROMPTS.md — Sistem promptovi i formati
 
-Svi promptovi žive u `src/lib/ai/prompts.ts`. Zod šeme u `src/lib/ai/schemas.ts`.
+Zajednička pravila žive u `src/lib/ai/prompts.ts`, a jezički redovi u `src/lib/languages/<jezik>/prompts.ts` (bira se po `book.language`). Ispod je prompt za `sr-Latn`; redovi „Autor piše prozu na srpskom…” i „Piši istim jezikom, pismom…” dolaze iz jezičkog modula. Zod šeme u `src/lib/ai/schemas.ts`.
 
 ## Zajednički deo (prepend za sve modove)
 
@@ -153,7 +153,7 @@ Pre parsiranja: skini ```json ograde ako postoje.
 
 - `model: process.env.AI_MODEL`
 - `max_completion_tokens: 1200` — gpt-6-luna je model koji „razmišlja”, a skriveno razmišljanje se računa u limit; vidljiv odgovor i dalje drži šema
-- bez `temperature` — gpt-6-luna prihvata samo podrazumevanu vrednost (1)
+- parametri se grade samo preko `buildRequestParams` (`src/lib/ai/requestParams.ts`): `temperature`/`top_p` idu **samo** uz `reasoning_effort: "none"`, inače gpt-6-luna vraća 400. Trenutno se `temperature` nigde ne šalje.
 - Korisnička poruka: `Knjiga: {bookTitle}\nPoglavlje: {chapterTitle}\nScena: {sceneTitle}\n\n---TEKST---\n{context}`
 
 ## Testni slučajevi (Vitest, `schemas.test.ts` + `guardrail.test.ts`)

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import Dexie from "dexie";
 import { bookWordTotal, createBook, firstSceneId, getBook, listBooks, renameBook } from "./books";
 import { createChapter, listChapters, renameChapter } from "./chapters";
 import { getDailyStat } from "./dailyStats";
@@ -170,5 +171,35 @@ describe("resume state", () => {
     const { book, scene } = await createBook();
     await saveScene(scene.id, doc("x"), 1, "2026-09-25");
     expect(await getResumeState(book.id)).toBeUndefined();
+  });
+});
+
+describe("migrations", () => {
+  it("v1 → v2 gives old books a language and keeps their text", async () => {
+    db.close();
+    await Dexie.delete("momentum");
+    const v1 = new Dexie("momentum");
+    v1.version(1).stores({
+      books: "id, updatedAt",
+      chapters: "id, bookId, [bookId+order]",
+      scenes: "id, chapterId, bookId, [chapterId+order], updatedAt",
+      dailyStats: "[date+bookId], bookId",
+      resumeState: "bookId",
+    });
+    await v1.table("books").add({ id: "b1", title: "Stara", createdAt: 1, updatedAt: 1 });
+    await v1.table("scenes").add({
+      id: "s1", chapterId: "c1", bookId: "b1", title: "Scena 1", order: 1000,
+      content: doc("Petar je zastao."), wordCount: 3, createdAt: 1, updatedAt: 1,
+    });
+    v1.close();
+
+    await db.open();
+    expect(await getBook("b1")).toMatchObject({ title: "Stara", language: "sr-Latn" });
+    expect((await getScene("s1"))!.content).toEqual(doc("Petar je zastao."));
+  });
+
+  it("new books get the default language", async () => {
+    const { book } = await createBook();
+    expect((await getBook(book.id))!.language).toBe("sr-Latn");
   });
 });
