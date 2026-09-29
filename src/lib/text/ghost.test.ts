@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cursorSituation, nextWord, slashOpensMenu } from "./ghost";
+import { cursorSituation, nextWord } from "./ghost";
 
 describe("cursorSituation", () => {
   it("is mid inside an unfinished sentence", () => {
@@ -34,19 +34,6 @@ describe("cursorSituation", () => {
   it("judges only the current paragraph", () => {
     // Called with the block's own text: a fresh paragraph without a period is mid.
     expect(cursorSituation("Sledeceg jutra", "", true)).toBe("mid");
-  });
-});
-
-describe("slashOpensMenu", () => {
-  it("opens at the start of an empty paragraph or after a space", () => {
-    expect(slashOpensMenu("")).toBe(true);
-    expect(slashOpensMenu("Platio je domen. ")).toBe(true);
-  });
-
-  it("types a normal slash inside a word or number", () => {
-    expect(slashOpensMenu("i")).toBe(false);
-    expect(slashOpensMenu("1")).toBe(false);
-    expect(slashOpensMenu("Platio je domen.")).toBe(false);
   });
 });
 

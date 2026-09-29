@@ -2,7 +2,7 @@
 
 Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen zadatak.
 
-**Trenutna faza:** v0.2 · Faza 1b (plan: `docs/ZADATAK_v0.2.md`)
+**Trenutna faza:** v0.2 · Faza 2 (plan: `docs/ZADATAK_v0.2.md`)
 
 ## Faza 0 — Postavka
 - [x] Next.js + TS + Tailwind + ESLint (pnpm)
@@ -41,7 +41,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - [x] AGENTS / ARCHITECTURE / PLAN / PRODUCT usklađeni, Urednik uklonjen, faze u PROGRESS
 
 ### v0.2 · Faza 1b — Prečica
-- [ ] Ctrl/Cmd+/ otvara paletu; `/` se kuca normalno; Ctrl+J uklonjen
+- [x] Ctrl/Cmd+/ otvara paletu; `/` se kuca normalno; Ctrl+J uklonjen
 
 ### v0.2 · Faza 2 — Priprema za više jezika (bez promene ponašanja)
 - [ ] `Book.language` (`"sr-Latn"`) + Dexie migracija + test
@@ -134,6 +134,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - 2026-09-28: Sivi tekst se ponekad nije pojavljivao (`finish-too-long` → ceo odgovor odbijen, ghost nema retry) i trajao je 4–8 s i sa `low`. Sada: guardrail za push/ghost **filtrira po stavci** (loše i duplikati ispadaju, odbija se tek kad ne ostane nijedna), šema prima 1–3 stavke; dovršetak **najbolje 2–5 reči, najviše 7** (bilo 8), tačka samo ako se rečenica prirodno završava; ghost podrazumevano `reasoning_effort: none` (ako kvalitet padne → `low` u `.env.local`).
 - 2026-09-29: Sivi tekst po stanju kursora (`cursorSituation`, gleda samo trenutni pasus): **usred** → dovršetak posle 1500 ms; **posle završene rečenice** (`. ! ? …` ili zatvoren navodnik `”`/`»`, zajednički `endsSentence` za klijent i server) → početak sledeće (2–5 reči, inner/outer/shift) posle 3000 ms; **prazan pasus** → bez API poziva, posle 6000 ms sivi podsetnik „Zapeo si? Pritisni /” (nestaje na prvi taster, jednom po pasusu — pozicija se prati kroz `transaction.mapping`). Pauze u `src/lib/timing.ts`. **„/” umesto Tab-a** otvara meni: samo na početku praznog pasusa ili posle razmaka (u „i/ili” kuca se normalno); „/” ponovo na izboru alata upisuje pravu kosu crtu. Tab sada samo prihvata sivi tekst, inače ne radi ništa (Shift+Tab izlazi).
 - 2026-09-29: **Plan v0.2** (`docs/ZADATAK_v0.2.md`) usvojen. **Urednik režim je ukinut potpuno** (i beleške na margini, rad na rečenici, ocena scene, Hemingway mere) — ne ide ni u „kasnije”; starije beleške o Uredniku gore su samo istorija. Pravilo 1: AI **dodaje** samo dopune do kraja rečenice, **menja** samo kroz proveru jezika (Grammarly za srpski — glavna funkcija v0.2), nikad ne ocenjuje. Dopune ostaju kako rade (≤ 7 / ≤ 5 reči); Faza 8 (optimizacija ghost-a) odložena. Paleta: `Ctrl/Cmd+/` + dugme umesto `/` i `Ctrl+J` (Faza 1b). Paleta i njeni alati ostaju, ali su **ZA MENJANJE** — autor razmišlja. Resume i Polish (stare Faze 4–5) idu posle v0.2.
+- 2026-09-29: Faza 1b: paletu otvaraju/zatvaraju samo `Ctrl/Cmd+/` (hvata i `event.code === "Slash"` i `Ctrl+Shift+7` na srpskom) i dugme. `/` se kuca normalno svuda; `slashOpensMenu` i „/ ponovo upisuje kosu crtu” uklonjeni. Podsetnik: „Zapeo si?  Pritisni Ctrl/Cmd+/” (bez detekcije Mac-a, kao `Ctrl/Cmd+\`).
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

@@ -15,7 +15,7 @@ export function EditorFooter({ wordsToday, sparkOpen, onSpark }: EditorFooterPro
         className="ui-button px-3 py-1"
         aria-expanded={sparkOpen}
         aria-haspopup="dialog"
-        aria-keyshortcuts="/ Control+J Meta+J"
+        aria-keyshortcuts="Control+/ Meta+/"
         title={copy.spark.shortcut}
         onClick={onSpark}
       >

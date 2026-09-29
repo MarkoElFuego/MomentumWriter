@@ -19,14 +19,6 @@ export function cursorSituation(
   return endsSentence(blockTextBefore) ? "after" : "mid";
 }
 
-/**
- * "/" opens the Spark menu only where it can't be part of a word: at the start
- * of an empty paragraph or right after a space. "i/ili" and "1/2" type normally.
- */
-export function slashOpensMenu(blockTextBefore: string): boolean {
-  return blockTextBefore === "" || /\s$/u.test(blockTextBefore);
-}
-
 /** The next chunk to accept word by word: leading space plus one word (with its punctuation). */
 export function nextWord(suggestion: string): string {
   return suggestion.match(/^\s*\S+/u)?.[0] ?? "";

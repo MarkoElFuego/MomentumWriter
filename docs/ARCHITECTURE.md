@@ -98,7 +98,7 @@ Pri otvaranju knjige: ako `resumeState.lastWrittenAt` je stariji od **6 sati** �
 
 | Prečica | Akcija |
 |---|---|
-| `Ctrl/Cmd + /` ili klik na „✦ Treba mi impuls” | Spark paleta na mestu kursora (v0.2 Faza 1b; do tada `/` i `Ctrl/Cmd + J`). `/` se kuca normalno |
+| `Ctrl/Cmd + /` ili klik na „✦ Treba mi impuls” | Spark paleta na mestu kursora (opet zatvara). `/` se kuca normalno |
 | `Tab` (u editoru) | Prihvati sivi tekst ako je vidljiv; inače ne radi ništa (ne izbacuje iz editora). `Shift+Tab` i dalje izlazi iz editora |
 | `Ctrl/Cmd + →` (sivi tekst vidljiv) | Prihvati jednu reč sivog teksta |
 | `↓` / `↑` (sivi tekst vidljiv, više predloga) | Sledeći / prethodni od 3 predloga; brojač „1/3” iza sivog teksta |

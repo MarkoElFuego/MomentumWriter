@@ -209,15 +209,6 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
     [spark],
   );
 
-  // "/" pressed again in the menu: the author wanted a real slash, not the menu.
-  const insertLiteralSlash = useCallback(() => {
-    const editor = editorRef.current;
-    if (!spark || !editor) return;
-    const pos = editor.state.doc === spark.doc ? spark.pos : editor.state.selection.from;
-    editor.chain().focus().insertContentAt(pos, { type: "text", text: "/" }).setTextSelection(pos + 1).run();
-    setSpark(null);
-  }, [spark]);
-
   const toggleSpark = useCallback(
     () => (spark ? closeSpark() : openSpark()),
     [spark, closeSpark, openSpark],
@@ -226,12 +217,12 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey)) return;
-      // event.code keeps shortcuts working where "\" needs AltGr (Serbian Latin)
-      // or J is a different letter (Cyrillic).
+      // event.code keeps shortcuts working where "\" needs AltGr and "/" is
+      // Shift+7 (Serbian); event.key catches Ctrl+Shift+7 there.
       if (event.key === "\\" || event.code === "Backslash") {
         event.preventDefault();
         togglePanel();
-      } else if (event.key.toLowerCase() === "j" || event.code === "KeyJ") {
+      } else if (event.key === "/" || event.code === "Slash") {
         event.preventDefault();
         toggleSpark();
       }
@@ -295,7 +286,6 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
             <Editor
               initialContent={data.scene.content}
               onChange={handleChange}
-              onSlash={openSpark}
               onReady={(instance) => {
                 editorRef.current = instance;
                 setEditor(instance);
@@ -308,7 +298,6 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
             context={spark.context}
             anchor={spark.anchor}
             onInsert={insertStarter}
-            onLiteralSlash={insertLiteralSlash}
             bookTitle={data.book.title}
             chapterTitle={chapterTitle}
             sceneTitle={data.scene.title}
