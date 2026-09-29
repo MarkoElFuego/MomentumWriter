@@ -12,8 +12,10 @@ import {
   GhostText,
   hasGhost,
   hasGhostChoices,
+  hasHint,
   stepGhost,
 } from "./ghostText";
+import { slashOpensMenu } from "@/lib/text/ghost";
 
 // Runs a key action and tells ProseMirror the key was handled.
 function run(action: () => void): true {
@@ -25,15 +27,16 @@ interface EditorProps {
   initialContent: JSONContent;
   onChange: (content: JSONContent, text: string) => void;
   onReady?: (editor: TiptapEditor) => void;
-  onTab?: () => void;
+  /** "/" at the start of a paragraph or after a space: open the Spark menu. */
+  onSlash?: () => void;
 }
 
-export function Editor({ initialContent, onChange, onReady, onTab }: EditorProps) {
+export function Editor({ initialContent, onChange, onReady, onSlash }: EditorProps) {
   // useEditor keeps its first options; the ref lets handleKeyDown see fresh props.
-  const onTabRef = useRef(onTab);
+  const onSlashRef = useRef(onSlash);
   useEffect(() => {
-    onTabRef.current = onTab;
-  }, [onTab]);
+    onSlashRef.current = onSlash;
+  }, [onSlash]);
 
   const editor = useEditor({
     // Next.js renders on the server first; TipTap must mount on the client only.
@@ -72,11 +75,21 @@ export function Editor({ initialContent, onChange, onReady, onTab }: EditorProps
           if (event.key === "Escape") return run(() => clearGhost(view));
         }
 
-        // Otherwise plain Tab opens the Spark palette; Shift+Tab still leaves the editor.
-        if (!plainTab || !onTabRef.current) return false;
-        event.preventDefault();
-        onTabRef.current();
-        return true;
+        // The "stuck?" hint goes away on the first key; the key still does its job.
+        if (hasHint(view.state)) clearGhost(view);
+
+        // "/" (Shift+7 on Serbian layouts, so Shift is allowed) opens the menu where
+        // it can't be part of a word; the slash itself is not typed.
+        if (event.key === "/" && !mod && !event.altKey && onSlashRef.current) {
+          const { selection } = view.state;
+          const $head = selection.$head;
+          const before = $head.parent.textBetween(0, $head.parentOffset);
+          if (selection.empty && slashOpensMenu(before)) return run(() => onSlashRef.current?.());
+        }
+
+        // Tab only accepts suggestions; without one it does nothing instead of
+        // throwing focus out of the text. Shift+Tab still leaves the editor.
+        return plainTab;
       },
     },
     onCreate: ({ editor }) => onReady?.(editor),

@@ -46,6 +46,8 @@ interface SparkPaletteProps {
   sceneTitle: string;
   /** Push only: the author picked a starter; the palette closes afterwards. */
   onInsert: (starter: string) => void;
+  /** "/" pressed again on the tool menu: close and type a real slash. */
+  onLiteralSlash: () => void;
   onClose: () => void;
 }
 
@@ -56,6 +58,7 @@ export function SparkPalette({
   chapterTitle,
   sceneTitle,
   onInsert,
+  onLiteralSlash,
   onClose,
 }: SparkPaletteProps) {
   const [view, setView] = useState<View>({ kind: "menu" });
@@ -120,7 +123,10 @@ export function SparkPalette({
       onKeyDown={(event) => {
         if (event.ctrlKey || event.metaKey || event.altKey) return;
         const index = Number(event.key) - 1;
-        if (view.kind === "menu" && TOOLS[index]) {
+        if (view.kind === "menu" && event.key === "/") {
+          event.preventDefault();
+          onLiteralSlash();
+        } else if (view.kind === "menu" && TOOLS[index]) {
           event.preventDefault();
           void run(TOOLS[index]);
         } else if (view.kind === "result" && "items" in view.data && view.data.items[index]) {

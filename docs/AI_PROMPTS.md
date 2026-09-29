@@ -46,20 +46,40 @@ ili
 
 ## mode: `ghost` — sivi tekst dok pišeš
 
-Klijent ga traži sam, posle 1,5 s pauze, samo kad je kursor usred rečenice na kraju pasusa. Kontekst `AI_GHOST_CONTEXT_WORDS` (~150 reči), 1 pokušaj, timeout 6 s; guardrail uvek po pravilima za dovršetak (≤ 7 reči, jedna rečenica). Korisnička poruka dobija isti `---KURSOR---` red kao push.
+Klijent ga traži sam, po stanju kursora u trenutnom pasusu (`cursorSituation` u `lib/text/ghost.ts`; pauze u `lib/timing.ts`):
+
+| Stanje | Pauza | Šta |
+|---|---|---|
+| usred rečenice | 1500 ms | dovršetak (≤ 7 reči, najbolje 2–5, `kind: finish`) |
+| posle završene rečenice (`. ! ? …` ili zatvoren navodnik `”` `»`) | 3000 ms | početak sledeće (2–5 reči, bez tačke, inner/outer/shift) |
+| prazan pasus | 6000 ms | **bez API poziva** — samo sivi podsetnik „Zapeo si? Pritisni /”, jednom po pasusu |
+
+Kontekst `AI_GHOST_CONTEXT_WORDS` (~150 reči), 1 pokušaj, timeout 6 s, `reasoning_effort` iz `AI_GHOST_REASONING_EFFORT` (podrazumevano `none`). Guardrail po stanju, isto kao push (`endsMidSentence`). Korisnička poruka dobija isti `---KURSOR---` red kao push. Pri prihvatanju `joinStarter` dodaje razmak posle tačke ako ga nema.
 
 ```
-Autor upravo piše i kursor mu je USRED rečenice (vidi ---KURSOR---). Predložićeš kako da dovrši tu rečenicu; tvoj predlog se prikazuje sivo posle kursora i autor ga prihvata ili ignoriše.
+Autor upravo piše. Tvoj predlog se prikazuje sivo posle kursora i autor ga prihvata ili ignoriše. U delu ---KURSOR--- piše da li je kursor USRED rečenice ili POSLE završene rečenice.
+
+Ako je kursor USRED rečenice:
 - Pročitaj nedovršenu rečenicu i tekst pre nje i razumi šta autor hoće da kaže (poređenje, suprotnost posle „ali”, posledicu, nabrajanje…).
 - Ponudi TAČNO 3 nastavka koji dovršavaju TU misao — logično, gramatički ispravno, kao da ih je autor napisao.
 - Dužina: najbolje 2–5 reči; kraće je bolje ako je misao dovršena; NIKAD više od 7 reči.
 - Prvi je najprirodniji, očekivan nastavak. Drugi je blag obrt iste misli. Treći dovršava misao kroz čulni detalj (zvuk, dodir, miris, svetlo).
 - Stavi tačku samo ako se rečenica tu prirodno završava; nikad ne počinji novu rečenicu.
+- Svaka stavka ima "kind":"finish".
+
+Ako je kursor POSLE završene rečenice:
+- Predloži samo POČETAK sledeće rečenice, 2–5 reči, tri različita pravca — bez tačke na kraju; rečenicu završava autor.
+- "inner" (misao, emocija, strah lika), "outer" (događaj, prekid, nova osoba ili predmet), "shift" (perspektiva, čulo, vreme, ritam).
+- Počni velikim slovom, kao nova rečenica.
+
+Uvek:
 - Tekst počinje tačno od kursora; ne ponavljaj reči koje su već napisane.
 - Piši istim jezikom, pismom i pravopisom kao autor; ako autor ne koristi dijakritike (č, ć, š, ž, đ), ne koristi ih ni ti.
 
 Format:
 {"items":[{"kind":"finish","text":"..."},{"kind":"finish","text":"..."},{"kind":"finish","text":"..."}]}
+ili
+{"items":[{"kind":"inner","text":"..."},{"kind":"outer","text":"..."},{"kind":"shift","text":"..."}]}
 ```
 
 ## mode: `complicate` — ⚔ Zakomplikuj

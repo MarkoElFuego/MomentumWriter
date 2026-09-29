@@ -74,7 +74,7 @@ src/
 
 ## 7. AI pravila (tehnička)
 
-- Jedan endpoint: `POST /api/spark` sa `mode: "push" | "complicate" | "missing" | "resume" | "ghost"`. `ghost` (sivi tekst) koristi `AI_GHOST_CONTEXT_WORDS` (~150 reči), 1 pokušaj i timeout 6 s; zahtev se otkazuje čim autor nastavi da kuca.
+- Jedan endpoint: `POST /api/spark` sa `mode: "push" | "complicate" | "missing" | "resume" | "ghost"`. `ghost` (sivi tekst) radi po stanju kursora — usred rečenice dovršetak, posle završene rečenice početak sledeće, u praznom pasusu **nema API poziva** (samo podsetnik); koristi `AI_GHOST_CONTEXT_WORDS` (~150 reči), 1 pokušaj i timeout 6 s; zahtev se otkazuje čim autor nastavi da kuca. Pauze su u `src/lib/timing.ts`.
 - Kontekst: poslednjih ~400 reči pre kursora (vidi `lib/text/extractContext.ts`). Ne šalji celu knjigu.
 - Model mora da vrati JSON: koristi JSON mode (`response_format: { type: "json_object" }`) i svejedno parsiraj kroz Zod. Na grešku: jedan retry, pa ljubazna poruka u UI.
 - Server odseca stavke duže od 220 karaktera i odbacuje odgovor koji liči na prozu (vidi `docs/AI_PROMPTS.md` → „Guardrail”).

@@ -86,6 +86,21 @@ describe("runSpark", () => {
     );
   });
 
+  it("tells the ghost model when the cursor is after a finished sentence", async () => {
+    const starters = JSON.stringify({
+      items: [
+        { kind: "inner", text: "Tada je shvatio" },
+        { kind: "outer", text: "Neko je pokucao" },
+        { kind: "shift", text: "Napolju je kisa" },
+      ],
+    });
+    const complete = completer(starters);
+    const after = { ...request, mode: "ghost" as const, context: "Platio je domen i godisnji hosting." };
+    const result = await runSpark(after, complete, neverAborted(), { attempts: 1 });
+    expect(result.ok).toBe(true);
+    expect(complete.mock.calls[0]![0].user).toContain("---KURSOR---\nPOSLE završene rečenice");
+  });
+
   it("makes a single attempt when asked to (ghost)", async () => {
     const complete = completer("loše", good);
     const result = await runSpark(request, complete, neverAborted(), { attempts: 1 });

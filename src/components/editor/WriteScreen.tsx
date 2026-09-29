@@ -209,6 +209,15 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
     [spark],
   );
 
+  // "/" pressed again in the menu: the author wanted a real slash, not the menu.
+  const insertLiteralSlash = useCallback(() => {
+    const editor = editorRef.current;
+    if (!spark || !editor) return;
+    const pos = editor.state.doc === spark.doc ? spark.pos : editor.state.selection.from;
+    editor.chain().focus().insertContentAt(pos, { type: "text", text: "/" }).setTextSelection(pos + 1).run();
+    setSpark(null);
+  }, [spark]);
+
   const toggleSpark = useCallback(
     () => (spark ? closeSpark() : openSpark()),
     [spark, closeSpark, openSpark],
@@ -286,7 +295,7 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
             <Editor
               initialContent={data.scene.content}
               onChange={handleChange}
-              onTab={openSpark}
+              onSlash={openSpark}
               onReady={(instance) => {
                 editorRef.current = instance;
                 setEditor(instance);
@@ -299,6 +308,7 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
             context={spark.context}
             anchor={spark.anchor}
             onInsert={insertStarter}
+            onLiteralSlash={insertLiteralSlash}
             bookTitle={data.book.title}
             chapterTitle={chapterTitle}
             sceneTitle={data.scene.title}

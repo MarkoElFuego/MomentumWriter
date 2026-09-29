@@ -22,8 +22,8 @@ export function checkGuardrail(mode: SparkMode, data: SparkResponse, context: st
 
   // Suggestions are judged one by one: two good ones beat an empty screen.
   if ((mode === "push" || mode === "ghost") && "items" in data) {
-    // Ghost is only ever requested mid-sentence, so it always follows the finish rules.
-    const check = mode === "ghost" || endsMidSentence(context) ? finishProblem : starterProblem;
+    // Same rule as the client's cursorSituation: finish an open sentence, or start the next.
+    const check = endsMidSentence(context) ? finishProblem : starterProblem;
     const seen = new Set<string>();
     let firstReason: string | null = null;
     const items = data.items.filter((item) => {

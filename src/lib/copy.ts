@@ -8,6 +8,7 @@ export const copy = {
     placeholder: "Počni ovde…",
     menuLabel: "Meni",
     sparkButton: "✦ Treba mi impuls",
+    stuckHint: "Zapeo si?  Pritisni /",
     // 1, 21, 31… reč; sve ostalo reči (11 je izuzetak)
     wordsToday: (n: number) =>
       `${n} ${n % 10 === 1 && n % 100 !== 11 ? "reč" : "reči"} danas`,
@@ -43,7 +44,7 @@ export const copy = {
   },
   spark: {
     dialogLabel: "Sparing partner",
-    shortcut: "Tab · Ctrl/Cmd+J",
+    shortcut: "/ · Ctrl/Cmd+J",
     tools: {
       push: "✦ Poguraj me",
       complicate: "⚔ Zakomplikuj",

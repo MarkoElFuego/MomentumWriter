@@ -73,9 +73,15 @@ describe("checkGuardrail — finishing an open sentence (push and ghost)", () =>
     });
   });
 
-  it("ghost always follows the finish rules, even if the context ends with a period", () => {
-    expect(kept(checkGuardrail("ghost", finishes("na kraju godine je to plata."), context))).toEqual([
-      "na kraju godine je to plata.",
+  it("ghost after a full stop follows the starter rules", () => {
+    const result = checkGuardrail("ghost", starters("Tada je shvatio", "Vrata su se otvorila.", "Negde u kuci"), context);
+    expect(kept(result)).toEqual(["Tada je shvatio", "Negde u kuci"]);
+  });
+
+  it("treats a closed quote as the end of a sentence", () => {
+    const quoted = "Rekla je: „Idi”";
+    expect(kept(checkGuardrail("ghost", starters("Nije se pomerio", "i otisla je."), quoted))).toEqual([
+      "Nije se pomerio",
     ]);
   });
 });

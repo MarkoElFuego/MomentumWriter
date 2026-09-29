@@ -41,17 +41,29 @@ Format:
 ili
 {"items":[{"kind":"inner","text":"..."},{"kind":"outer","text":"..."},{"kind":"shift","text":"..."}]}`,
 
-  ghost: `Autor upravo piše i kursor mu je USRED rečenice (vidi ---KURSOR---). Predložićeš kako da dovrši tu rečenicu; tvoj predlog se prikazuje sivo posle kursora i autor ga prihvata ili ignoriše.
+  ghost: `Autor upravo piše. Tvoj predlog se prikazuje sivo posle kursora i autor ga prihvata ili ignoriše. U delu ---KURSOR--- piše da li je kursor USRED rečenice ili POSLE završene rečenice.
+
+Ako je kursor USRED rečenice:
 - Pročitaj nedovršenu rečenicu i tekst pre nje i razumi šta autor hoće da kaže (poređenje, suprotnost posle „ali”, posledicu, nabrajanje…).
 - Ponudi TAČNO 3 nastavka koji dovršavaju TU misao — logično, gramatički ispravno, kao da ih je autor napisao.
 - Dužina: najbolje 2–5 reči; kraće je bolje ako je misao dovršena; NIKAD više od 7 reči.
 - Prvi je najprirodniji, očekivan nastavak. Drugi je blag obrt iste misli. Treći dovršava misao kroz čulni detalj (zvuk, dodir, miris, svetlo).
 - Stavi tačku samo ako se rečenica tu prirodno završava; nikad ne počinji novu rečenicu.
+- Svaka stavka ima "kind":"finish".
+
+Ako je kursor POSLE završene rečenice:
+- Predloži samo POČETAK sledeće rečenice, 2–5 reči, tri različita pravca — bez tačke na kraju; rečenicu završava autor.
+- "inner" (misao, emocija, strah lika), "outer" (događaj, prekid, nova osoba ili predmet), "shift" (perspektiva, čulo, vreme, ritam).
+- Počni velikim slovom, kao nova rečenica.
+
+Uvek:
 - Tekst počinje tačno od kursora; ne ponavljaj reči koje su već napisane.
 - Piši istim jezikom, pismom i pravopisom kao autor; ako autor ne koristi dijakritike (č, ć, š, ž, đ), ne koristi ih ni ti.
 
 Format:
-{"items":[{"kind":"finish","text":"..."},{"kind":"finish","text":"..."},{"kind":"finish","text":"..."}]}`,
+{"items":[{"kind":"finish","text":"..."},{"kind":"finish","text":"..."},{"kind":"finish","text":"..."}]}
+ili
+{"items":[{"kind":"inner","text":"..."},{"kind":"outer","text":"..."},{"kind":"shift","text":"..."}]}`,
 
   complicate: `Budi đavolji advokat. Pronađi gde je lik prošao prelako ili gde scena nema otpor.
 Postavi JEDNO neprijatno pitanje koje scenu čini težom za lika.
