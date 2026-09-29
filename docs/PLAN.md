@@ -57,7 +57,7 @@ Faza 2 iz docs/PLAN.md. Implementiraj Dexie šemu tačno po docs/ARCHITECTURE.md
 
 ---
 
-## Faza 3 — AI sparing partner (`Ctrl+J`)
+## Faza 3 — AI sparing partner (Spark paleta)
 
 **Prompt:**
 ```
@@ -65,12 +65,12 @@ Faza 3 iz docs/PLAN.md. Implementiraj AI sparing partnera tačno po docs/AI_PROM
 - lib/text/extractContext.ts (+ testovi): poslednjih AI_CONTEXT_WORDS reči pre kursora
 - lib/ai/prompts.ts, schemas.ts, guardrail.ts (+ testovi iz AI_PROMPTS.md)
 - POST /api/spark: Zod ulaz, poziv OpenAI API-ja, parsiranje, guardrail, jedan retry, timeout 15s
-- Spark paleta: Ctrl/Cmd+J ili klik na "✦ Treba mi impuls" otvara mali lebdeći prozor iznad footera sa 3 alata: 1 ✦ Poguraj me, 2 ⚔ Zakomplikuj, 3 👁 Šta mi nedostaje?  (izbor brojem ili klikom; Esc zatvara)
+- Spark paleta: prečica ili klik na "✦ Treba mi impuls" otvara mali lebdeći prozor iznad footera sa 3 alata: 1 ✦ Poguraj me, 2 ⚔ Zakomplikuj, 3 👁 Šta mi nedostaje?  (izbor brojem ili klikom; Esc zatvara)
 - Rezultat: kratke kartice, skeleton dok čeka. Kartice se NE ubacuju u tekst. Dugme "Još jednom" i "Zatvori".
 - Fokus se posle zatvaranja vraća u editor na istu poziciju.
 Alat "↩ Vrati me u priču" pravimo u Fazi 4.
 ```
-**Gotovo kada:** `Ctrl+J`/`Tab` → `1` usred rečenice daje 3 dovršetka moje misli (≤ 7 reči), posle tačke 3 početka sledeće (≤ 5 reči); izbor se ubacuje na kursor (izmenjeno 2026-09-28) · ostali alati nisu proza · bez interneta dobijam ljubaznu poruku, ne pad aplikacije · kursor ostaje gde je bio.
+**Gotovo kada:** paleta → `1` usred rečenice daje 3 dovršetka moje misli (≤ 7 reči), posle tačke 3 početka sledeće (≤ 5 reči); izbor se ubacuje na kursor (izmenjeno 2026-09-28) · ostali alati nisu proza · bez interneta dobijam ljubaznu poruku, ne pad aplikacije · kursor ostaje gde je bio.
 
 ---
 
@@ -98,20 +98,26 @@ Faza 5 iz docs/PLAN.md. Samo poliranje, bez novih funkcija:
 - tipografija: line-height, veličina, širina kolone; fokus stil; animacije ≤150ms
 - prazna stanja (nema knjiga, prazna scena)
 - export trenutne knjige u Markdown (··· meni) kao sigurnosna kopija
-- proveri Ctrl+J u Chrome/Firefox/Safari, dodaj Ctrl/Cmd+K kao rezervu ako treba
+- proveri Ctrl/Cmd+/ i ostale prečice u Chrome/Firefox/Safari
 - pokreni /review i popravi sve ❌
 ```
 **Gotovo kada:** pišeš 7 dana zaredom u sopstvenoj aplikaciji. Beleži šta smeta u `docs/PROGRESS.md` → „Utisci”.
 
 ---
 
-## v0.2 (tek posle 7 dana korišćenja v0.1)
+> Napomena (2026-09-29): prečice su se menjale posle Faze 3 — važeća tabela je u `docs/ARCHITECTURE.md` → „Prečice”.
+
+## v0.2
+
+Plan i „Gotovo kada” po fazama: **`docs/ZADATAK_v0.2.md`** (redosled i status u `docs/PROGRESS.md`). Faze 4 (Resume) i 5 (Polish) iz v0.1 rade se posle v0.2.
+
+## Kasnije (bez roka)
 
 1. **Stranice umesto reči** — „+ 1 stranica” svakih 300 reči, mala animacija papira na gomilu
 2. **Kalendar** na početnom ekranu (tačkice po danima, „6 dana pisanja · 4.280 novih reči · 12 stranica”)
 3. **`[[likovi]]`** — TipTap mention ekstenzija, kartica lika, AI dobija listu likova u kontekstu
-4. **Revision mode** — pomereno u v0.1, Faza 3.5 (odluka 2026-09-28)
-5. **Export u DOCX**
+4. **Export u DOCX**
+5. **Optimizacija troškova sivog teksta** (v0.2 Faza 8) — samo ako autor odluči
 
 ## v0.3 (cloud + povratak mejlom)
 

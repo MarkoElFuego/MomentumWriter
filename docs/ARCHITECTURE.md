@@ -9,7 +9,7 @@ Browser (Next.js klijent)
  └─ Resume ekran ──► Dexie (resumeState) + /api/spark (mode: resume)
 ```
 
-API ključ postoji samo na serveru (`src/app/api/spark/route.ts`). Rukopis se šalje AI-ju samo kada korisnik eksplicitno pritisne AI akciju, i to samo ~400 reči konteksta.
+API ključ postoji samo na serveru (`src/app/api/spark/route.ts`). Rukopis se šalje AI-ju samo kroz AI akcije (paleta, sivi tekst posle pauze, u v0.2 provera jezika za završen pasus), i nikad cela knjiga — najviše ~400 reči konteksta.
 
 ## Model podataka (Dexie, `src/lib/db/schema.ts`)
 
@@ -98,24 +98,23 @@ Pri otvaranju knjige: ako `resumeState.lastWrittenAt` je stariji od **6 sati** �
 
 | Prečica | Akcija |
 |---|---|
-| `/` (početak praznog pasusa ili posle razmaka) | Spark paleta na mestu kursora; „/” se ne upisuje. Usred reči („i/ili”) kuca se normalno. `/` ponovo na izboru alata → zatvori i upiši „/” |
+| `Ctrl/Cmd + /` ili klik na „✦ Treba mi impuls” | Spark paleta na mestu kursora (v0.2 Faza 1b; do tada `/` i `Ctrl/Cmd + J`). `/` se kuca normalno |
 | `Tab` (u editoru) | Prihvati sivi tekst ako je vidljiv; inače ne radi ništa (ne izbacuje iz editora). `Shift+Tab` i dalje izlazi iz editora |
 | `Ctrl/Cmd + →` (sivi tekst vidljiv) | Prihvati jednu reč sivog teksta |
 | `↓` / `↑` (sivi tekst vidljiv, više predloga) | Sledeći / prethodni od 3 predloga; brojač „1/3” iza sivog teksta |
 | `Esc` (sivi tekst vidljiv) | Skloni sivi tekst |
-| `Ctrl/Cmd + J` | Spark paleta (preventDefault; testiraj u Chrome, Firefox, Safari) |
 | `1`–`4` (dok je paleta otvorena) | Izbor alata |
 | `Esc` | Zatvori paletu |
 | `Ctrl/Cmd + \` | Prikaži/sakrij strukturu (Book → Chapter → Scene) |
 
-Ako `Ctrl+J` ne može da se presretne u nekom browseru, rezervna prečica je `Ctrl/Cmd + K`.
+Na srpskom rasporedu `/` je `Shift+7` — prečica se hvata i po `event.code === "Slash"`, kao `Ctrl+\` po `"Backslash"`.
 
 ## API: `POST /api/spark`
 
 Ulaz (Zod):
 ```ts
 {
-  mode: "push" | "complicate" | "missing" | "resume",
+  mode: "push" | "complicate" | "missing" | "resume" | "ghost",
   context: string,          // max ~3000 karaktera
   sceneTitle?: string,
   chapterTitle?: string,

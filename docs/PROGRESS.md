@@ -2,7 +2,7 @@
 
 Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen zadatak.
 
-**Trenutna faza:** 4
+**Trenutna faza:** v0.2 · Faza 1b (plan: `docs/ZADATAK_v0.2.md`)
 
 ## Faza 0 — Postavka
 - [x] Next.js + TS + Tailwind + ESLint (pnpm)
@@ -34,17 +34,62 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - [x] ✦ Poguraj me → dovrši započetu rečenicu / početak sledeće (autor bira)
 - [x] Dopune kao sivi tekst (pauza 1,5 s, Tab / Ctrl+→ / ↓↑, prekidač u ···)
 - [x] Dopune po stanju kursora (usred / posle tačke / prazan pasus) + „/” otvara meni umesto Tab-a
-- [ ] 🖋 Urednik (Ctrl+E): beleške na margini (+ lokalne mere: duge rečenice, ponavljanja)
-- [ ] 🖋 Urednik: rad na izabranoj rečenici (Pojačaj · Skrati · Konkretnije · Ritam; Prihvati/Odbaci)
-- [ ] 🖋 Urednik: ocena scene (●●○ dimenzije, jedna pohvala + jedna stvar za popravku)
 
-## Faza 4 — Resume
+## v0.2 (detalji i „Gotovo kada”: `docs/ZADATAK_v0.2.md`)
+
+### v0.2 · Faza 1 — Dokumentacija
+- [x] AGENTS / ARCHITECTURE / PLAN / PRODUCT usklađeni, Urednik uklonjen, faze u PROGRESS
+
+### v0.2 · Faza 1b — Prečica
+- [ ] Ctrl/Cmd+/ otvara paletu; `/` se kuca normalno; Ctrl+J uklonjen
+
+### v0.2 · Faza 2 — Priprema za više jezika (bez promene ponašanja)
+- [ ] `Book.language` (`"sr-Latn"`) + Dexie migracija + test
+- [ ] `src/lib/languages/sr-Latn/{prompts,typography}.ts` + `index.ts`
+- [ ] `lib/ai/requestParams.ts` (temperature samo uz effort `none`) + test
+- [ ] Sav UI tekst iz komponenti u `copy.ts`
+- [ ] ARCHITECTURE: koraci za dodavanje jezika
+
+### v0.2 · Faza 3 — Poglavlja umesto scena (pre početka: backup svih knjiga!)
+- [ ] Model `Book → Part` (`front | chapter | back`) + migracija scena → poglavlje (prelom + naslov u kurzivu) + test 2×3
+- [ ] `ResumeState` i `DailyStat` na `partId`
+- [ ] Panel = sadržaj knjige (rimski brojevi, + Novo poglavlje, + Dodaj deo, prevlačenje, preimenovanje)
+- [ ] Ruta `/write/[partId]`
+- [ ] `***` u praznom redu → `sceneBreak` (✱ ✱ ✱)
+
+### v0.2 · Faza 4 — Fusnote
+- [ ] Ctrl+Shift+F ubacuje fusnotu; zona na dnu; Esc nazad iza broja
+- [ ] Prenumerisanje, tooltip na hover
+- [ ] Brisanje broja briše fusnotu; jedan Ctrl+Z vraća oboje
+- [ ] Sivi tekst i provera jezika ne rade u fusnoti
+
+### v0.2 · Faza 5 — Provera jezika (glavna funkcija)
+- [ ] 5a: `scripts/proofread-cases.json` + `pnpm eval:proofread` (A vs B) → izlaz autoru pre UI-ja
+- [ ] 5b: mode `proofread` na Enter posle pasusa (hash, bez ponovnog slanja)
+- [ ] 5b: `lib/text/proofDiff.ts` + testovi
+- [ ] 5b: podvlake (tačkasta / talasasta), popover Prihvati/Odbaci, „Prihvati sve kvačice u pasusu”
+- [ ] 5b: prekidač u ··· + log `[proofread] …`
+
+### v0.2 · Faza 6 — Sinonimi
+- [ ] BubbleMenu „≈ Sinonimi” / Alt+S na jednoj reči
+- [ ] mode `synonyms` (isti padež/rod/broj/vreme) + Zod + keš
+- [ ] Popover: strelice + Enter / klik, jedan Ctrl+Z, čuva veliko slovo
+
+### v0.2 · Faza 7 — Vizuelne teme
+- [ ] `themes.css` (papir / noc / masina / magla) + fontovi preko `next/font`
+- [ ] Izbor u ··· (4 kružića), pamti se u Dexie; tamni sistem → noc
+- [ ] Fokus mod + Pisaća mašina skrol
+- [ ] Kontrast teksta, ghosta i podvlaka u svim temama
+
+_v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne dira se bez odluke autora._
+
+## Faza 4 — Resume (posle v0.2)
 - [x] ResumeState + lastSentence + testovi
 - [ ] Pravilo 6h → /resume
 - [ ] Resume ekran (radi i bez AI-ja)
 - [ ] 4. alat „↩ Vrati me u priču”
 
-## Faza 5 — Polish
+## Faza 5 — Polish (posle v0.2)
 - [ ] copy.ts ton
 - [ ] Tipografija + prazna stanja
 - [ ] Export Markdown
@@ -88,6 +133,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - 2026-09-28: Sivi tekst (`mode: "ghost"`): posle 1,5 s pauze, samo usred rečenice na kraju pasusa bez selekcije; 3 nastavka (očekivan / obrt / čulni), prikazuje se prvi. Tab prihvata, Ctrl/Cmd+→ reč po reč, ↓/↑ menja predlog (autor izabrao umesto Alt+]; ←/→ ostaju za kursor; brojač „1/3”), Esc/kucanje sklanja; Tab bez sivog teksta i dalje otvara paletu. Zahtev se otkazuje na svaki taster, odgovor za promenjen tekst se baca, greške su tihe. Server: `AI_GHOST_CONTEXT_WORDS` (150), 1 pokušaj, timeout 6 s. Prekidač „Dopune” u ··· meniju, u `localStorage` (`momentum:ghost`, UI podešavanje). Paleta otvorena → nema sivog teksta. Merenje: bez podešavanja Luna je davala 3,5–5,7 s (i 504), pa ghost šalje `reasoning_effort` iz `AI_GHOST_REASONING_EFFORT` (podrazumevano `low`; gpt-6-luna odbija `minimal` — podržava none/low/medium/high/xhigh).
 - 2026-09-28: Sivi tekst se ponekad nije pojavljivao (`finish-too-long` → ceo odgovor odbijen, ghost nema retry) i trajao je 4–8 s i sa `low`. Sada: guardrail za push/ghost **filtrira po stavci** (loše i duplikati ispadaju, odbija se tek kad ne ostane nijedna), šema prima 1–3 stavke; dovršetak **najbolje 2–5 reči, najviše 7** (bilo 8), tačka samo ako se rečenica prirodno završava; ghost podrazumevano `reasoning_effort: none` (ako kvalitet padne → `low` u `.env.local`).
 - 2026-09-29: Sivi tekst po stanju kursora (`cursorSituation`, gleda samo trenutni pasus): **usred** → dovršetak posle 1500 ms; **posle završene rečenice** (`. ! ? …` ili zatvoren navodnik `”`/`»`, zajednički `endsSentence` za klijent i server) → početak sledeće (2–5 reči, inner/outer/shift) posle 3000 ms; **prazan pasus** → bez API poziva, posle 6000 ms sivi podsetnik „Zapeo si? Pritisni /” (nestaje na prvi taster, jednom po pasusu — pozicija se prati kroz `transaction.mapping`). Pauze u `src/lib/timing.ts`. **„/” umesto Tab-a** otvara meni: samo na početku praznog pasusa ili posle razmaka (u „i/ili” kuca se normalno); „/” ponovo na izboru alata upisuje pravu kosu crtu. Tab sada samo prihvata sivi tekst, inače ne radi ništa (Shift+Tab izlazi).
+- 2026-09-29: **Plan v0.2** (`docs/ZADATAK_v0.2.md`) usvojen. **Urednik režim je ukinut potpuno** (i beleške na margini, rad na rečenici, ocena scene, Hemingway mere) — ne ide ni u „kasnije”; starije beleške o Uredniku gore su samo istorija. Pravilo 1: AI **dodaje** samo dopune do kraja rečenice, **menja** samo kroz proveru jezika (Grammarly za srpski — glavna funkcija v0.2), nikad ne ocenjuje. Dopune ostaju kako rade (≤ 7 / ≤ 5 reči); Faza 8 (optimizacija ghost-a) odložena. Paleta: `Ctrl/Cmd+/` + dugme umesto `/` i `Ctrl+J` (Faza 1b). Paleta i njeni alati ostaju, ali su **ZA MENJANJE** — autor razmišlja. Resume i Polish (stare Faze 4–5) idu posle v0.2.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

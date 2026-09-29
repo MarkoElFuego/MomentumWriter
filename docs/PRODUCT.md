@@ -6,14 +6,12 @@
 
 Nije „Word + ChatGPT”. Nije ghostwriter. To je **minimalistički prostor koji pomaže čoveku da nastavi da piše**.
 
-## Tri stuba
+## Četiri stuba
 
 1. **Čist editor** — bez UI gužve. Tekst, kursor, tišina.
-2. **AI sparing partner** — urednik pored stola, u dva režima:
-   - ✍️ **Pisanje** (podrazumevano): pomaže ti da ideš napred — sivi tekst koji dovršava tvoju rečenicu kad zastaneš (Tab prihvata), ✦ Poguraj me, pitanja. Nikakve ocene.
-   - 🖋 **Urednik** (Ctrl+E): čita i komentariše — beleške na margini, rad na izabranoj rečenici (Prihvati/Odbaci, original prvi), ocena scene.
-   AI predlaže, ti odlučuješ. Nikad ne piše pasus umesto tebe.
-3. **Povratak u priču** — Resume ekran (v0.1), kasnije email koji te zove nazad kroz samu priču (v0.3).
+2. **AI sparing partner** — pomaže ti da ideš napred: sivi tekst koji dovršava tvoju rečenicu kad zastaneš (Tab prihvata) i mala paleta alata kad zapneš. AI predlaže, ti odlučuješ. Nikad ne piše pasus umesto tebe i nikad ne ocenjuje.
+3. **Provera jezika za srpski** — dijakritici, pravopis i gramatika, kao Grammarly. Nijedan postojeći alat to ne radi dobro za srpski. Ispravke su podvučene reči koje prihvataš ili odbacuješ; stil i žargon se ne diraju (v0.2).
+4. **Povratak u priču** — Resume ekran, kasnije email koji te zove nazad kroz samu priču (v0.3).
 
 ## Ekran za pisanje
 
@@ -28,7 +26,9 @@ Nije „Word + ChatGPT”. Nije ghostwriter. To je **minimalistički prostor koj
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-## AI: četiri mala alata (`Ctrl/Cmd + J`)
+## AI: četiri mala alata (`Ctrl/Cmd + /` ili „✦ Treba mi impuls”)
+
+> **ZA MENJANJE** — paleta i alati ostaju za sada, ali autor razmišlja kako da ih promeni.
 
 | Alat | Šta vraća | Primer |
 |---|---|---|
@@ -60,13 +60,14 @@ Klik → editor, kursor tačno gde si stao.
 - Generisanje proze, „nastavi tekst”, „prepiši pasus”
 - Streak, bedževi, notifikacije krivice
 - Veliki AI chat panel
-- LanguageTool / gramatika u v0.1
+- Prepravljanje stila, ocene i kritika teksta
 - Cloud sync, nalozi, email u v0.1
 
 ## Roadmap
 
-- **v0.1** — editor, Book→Chapter→Scene, `Ctrl+J`/`Tab` sparing partner, Revision/Hemingway mode (pomereno iz v0.2, odluka 2026-09-28), Resume, lokalno čuvanje + autosave
-- **v0.2** — `[[likovi]]`, stranice + kalendar, export (Markdown/DOCX)
+- **v0.1** — editor, Book→Chapter→Scene, sivi tekst + Spark paleta, lokalno čuvanje + autosave
+- **v0.2** — vidi `docs/ZADATAK_v0.2.md`: priprema za više jezika, poglavlja umesto scena, fusnote, provera jezika, sinonimi, vizuelne teme; zatim Resume i polish
+- **kasnije** — `[[likovi]]`, stranice + kalendar, export u DOCX
 - **v0.3** — nalozi (Supabase), sync, email „nezavršena rečenica” + nedeljni pregled narativa, magic link
 
 ## Test uspeha za v0.1
