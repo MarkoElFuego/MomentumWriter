@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import type { ReasoningEffort } from "openai/resources/shared";
+import { PROOFREAD_EFFORT, PROOFREAD_TEMPERATURE } from "./proofread";
 import { MAX_COMPLETION_TOKENS } from "./prompts";
 import { buildRequestParams } from "./requestParams";
 import type { Completer } from "./spark";
@@ -25,16 +26,36 @@ export function createCompleter(): Completer {
   const ghostEffort = (process.env.AI_GHOST_REASONING_EFFORT || "none") as ReasoningEffort;
 
   return async ({ mode, system, user, signal }) => {
+    const proofread = mode === "proofread";
+    const started = Date.now();
     const completion = await client.chat.completions.create(
-      buildRequestParams({
-        model,
-        system,
-        user,
-        maxCompletionTokens: MAX_COMPLETION_TOKENS,
-        effort: mode === "ghost" ? ghostEffort : undefined,
-      }),
+      buildRequestParams(
+        proofread
+          ? {
+              model,
+              system,
+              user,
+              maxCompletionTokens: MAX_COMPLETION_TOKENS,
+              effort: PROOFREAD_EFFORT,
+              temperature: PROOFREAD_TEMPERATURE,
+              format: "text",
+            }
+          : {
+              model,
+              system,
+              user,
+              maxCompletionTokens: MAX_COMPLETION_TOKENS,
+              effort: mode === "ghost" ? ghostEffort : undefined,
+            },
+      ),
       { signal },
     );
+    if (proofread) {
+      const { usage } = completion;
+      console.log(
+        `[proofread] ${Date.now() - started}ms in=${usage?.prompt_tokens ?? "?"} cached=${usage?.prompt_tokens_details?.cached_tokens ?? 0} out=${usage?.completion_tokens ?? "?"}`,
+      );
+    }
     const choice = completion.choices[0];
     if (!choice?.message.content) {
       throw new Error(`empty reply (finish_reason: ${choice?.finish_reason ?? "none"})`);

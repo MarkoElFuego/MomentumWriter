@@ -113,6 +113,21 @@ Format:
 {"summary":["...","...","..."],"openQuestion":"..."}
 ```
 
+## mode: `proofread` — provera jezika (v0.2 Faza 5)
+
+Ne koristi zajednički deo ni JSON. Sistem prompt je jezički (`lib/languages/sr-Latn/prompts.ts` → `proofreader`) i uvek identičan:
+
+```
+Ti si lektor za srpski jezik (latinica). Ispravi SAMO pravopisne i gramatičke greške i dodaj nedostajuće dijakritike (č, ć, š, ž, đ). NE menjaj stil, redosled reči, izbor reči niti žargon u dijalozima. Ako je pasus ispravan, vrati ga identičnog. Vrati isključivo ispravljen pasus, bez objašnjenja, navodnika ili markdowna.
+```
+
+User poruka: samo tekst pasusa (najviše 400 reči). Odgovor: ceo ispravljen pasus kao čist tekst → server vraća `{ corrected }`. Tekst se **nikad ne ubacuje** — klijent ga pretvara u ispravke po rečima (`lib/text/proofDiff.ts`).
+
+- Parametri (varijanta A iz 5a): `reasoning_effort: "none"`, `temperature: 0.2`, `response_format: text`. 1 pokušaj, timeout 10 s.
+- Umesto guardraila: ceo odgovor se odbacuje ako se broj reči razlikuje > 20%; pojedinačna ispravka se odbacuje ako je udaljenost (bez kvačica, `đ` = `dj`) > 3 ili > 40% dužine reči. Samo zamene reč-za-reč, dodate/izbačene reči se ne nude.
+- Server skida ```-ograde i navodnike oko celog odgovora (osim ako ih je autor napisao).
+- Log: `[proofread] 812ms in=486 cached=0 out=231`.
+
 ## Zod šeme
 
 ```ts
