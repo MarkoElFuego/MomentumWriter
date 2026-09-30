@@ -6,6 +6,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { copy } from "@/lib/copy";
 import { getLanguage, type Language } from "@/lib/languages";
 import { SceneBreak } from "./sceneBreak";
+import { atFootnoteEdge, Footnotes, insertFootnoteTr, isInFootnote, leaveFootnoteTr } from "./footnotes";
 import {
   acceptGhost,
   acceptGhostWord,
@@ -40,14 +41,22 @@ export function Editor({ initialContent, language, onChange, onReady }: EditorPr
     extensions: [
       StarterKit.configure({
         heading: { levels: [1] },
+        // Replaced by Footnotes, which allows a note zone at the end.
+        document: false,
         // Prose only: no code, lists-as-UI or links in v0.1.
         code: false,
         codeBlock: false,
         horizontalRule: false,
         link: false,
       }),
-      Placeholder.configure({ placeholder: copy.editor.placeholder }),
+      Placeholder.configure({
+        // Children too, so an empty note inside the zone gets its own hint.
+        includeChildren: true,
+        placeholder: ({ node }) =>
+          node.type.name === "footnote" ? copy.footnotes.placeholder : copy.editor.placeholder,
+      }),
       GhostText,
+      Footnotes,
       SceneBreak.configure({ symbol: getLanguage(language).typography.sceneBreak }),
     ],
     editorProps: {
@@ -72,6 +81,28 @@ export function Editor({ initialContent, language, onChange, onReady }: EditorPr
 
         // The "stuck?" hint goes away on the first key; the key still does its job.
         if (hasHint(view.state)) clearGhost(view);
+
+        // Ctrl/Cmd+Shift+F — event.code too, for the Cyrillic layout.
+        if (mod && event.shiftKey && !event.altKey && (event.key.toLowerCase() === "f" || event.code === "KeyF")) {
+          return run(() => {
+            const tr = insertFootnoteTr(view.state);
+            if (tr) view.dispatch(tr);
+          });
+        }
+        if (isInFootnote(view.state)) {
+          const bare = !mod && !event.altKey && !event.shiftKey;
+          // A note is one line: Esc or Enter goes back to the text after its number.
+          if (bare && (event.key === "Escape" || event.key === "Enter")) {
+            return run(() => {
+              const tr = leaveFootnoteTr(view.state);
+              if (tr) view.dispatch(tr);
+            });
+          }
+          if (event.key === "Enter") return true;
+          if ((event.key === "Backspace" || event.key === "Delete") && atFootnoteEdge(view.state, event.key)) {
+            return true;
+          }
+        }
 
         // Tab only accepts suggestions; without one it does nothing instead of
         // throwing focus out of the text. Shift+Tab still leaves the editor.

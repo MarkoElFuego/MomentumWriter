@@ -20,6 +20,7 @@ import { lastSentence } from "@/lib/text/lastSentence";
 import { Editor } from "./Editor";
 import { EditorFooter } from "./EditorFooter";
 import { EditorHeader } from "./EditorHeader";
+import { mainTextEnd } from "./footnotes";
 
 // Panel open/closed survives part switches (the page remounts on each one).
 const PANEL_KEY = "momentum:structureOpen";
@@ -139,7 +140,10 @@ export function WriteScreen({ partId }: { partId: ID }) {
     const editor = editorRef.current;
     const cursor = editor && {
       pos: editor.state.selection.from,
-      lastSentence: lastSentence(editor.state.doc.textBetween(0, editor.state.selection.from, "\n\n")),
+      // The sentence in the prose, not in a footnote the cursor happens to be in.
+      lastSentence: lastSentence(
+        editor.state.doc.textBetween(0, Math.min(editor.state.selection.from, mainTextEnd(editor.state.doc)), "\n\n"),
+      ),
     };
     await savePart(
       partId,

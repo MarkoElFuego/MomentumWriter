@@ -110,3 +110,49 @@
   font-size: 0.7em;
   opacity: 0.6;
 }
+
+/* Fusnote: broj u tekstu (računa se, ne čuva) i zona na kraju poglavlja. */
+.footnote-ref {
+  font-size: 0.7em;
+  line-height: 0;
+  vertical-align: super;
+  padding: 0 0.1em;
+  color: var(--muted);
+  cursor: default;
+}
+
+.footnote-ref::after {
+  content: attr(data-n);
+}
+
+.footnote-ref.ProseMirror-selectednode {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+.footnotes {
+  margin: 3em 0 0;
+  padding: 1em 0 0 1.5em;
+  font-size: 0.85em;
+  line-height: 1.6;
+  list-style: decimal;
+  /* Kratka linija iznad fusnota, kao u knjizi. */
+  background: linear-gradient(var(--muted), var(--muted)) top left / 6em 1px no-repeat;
+}
+
+.footnote {
+  margin: 0 0 0.4em;
+}
+
+.footnote::marker {
+  color: var(--muted);
+}
+
+.prose-editor .footnote.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--muted);
+  pointer-events: none;
+}

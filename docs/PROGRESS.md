@@ -2,7 +2,7 @@
 
 Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen zadatak.
 
-**Trenutna faza:** v0.2 · Faza 4 (plan: `docs/ZADATAK_v0.2.md`)
+**Trenutna faza:** v0.2 · Faza 5 (plan: `docs/ZADATAK_v0.2.md`)
 
 ## Faza 0 — Postavka
 - [x] Next.js + TS + Tailwind + ESLint (pnpm)
@@ -58,10 +58,10 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - [x] `***` u praznom redu → `sceneBreak` (✱ ✱ ✱)
 
 ### v0.2 · Faza 4 — Fusnote
-- [ ] Ctrl+Shift+F ubacuje fusnotu; zona na dnu; Esc nazad iza broja
-- [ ] Prenumerisanje, tooltip na hover
-- [ ] Brisanje broja briše fusnotu; jedan Ctrl+Z vraća oboje
-- [ ] Sivi tekst i provera jezika ne rade u fusnoti
+- [x] Ctrl+Shift+F ubacuje fusnotu; zona na dnu; Esc nazad iza broja
+- [x] Prenumerisanje, tooltip na hover
+- [x] Brisanje broja briše fusnotu; jedan Ctrl+Z vraća oboje
+- [x] Sivi tekst i provera jezika ne rade u fusnoti
 
 ### v0.2 · Faza 5 — Provera jezika (glavna funkcija)
 - [ ] 5a: `scripts/proofread-cases.json` + `pnpm eval:proofread` (A vs B) → izlaz autoru pre UI-ja
@@ -137,6 +137,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - 2026-09-29: Faza 1b: paletu otvaraju/zatvaraju samo `Ctrl/Cmd+/` (hvata i `event.code === "Slash"` i `Ctrl+Shift+7` na srpskom) i dugme. `/` se kuca normalno svuda; `slashOpensMenu` i „/ ponovo upisuje kosu crtu” uklonjeni. Podsetnik: „Zapeo si?  Pritisni Ctrl/Cmd+/” (bez detekcije Mac-a, kao `Ctrl/Cmd+\`).
 - 2026-09-29: v0.2 Faza 2: `Book.language` (`"sr-Latn"`) kroz Dexie v2 (`.stores({})` + `.upgrade()`, bez novih indeksa) + test migracije v1→v2. Jezički modul daje samo redove koji zavise od jezika (`writer`, `sameScript`); ostatak promptova ostaje zajednički i na srpskom. Sistem promptovi za sr-Latn provereni **znak po znak identični** pre/posle refaktora. `language` je opciono u `/api/spark` (stari klijent → podrazumevani). `typography.ts` još niko ne koristi — prelom scene ga koristi u Fazi 3. `buildRequestParams` izbacuje `temperature`/`top_p` i kad effort nije poslat (podrazumevani nije `none`). UI tekst je već bio sav u `copy.ts` — nije bilo šta da se premešta.
 - 2026-09-30: v0.2 Faza 3: `Part` (`front | chapter | back`) zamenjuje Chapter + Scene; Dexie v3 spaja scene (`mergeScenes` u `lib/db/migrations.ts`) i briše tabele `chapters`/`scenes` (autor: postojeći tekstovi su testni). Pri spajanju otpadaju prazne scene i automatski naslovi „Scena N”; pravi naslovi scene ostaju kao pasus u kurzivu. Id poglavlja ostaje id dela. „Poglavlje IV” → `title: ""` jer se broj računa (`chapterNumber`, rimski); header „Poglavlje I · Dolazak”, panel „I · Dolazak”, uvodni/završni delovi samo naslov. `ResumeState.partId`, `cursorPos` resetovan na 0; `DailyStat` je već bio po knjizi — bez promene. „+ Dodaj deo” nudi 6 gotovih delova (Naslovna, Posveta, Predgovor · Epilog, Zahvalnica, Beleška o autoru). Redosled: HTML5 prevlačenje ili `Alt+↑/↓`, samo unutar grupe. Ime poglavlja sme da se obriše (ostaje broj). AI poruka više nema „Scena:” red; `chapterTitle` nosi naslov dela. `sceneBreak` je atom čvor bez teksta (ne broji se u reči, ne ide u AI kontekst); `***` radi samo u pasusu koji sadrži samo zvezdice.
+- 2026-09-30: v0.2 Faza 4: fusnote su deo istog dokumenta (`components/editor/footnotes.ts`) — broj `footnoteRef` (atom, bez teksta: ne ide u reči ni u AI kontekst) + zona `footnotes > footnote` koja sme da stoji samo na kraju (`doc: block+ footnotes?`). Zato nema nove Dexie verzije: sadržaj je i dalje JSON dela. Brojevi se ne čuvaju — računaju se (dekoracija `data-n` + `title` za tooltip u tekstu, `<ol>` u zoni). `syncFootnotes` u `appendTransaction` drži zonu u redosledu brojeva, briše fusnotu bez broja, dodaje praznu za broj bez fusnote, a kopiran broj dobija nov id (original zadržava fusnotu); pošto je u istom koraku istorije, jedan Ctrl+Z vraća broj i fusnotu. Fusnota je jedan red teksta: Esc **i Enter** vraćaju iza broja, Backspace na početku / Delete na kraju ne spajaju fusnote, nalepljeni pasusi se spajaju u jedan red. Reči u fusnotama se broje u „reči danas”. Sivi tekst i podsetnik ne rade u fusnoti; **Faza 5 mora da proveri `isInFootnote`** pre slanja pasusa na proveru jezika. Resume `lastSentence` gleda samo prozu.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

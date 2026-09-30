@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Editor } from "@tiptap/react";
+import { isInFootnote } from "@/components/editor/footnotes";
 import { clearGhost, hasGhost, showGhost, showHint } from "@/components/editor/ghostText";
 import { requestSpark } from "@/lib/ai/sparkClient";
 import { copy } from "@/lib/copy";
@@ -73,7 +74,8 @@ export function useGhostText(editor: Editor | null, enabled: boolean, titles: Ti
     const schedule = () => {
       cancel();
       const { state } = editor;
-      if (hasGhost(state)) return;
+      // No suggestions or hints while writing a footnote.
+      if (hasGhost(state) || isInFootnote(state)) return;
       const { selection } = state;
       const $head = selection.$head;
       if (!$head.parent.isTextblock) return;

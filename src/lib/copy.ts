@@ -13,6 +13,11 @@ export const copy = {
     wordsToday: (n: number) =>
       `${n} ${n % 10 === 1 && n % 100 !== 11 ? "reč" : "reči"} danas`,
   },
+  footnotes: {
+    label: "Fusnote",
+    placeholder: "Tekst fusnote…  Esc vraća u tekst",
+    refLabel: (n: number) => `Fusnota ${n}`,
+  },
   menu: {
     structure: "Struktura",
     structureShortcut: "Ctrl/Cmd+\\",
