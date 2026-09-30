@@ -2,7 +2,14 @@
 
 Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen zadatak.
 
-**Trenutna faza:** v0.2 · Faza 7 (plan: `docs/ZADATAK_v0.2.md`; Faza 6 je odložena)
+**Trenutna faza:** Faza 4 — Resume (posle v0.2; plan: `docs/PLAN.md` → „Faza 4 — Resume ekran”). v0.2 je završena (Faza 6 sinonimi i Faza 8 odložene).
+
+**Sledeće (2026-10-01):** prvi nezavršen zadatak je „Pravilo 6h → /resume”. Pre koda: plan i „ok” od autora.
+- Otvaranje knjige: `lastWrittenAt` stariji od 6 h → `/resume?book=…`, inače editor tačno na poziciji kursora (`ResumeState` već postoji i puni se pri autosave-u).
+- `/resume`: „Dobrodošao nazad.” · „Juče si stao ovde:” / „Pre N dana…” · citat poslednje rečenice · „Otvoreno pitanje:” (AI mode `resume`, keš po hash-u konteksta, skeleton; ako AI padne, sekcija se sakrije) · dugme „Nastavi da pišeš” radi odmah, bez čekanja AI-ja.
+- „Nastavi” → editor, kursor na `cursorPos`, skrolovano do njega. Pazi: PLAN još piše `sceneId` — sada je sve na `partId` (Faza 3), a `cursorPos` je resetovan na 0 pri migraciji.
+- Zatim 4. alat u paleti „↩ Vrati me u priču” (3 reda sižea + pitanje).
+- Gotovo kada: `lastWrittenAt` u DevTools-u na juče → otvaranje knjige vodi na Resume · „Nastavi” vraća tačno na kursor · radi i bez AI-ja.
 
 ## Faza 0 — Postavka
 - [x] Next.js + TS + Tailwind + ESLint (pnpm)
