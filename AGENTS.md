@@ -76,7 +76,7 @@ src/
 
 ## 7. AI pravila (tehnička)
 
-- Jedan endpoint: `POST /api/spark` sa `mode: "push" | "complicate" | "missing" | "resume" | "ghost"` (u v0.2 dolaze `"proofread"` i `"synonyms"`).
+- Jedan endpoint: `POST /api/spark` sa `mode: "push" | "complicate" | "missing" | "resume" | "ghost"` (u v0.2 je dodat `"proofread"`; `"synonyms"` je odložen).
 - `ghost` (sivi tekst) radi po stanju kursora — usred rečenice dovršetak, posle završene rečenice početak sledeće, u praznom pasusu **nema API poziva** (samo podsetnik); koristi `AI_GHOST_CONTEXT_WORDS` (~150 reči), 1 pokušaj i timeout 6 s; zahtev se otkazuje čim autor nastavi da kuca. Pauze su u `src/lib/timing.ts`. Radi dobro — ne optimizuj bez odluke autora.
 - `proofread` (v0.2): model vraća ceo ispravljen pasus kao čist tekst, ali on se **nikad ne ubacuje** — služi samo za diff po rečima (`lib/text/proofDiff.ts`), a autor prihvata ispravke reč po reč. Guardrail protiv proze za ovaj mode ne važi; umesto njega važe pravila iz `proofDiff` (sličnost reči, razlika u broju reči).
 - Kontekst: poslednjih ~400 reči pre kursora (vidi `lib/text/extractContext.ts`). Ne šalji celu knjigu.

@@ -119,6 +119,8 @@ Uskladi dokumentaciju sa odlukama:
 
 ## Faza 6 — Sinonimi
 
+> **ODLOŽENO (2026-09-30, odluka autora):** preskačemo za sada — ne raditi dok autor ne vrati fazu. Sledeća je Faza 7.
+
 - Selekcija TAČNO jedne reči (dupli klik) → mali BubbleMenu sa dugmetom „≈ Sinonimi". Isto radi `Alt+S`. Zahtev ide tek na klik/prečicu.
 - Klik na reč sa podvlakom provere jezika i dalje otvara ispravku.
 - `/api/spark` mode `"synonyms"`: ulaz = reč + cela rečenica; effort `none`, temperature `0.3`.

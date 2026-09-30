@@ -2,7 +2,7 @@
 
 Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen zadatak.
 
-**Trenutna faza:** v0.2 · Faza 5 (plan: `docs/ZADATAK_v0.2.md`)
+**Trenutna faza:** v0.2 · Faza 7 (plan: `docs/ZADATAK_v0.2.md`; Faza 6 je odložena)
 
 ## Faza 0 — Postavka
 - [x] Next.js + TS + Tailwind + ESLint (pnpm)
@@ -70,10 +70,11 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - [x] 5b: podvlake (tačkasta / talasasta), popover Prihvati/Odbaci, „Prihvati sve kvačice u pasusu”
 - [x] 5b: prekidač u ··· + log `[proofread] …`
 
-### v0.2 · Faza 6 — Sinonimi
-- [ ] BubbleMenu „≈ Sinonimi” / Alt+S na jednoj reči
-- [ ] mode `synonyms` (isti padež/rod/broj/vreme) + Zod + keš
-- [ ] Popover: strelice + Enter / klik, jedan Ctrl+Z, čuva veliko slovo
+### v0.2 · Faza 6 — Sinonimi — ODLOŽENO (odluka autora 2026-09-30, preskoči)
+_`[-]` = namerno preskočeno za sada; agent ne radi ove stavke dok ih autor ne vrati._
+- [-] BubbleMenu „≈ Sinonimi” / Alt+S na jednoj reči
+- [-] mode `synonyms` (isti padež/rod/broj/vreme) + Zod + keš
+- [-] Popover: strelice + Enter / klik, jedan Ctrl+Z, čuva veliko slovo
 
 ### v0.2 · Faza 7 — Vizuelne teme
 - [ ] `themes.css` (papir / noc / masina / magla) + fontovi preko `next/font`
@@ -147,6 +148,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - 2026-09-30: **Odluka autora: provera jezika sme da ispravlja i više reči odjednom** („neka promeni tekst ako treba da se pravilno napiše”) — i dalje samo uz Prihvati. `proofDiff` sada poravnava ceo pasus odjednom (iste reči imaju prednost, pa slične); pored zamena reč-za-reč nudi spajanje/razdvajanje („kapkeDosao” → „kapke. Došao”), zamenu kratkih reči („je” → „su”) i do 3 dodate/izbačene kratke reči (≤ 4 slova) okačene na susednu nepromenjenu reč („njega.” → „za njega.”). Ne nudi se: izbačena rečenica ili nova duga reč. `isProofreadOf` broji i slične reči (kratki pasusi sa više ispravki više ne ispadaju „prepričani”). U dev režimu konzola (F12) ispisuje po pasusu šta je model vratio i šta je odbačeno i zašto (`[proofread] …`).
 - 2026-09-30: Provera jezika — pasus sa kursorom se više ne preskače pri otvaranju (autofokus stavlja kursor na kraj, pa poslednji/jedini pasus nikad nije bio proveren dok autor ne izađe iz njega). Dodato: pasus u kome se piše proverava se i posle **3 s pauze u kucanju** (`PROOFREAD_PAUSE_MS` u `lib/timing.ts`). Proba skriptom na autorovom pasusu („…bilo povoljno njega.”): model 3/3 puta vraća „bili su povoljni za njega.”, `proofDiff` nudi svih 5 ispravki — problem je bio samo okidač.
 - 2026-09-30: Provera jezika gleda **svaki tekstualni blok** (pasus i naslov, i unutar citata/liste — nalepljen tekst često završi tamo), ne samo pasuse na vrhu dokumenta; fusnote i dalje ne. U dev konzoli se sada vide i neuspeli zahtevi, odbijeni odgovori, preskočeni predugi pasusi i pasusi promenjeni pre nego što je odgovor stigao.
+- 2026-09-30: **Faza 6 (sinonimi) je odložena — preskačemo je za sada** (odluka autora). Ne ide se na nju dok autor ne kaže; sledeća je Faza 7 (vizuelne teme).
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->
