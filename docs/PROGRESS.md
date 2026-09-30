@@ -77,10 +77,10 @@ _`[-]` = namerno preskočeno za sada; agent ne radi ove stavke dok ih autor ne v
 - [-] Popover: strelice + Enter / klik, jedan Ctrl+Z, čuva veliko slovo
 
 ### v0.2 · Faza 7 — Vizuelne teme
-- [ ] `themes.css` (papir / noc / masina / magla) + fontovi preko `next/font`
-- [ ] Izbor u ··· (4 kružića), pamti se u Dexie; tamni sistem → noc
-- [ ] Fokus mod + Pisaća mašina skrol
-- [ ] Kontrast teksta, ghosta i podvlaka u svim temama
+- [x] `themes.css` (papir / noc / masina / magla) + fontovi preko `next/font`
+- [x] Izbor u ··· (4 kružića), pamti se u Dexie; tamni sistem → noc
+- [x] Fokus mod + Pisaća mašina skrol
+- [x] Kontrast teksta, ghosta i podvlaka u svim temama
 
 _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne dira se bez odluke autora._
 
@@ -149,6 +149,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - 2026-09-30: Provera jezika — pasus sa kursorom se više ne preskače pri otvaranju (autofokus stavlja kursor na kraj, pa poslednji/jedini pasus nikad nije bio proveren dok autor ne izađe iz njega). Dodato: pasus u kome se piše proverava se i posle **3 s pauze u kucanju** (`PROOFREAD_PAUSE_MS` u `lib/timing.ts`). Proba skriptom na autorovom pasusu („…bilo povoljno njega.”): model 3/3 puta vraća „bili su povoljni za njega.”, `proofDiff` nudi svih 5 ispravki — problem je bio samo okidač.
 - 2026-09-30: Provera jezika gleda **svaki tekstualni blok** (pasus i naslov, i unutar citata/liste — nalepljen tekst često završi tamo), ne samo pasuse na vrhu dokumenta; fusnote i dalje ne. U dev konzoli se sada vide i neuspeli zahtevi, odbijeni odgovori, preskočeni predugi pasusi i pasusi promenjeni pre nego što je odgovor stigao.
 - 2026-09-30: **Faza 6 (sinonimi) je odložena — preskačemo je za sada** (odluka autora). Ne ide se na nju dok autor ne kaže; sledeća je Faza 7 (vizuelne teme).
+- 2026-09-30: v0.2 Faza 7: teme u `src/styles/themes.css` na `<html data-theme>`; bez izbora nema `data-theme` i CSS prati sistem (tamni → noc). Paper/ink/font tačno iz ZADATAK-a; **`--ink-muted` i `--ghost` minimalno potamnjeni** (autor odobrio) da pređu kontrast ≥ 4,5 i ≥ 3,0 — `lib/themes.test.ts` čita pravi CSS i proverava ink ≥ 7, ink-muted ≥ 4,5, ghost ≥ 3 (i bleđi od ink-muted), podvlake ≥ 3. Podvlake: plavo-siva (kvačice) i oker (gramatika), nikad crvena. `--muted/--focus/--proof` zamenjeni; Tailwind `text-muted` sada pokazuje na `--ink-muted`. Fontovi: Courier Prime i Inter preko `next/font` sa `preload: false` (učitavaju se tek kad tema zatreba). Izbor se čuva u Dexie **v4** (tabela `settings`, jedan zapis `appearance`: `theme?`, `focusMode`, `typewriter`) + test v3→v4; **kopija teme u `localStorage` (`momentum:theme`) samo za prvi prikaz** — inline skripta u `<head>` je postavlja pre crtanja (autor odobrio), Dexie pobeđuje pri učitavanju. Fokus mod: dekoracija `has-focus` na bloku sa kursorom (uvek), CSS pod `.focus-mode` bledi ostale na 0,35 za 150 ms. Pisaća mašina: posle svakog pomeranja kursora `requestAnimationFrame` skroluje `<main>` da red bude na sredini (tolerancija 12 px), dno teksta dobija `pb-[50vh]`. Obrisan zaostali `src/app/write/[sceneId]/page.tsx`.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

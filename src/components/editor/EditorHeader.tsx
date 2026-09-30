@@ -1,3 +1,4 @@
+import type { AppearanceControls } from "@/hooks/useAppearance";
 import type { SaveStatus } from "@/hooks/useAutosave";
 import { EditorMenu } from "./EditorMenu";
 
@@ -9,6 +10,7 @@ interface EditorHeaderProps {
   onToggleGhost: () => void;
   proofEnabled: boolean;
   onToggleProof: () => void;
+  appearance: AppearanceControls;
 }
 
 export function EditorHeader({
@@ -19,6 +21,7 @@ export function EditorHeader({
   onToggleGhost,
   proofEnabled,
   onToggleProof,
+  appearance,
 }: EditorHeaderProps) {
   return (
     <header className="flex items-center justify-end gap-4 px-6 py-4 text-sm text-muted">
@@ -30,6 +33,7 @@ export function EditorHeader({
         onToggleGhost={onToggleGhost}
         proofEnabled={proofEnabled}
         onToggleProof={onToggleProof}
+        appearance={appearance}
       />
     </header>
   );

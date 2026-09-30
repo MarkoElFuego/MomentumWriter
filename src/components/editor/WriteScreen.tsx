@@ -6,9 +6,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor as TiptapEditor, JSONContent } from "@tiptap/react";
 import { SparkPalette, type SparkAnchor } from "@/components/spark/SparkPalette";
 import { StructurePanel } from "@/components/structure/StructurePanel";
+import { useAppearance } from "@/hooks/useAppearance";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useGhostText } from "@/hooks/useGhostText";
 import { useOpenProofMark, useProofread } from "@/hooks/useProofread";
+import { useTypewriterScroll } from "@/hooks/useTypewriterScroll";
 import { copy } from "@/lib/copy";
 import { chapterNumber, getPart, listParts, partHeading, savePart } from "@/lib/db/parts";
 import type { ID } from "@/lib/db/schema";
@@ -127,6 +129,9 @@ export function WriteScreen({ partId }: { partId: ID }) {
         : null,
     [ready, heading],
   );
+  const appearance = useAppearance();
+  const scrollRef = useRef<HTMLElement>(null);
+  useTypewriterScroll(editor, scrollRef, appearance.typewriter);
   useGhostText(editor, ghostEnabled && spark === null, titles);
   useProofread(editor, proofEnabled, ready?.book.language ?? null);
   const proofMark = useOpenProofMark(editor);
@@ -337,9 +342,14 @@ export function WriteScreen({ partId }: { partId: ID }) {
           onToggleGhost={toggleGhost}
           proofEnabled={proofEnabled}
           onToggleProof={toggleProof}
+          appearance={appearance}
         />
-        <main className="flex-1 overflow-y-auto px-6">
-          <div className="mx-auto max-w-[66ch] py-16">
+        <main
+          ref={scrollRef}
+          className={`flex-1 overflow-y-auto px-6${appearance.focusMode ? " focus-mode" : ""}`}
+        >
+          {/* Typewriter: room below the last line so it can reach the middle too. */}
+          <div className={`mx-auto max-w-[66ch] pt-16 ${appearance.typewriter ? "pb-[50vh]" : "pb-16"}`}>
             <Editor
               initialContent={data.part.content}
               language={data.book.language}

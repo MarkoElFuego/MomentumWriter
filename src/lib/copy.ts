@@ -32,6 +32,12 @@ export const copy = {
     ghostOff: "Dopune: isključene",
     proofOn: "Provera jezika: uključena",
     proofOff: "Provera jezika: isključena",
+    themes: "Tema",
+    themeNames: { papir: "Papir", noc: "Noć", masina: "Mašina", magla: "Magla" },
+    focusOn: "Fokus mod: uključen",
+    focusOff: "Fokus mod: isključen",
+    typewriterOn: "Pisaća mašina: uključena",
+    typewriterOff: "Pisaća mašina: isključena",
     allBooks: "Sve knjige",
   },
   save: {

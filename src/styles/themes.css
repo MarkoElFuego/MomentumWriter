@@ -1,0 +1,64 @@
+/*
+ * Vizuelne teme (v0.2 Faza 7): tema menja SAMO boje i font.
+ * Vrednosti za paper/ink/font su iz ZADATAK_v0.2.md; ink-muted i ghost su
+ * malo potamnjeni da pređu kontrast (≥ 4.5 i ≥ 3.0 — proverava themes.test.ts).
+ * Tema se postavlja na <html data-theme="…"> pre prvog prikaza (layout.tsx).
+ */
+
+:root,
+[data-theme="papir"] {
+  --paper: #f7f3ea;
+  --ink: #2b2a26;
+  --ink-muted: #746f64;
+  --ghost: #928c7f;
+  --underline-diacritic: #5f7c99;
+  --underline-grammar: #9a6b3c;
+  --font-text: var(--font-literata), Georgia, "Times New Roman", serif;
+  color-scheme: light;
+}
+
+/* Bez sačuvanog izbora prati sistem: tamni sistem → noc. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --paper: #1b1c1f;
+    --ink: #d9d6ce;
+    --ink-muted: #87847f;
+    --ghost: #696763;
+    --underline-diacritic: #8ea6bf;
+    --underline-grammar: #c9a27a;
+    color-scheme: dark;
+  }
+}
+
+[data-theme="noc"] {
+  --paper: #1b1c1f;
+  --ink: #d9d6ce;
+  --ink-muted: #87847f;
+  --ghost: #696763;
+  --underline-diacritic: #8ea6bf;
+  --underline-grammar: #c9a27a;
+  --font-text: var(--font-literata), Georgia, "Times New Roman", serif;
+  color-scheme: dark;
+}
+
+[data-theme="masina"] {
+  --paper: #ede8dc;
+  --ink: #2f2d29;
+  --ink-muted: #6d685c;
+  --ghost: #8b8477;
+  --underline-diacritic: #5f7c99;
+  --underline-grammar: #9a6b3c;
+  --font-text: var(--font-courier-prime), "Courier New", monospace;
+  color-scheme: light;
+}
+
+[data-theme="magla"] {
+  --paper: #e8ebed;
+  --ink: #2b3237;
+  --ink-muted: #626b71;
+  --ghost: #7f888e;
+  --underline-diacritic: #5a7894;
+  --underline-grammar: #95683a;
+  --font-text: var(--font-inter), system-ui, sans-serif;
+  color-scheme: light;
+}

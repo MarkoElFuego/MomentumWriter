@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import type { AppearanceControls } from "@/hooks/useAppearance";
 import type { SaveStatus } from "@/hooks/useAutosave";
 import { copy } from "@/lib/copy";
+import { THEME_PAPER, THEMES } from "@/lib/themes";
 
 interface EditorMenuProps {
   saveStatus: SaveStatus;
@@ -12,6 +14,7 @@ interface EditorMenuProps {
   onToggleGhost: () => void;
   proofEnabled: boolean;
   onToggleProof: () => void;
+  appearance: AppearanceControls;
 }
 
 export function EditorMenu({
@@ -21,6 +24,7 @@ export function EditorMenu({
   onToggleGhost,
   proofEnabled,
   onToggleProof,
+  appearance,
 }: EditorMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -93,6 +97,36 @@ export function EditorMenu({
             onClick={onToggleProof}
           >
             {proofEnabled ? copy.menu.proofOn : copy.menu.proofOff}
+          </button>
+          <div role="group" aria-label={copy.menu.themes} className="flex gap-2 px-3 py-2">
+            {THEMES.map((theme) => (
+              <button
+                key={theme}
+                type="button"
+                title={copy.menu.themeNames[theme]}
+                aria-label={copy.menu.themeNames[theme]}
+                aria-pressed={appearance.theme === theme}
+                className="theme-swatch"
+                style={{ backgroundColor: THEME_PAPER[theme] }}
+                onClick={() => appearance.onTheme(theme)}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            aria-pressed={appearance.focusMode}
+            className="ui-button block w-full px-3 py-2 text-left"
+            onClick={appearance.onToggleFocus}
+          >
+            {appearance.focusMode ? copy.menu.focusOn : copy.menu.focusOff}
+          </button>
+          <button
+            type="button"
+            aria-pressed={appearance.typewriter}
+            className="ui-button block w-full px-3 py-2 text-left"
+            onClick={appearance.onToggleTypewriter}
+          >
+            {appearance.typewriter ? copy.menu.typewriterOn : copy.menu.typewriterOff}
           </button>
           <Link href="/" className="ui-button block px-3 py-2">
             {copy.menu.allBooks}

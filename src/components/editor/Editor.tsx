@@ -5,6 +5,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { copy } from "@/lib/copy";
 import { getLanguage, type Language } from "@/lib/languages";
+import { FocusMode } from "./focusMode";
 import { SceneBreak } from "./sceneBreak";
 import { closeProofTr, dispatchIf, openProofAtCursorTr, openProofMark, ProofMarks } from "./proofMarks";
 import { atFootnoteEdge, Footnotes, insertFootnoteTr, isInFootnote, leaveFootnoteTr } from "./footnotes";
@@ -59,6 +60,7 @@ export function Editor({ initialContent, language, onChange, onReady }: EditorPr
       GhostText,
       Footnotes,
       ProofMarks,
+      FocusMode,
       SceneBreak.configure({ symbol: getLanguage(language).typography.sceneBreak }),
     ],
     editorProps: {

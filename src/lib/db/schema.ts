@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable, type Table } from "dexie";
 import type { JSONContent } from "@tiptap/react";
 import { DEFAULT_LANGUAGE, type Language } from "@/lib/languages";
+import type { ThemeName } from "@/lib/themes";
 import { upgradeToParts } from "./migrations";
 
 export type ID = string;
@@ -48,6 +49,17 @@ export interface ResumeState {
   openQuestionFor?: string;
 }
 
+/** How the writing screen looks — one record, key "appearance". */
+export interface Appearance {
+  key: "appearance";
+  /** Unset = follow the system (dark → noc, otherwise papir). */
+  theme?: ThemeName;
+  /** Paragraphs other than the current one fade. */
+  focusMode: boolean;
+  /** The cursor line stays around the middle of the screen. */
+  typewriter: boolean;
+}
+
 // Gaps between orders leave room to insert without renumbering.
 export const ORDER_STEP = 1000;
 
@@ -56,6 +68,7 @@ export class MomentumDB extends Dexie {
   parts!: EntityTable<Part, "id">;
   dailyStats!: Table<DailyStat, [string, ID]>;
   resumeState!: EntityTable<ResumeState, "bookId">;
+  settings!: EntityTable<Appearance, "key">;
 
   constructor() {
     super("momentum");
@@ -83,6 +96,9 @@ export class MomentumDB extends Dexie {
     this.version(3)
       .stores({ parts: "id, bookId", chapters: null, scenes: null })
       .upgrade(upgradeToParts);
+    // v4: settings (visual theme, focus mode, typewriter scroll). New table only —
+    // nothing to copy; an empty table means defaults.
+    this.version(4).stores({ settings: "key" });
   }
 }
 

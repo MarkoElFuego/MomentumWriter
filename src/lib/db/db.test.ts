@@ -14,6 +14,7 @@ import {
   savePart,
 } from "./parts";
 import { getResumeState } from "./resume";
+import { getAppearance, saveAppearance } from "./settings";
 import { db } from "./schema";
 import { openPart } from "./session";
 
@@ -295,6 +296,46 @@ describe("migrations", () => {
     const resume = await getResumeState("b1");
     expect(resume).toMatchObject({ partId: "c2", cursorPos: 0, lastSentence: "Peta." });
     expect(resume).not.toHaveProperty("sceneId");
-    expect(db.tables.map((t) => t.name).sort()).toEqual(["books", "dailyStats", "parts", "resumeState"]);
+    expect(db.tables.map((t) => t.name).sort()).toEqual(["books", "dailyStats", "parts", "resumeState", "settings"]);
+  });
+
+  it("v3 → v4: parts stay, settings start empty (defaults)", async () => {
+    db.close();
+    await Dexie.delete("momentum");
+    const v3 = new Dexie("momentum");
+    v3.version(3).stores({ ...V1_STORES, parts: "id, bookId", chapters: null, scenes: null });
+    await v3.table("books").add({ id: "b1", title: "Knjiga", language: "sr-Latn", createdAt: 1, updatedAt: 1 });
+    await v3.table("parts").add({
+      id: "p1",
+      bookId: "b1",
+      kind: "chapter",
+      title: "",
+      order: 1000,
+      content: doc("Tekst ostaje."),
+      wordCount: 2,
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    v3.close();
+    await db.open();
+
+    expect(db.verno).toBe(4);
+    expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
+    expect(await db.settings.count()).toBe(0);
+    expect(await getAppearance()).toEqual({ key: "appearance", focusMode: false, typewriter: false });
+  });
+});
+
+describe("appearance settings", () => {
+  it("starts from defaults: system theme, no focus mode, no typewriter", async () => {
+    const appearance = await getAppearance();
+    expect(appearance.theme).toBeUndefined();
+    expect(appearance).toMatchObject({ focusMode: false, typewriter: false });
+  });
+
+  it("saves only what changed and keeps the rest", async () => {
+    await saveAppearance({ theme: "masina" });
+    await saveAppearance({ focusMode: true });
+    expect(await getAppearance()).toEqual({ key: "appearance", theme: "masina", focusMode: true, typewriter: false });
   });
 });

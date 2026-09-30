@@ -1,35 +1,16 @@
 @import "tailwindcss";
-
-:root {
-  --paper: #fbfaf7;
-  --ink: #1f1d1a;
-  --muted: #8a857c;
-  --focus: #8a857c;
-  --proof: #6f8aa6;
-  color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #1a1917;
-    --ink: #e6e1d8;
-    --muted: #7d786f;
-    --focus: #a39d92;
-    --proof: #8ea6bf;
-    color-scheme: dark;
-  }
-}
+@import "../styles/themes.css";
 
 @theme inline {
   --color-paper: var(--paper);
   --color-ink: var(--ink);
-  --color-muted: var(--muted);
-  --font-serif: var(--font-literata), Georgia, "Times New Roman", serif;
+  --color-muted: var(--ink-muted);
+  --font-serif: var(--font-text);
 }
 
 /* Editor: samo tekst i kursor. */
 .prose-editor {
-  font-family: var(--font-serif);
+  font-family: var(--font-text);
   font-size: 1.1875rem;
   line-height: 1.75;
   caret-color: var(--ink);
@@ -51,7 +32,7 @@
 }
 
 .prose-editor blockquote {
-  border-left: 2px solid var(--muted);
+  border-left: 2px solid var(--ink-muted);
   padding-left: 1em;
   font-style: italic;
 }
@@ -60,14 +41,14 @@
   content: attr(data-placeholder);
   float: left;
   height: 0;
-  color: var(--muted);
+  color: var(--ink-muted);
   pointer-events: none;
 }
 
 /* Tiha dugmad: vidljiva tek kad zatrebaju, fokus uvek jasan. */
 .ui-button {
   border-radius: 0.375rem;
-  color: var(--muted);
+  color: var(--ink-muted);
   transition: color 120ms ease;
 }
 
@@ -76,7 +57,7 @@
 }
 
 .ui-button:focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--ink-muted);
   outline-offset: 2px;
   color: var(--ink);
 }
@@ -85,7 +66,7 @@
 .scene-break {
   margin: 2em 0;
   text-align: center;
-  color: var(--muted);
+  color: var(--ink-muted);
   letter-spacing: 0.5em;
   user-select: none;
 }
@@ -95,13 +76,13 @@
 }
 
 .scene-break.ProseMirror-selectednode {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--ink-muted);
   outline-offset: 4px;
 }
 
 /* Sivi predlog posle kursora — samo prikaz, nije deo teksta. */
 .ghost-text {
-  color: var(--muted);
+  color: var(--ghost);
   pointer-events: none;
   user-select: none;
 }
@@ -119,7 +100,7 @@
   line-height: 0;
   vertical-align: super;
   padding: 0 0.1em;
-  color: var(--muted);
+  color: var(--ink-muted);
   cursor: default;
 }
 
@@ -128,7 +109,7 @@
 }
 
 .footnote-ref.ProseMirror-selectednode {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--ink-muted);
   outline-offset: 1px;
   border-radius: 2px;
 }
@@ -140,7 +121,7 @@
   line-height: 1.6;
   list-style: decimal;
   /* Kratka linija iznad fusnota, kao u knjizi. */
-  background: linear-gradient(var(--muted), var(--muted)) top left / 6em 1px no-repeat;
+  background: linear-gradient(var(--ink-muted), var(--ink-muted)) top left / 6em 1px no-repeat;
 }
 
 .footnote {
@@ -148,31 +129,65 @@
 }
 
 .footnote::marker {
-  color: var(--muted);
+  color: var(--ink-muted);
 }
 
 .prose-editor .footnote.is-empty::before {
   content: attr(data-placeholder);
   float: left;
   height: 0;
-  color: var(--muted);
+  color: var(--ink-muted);
   pointer-events: none;
 }
 
 /* Provera jezika: tačkasto = kvačice, talasasto = gramatika. Tiha boja — nikad crvena. */
 .proof-mark {
-  text-decoration-color: var(--proof);
   text-decoration-thickness: 1.5px;
   text-underline-offset: 0.2em;
   cursor: pointer;
 }
 
 .proof-diacritic {
+  text-decoration-color: var(--underline-diacritic);
   text-decoration-line: underline;
   text-decoration-style: dotted;
 }
 
 .proof-grammar {
+  text-decoration-color: var(--underline-grammar);
   text-decoration-line: underline;
   text-decoration-style: wavy;
+}
+
+/* Fokus mod: svi blokovi osim onog sa kursorom blede. */
+.focus-mode .prose-editor > * {
+  transition: opacity 150ms ease;
+}
+
+.focus-mode .prose-editor > :not(.has-focus) {
+  opacity: 0.35;
+}
+
+/* Tema u ··· meniju: kružić u boji papira. */
+.theme-swatch {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--ink-muted);
+}
+
+.theme-swatch[aria-pressed="true"] {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.theme-swatch:focus-visible {
+  outline: 2px solid var(--ink-muted);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-mode .prose-editor > * {
+    transition: none;
+  }
 }
