@@ -6,6 +6,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { copy } from "@/lib/copy";
 import { getLanguage, type Language } from "@/lib/languages";
 import { SceneBreak } from "./sceneBreak";
+import { closeProofTr, dispatchIf, openProofAtCursorTr, openProofMark, ProofMarks } from "./proofMarks";
 import { atFootnoteEdge, Footnotes, insertFootnoteTr, isInFootnote, leaveFootnoteTr } from "./footnotes";
 import {
   acceptGhost,
@@ -57,6 +58,7 @@ export function Editor({ initialContent, language, onChange, onReady }: EditorPr
       }),
       GhostText,
       Footnotes,
+      ProofMarks,
       SceneBreak.configure({ symbol: getLanguage(language).typography.sceneBreak }),
     ],
     editorProps: {
@@ -81,6 +83,16 @@ export function Editor({ initialContent, language, onChange, onReady }: EditorPr
 
         // The "stuck?" hint goes away on the first key; the key still does its job.
         if (hasHint(view.state)) clearGhost(view);
+
+        // A popover opened by a click leaves the cursor here; Esc closes it.
+        if (event.key === "Escape" && openProofMark(view.state)) {
+          return dispatchIf(view, closeProofTr(view.state));
+        }
+
+        // Alt+Enter on an underlined word opens its correction.
+        if (event.altKey && !mod && !event.shiftKey && event.key === "Enter") {
+          return dispatchIf(view, openProofAtCursorTr(view.state));
+        }
 
         // Ctrl/Cmd+Shift+F — event.code too, for the Cyrillic layout.
         if (mod && event.shiftKey && !event.altKey && (event.key.toLowerCase() === "f" || event.code === "KeyF")) {

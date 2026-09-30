@@ -8,6 +8,7 @@ import { SparkPalette, type SparkAnchor } from "@/components/spark/SparkPalette"
 import { StructurePanel } from "@/components/structure/StructurePanel";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useGhostText } from "@/hooks/useGhostText";
+import { useOpenProofMark, useProofread } from "@/hooks/useProofread";
 import { copy } from "@/lib/copy";
 import { chapterNumber, getPart, listParts, partHeading, savePart } from "@/lib/db/parts";
 import type { ID } from "@/lib/db/schema";
@@ -21,6 +22,8 @@ import { Editor } from "./Editor";
 import { EditorFooter } from "./EditorFooter";
 import { EditorHeader } from "./EditorHeader";
 import { mainTextEnd } from "./footnotes";
+import { ProofPopover } from "./ProofPopover";
+import { acceptDiacriticsTr, acceptProofTr, closeProofTr, dispatchIf, rejectProofTr } from "./proofMarks";
 
 // Panel open/closed survives part switches (the page remounts on each one).
 const PANEL_KEY = "momentum:structureOpen";
@@ -41,20 +44,21 @@ function writePanelOpen(open: boolean) {
   }
 }
 
-// Gray completions on/off — a per-browser UI preference, not manuscript content.
+// Gray completions and language check on/off — per-browser UI preferences, not manuscript content.
 const GHOST_KEY = "momentum:ghost";
+const PROOF_KEY = "momentum:proofread";
 
-function readGhostEnabled(): boolean {
+function readEnabled(key: string): boolean {
   try {
-    return localStorage.getItem(GHOST_KEY) !== "0";
+    return localStorage.getItem(key) !== "0";
   } catch {
     return true;
   }
 }
 
-function writeGhostEnabled(enabled: boolean) {
+function writeEnabled(key: string, enabled: boolean) {
   try {
-    localStorage.setItem(GHOST_KEY, enabled ? "1" : "0");
+    localStorage.setItem(key, enabled ? "1" : "0");
   } catch {
     // UI preference only — safe to ignore.
   }
@@ -90,12 +94,23 @@ export function WriteScreen({ partId }: { partId: ID }) {
   // State copy of the editor so hooks can subscribe once it exists.
   const [editor, setEditor] = useState<TiptapEditor | null>(null);
   const [ghostEnabled, setGhostEnabled] = useState(true);
+  const [proofEnabled, setProofEnabled] = useState(true);
 
-  useEffect(() => setGhostEnabled(readGhostEnabled()), []);
+  useEffect(() => {
+    setGhostEnabled(readEnabled(GHOST_KEY));
+    setProofEnabled(readEnabled(PROOF_KEY));
+  }, []);
 
   const toggleGhost = useCallback(() => {
     setGhostEnabled((enabled) => {
-      writeGhostEnabled(!enabled);
+      writeEnabled(GHOST_KEY, !enabled);
+      return !enabled;
+    });
+  }, []);
+
+  const toggleProof = useCallback(() => {
+    setProofEnabled((enabled) => {
+      writeEnabled(PROOF_KEY, !enabled);
       return !enabled;
     });
   }, []);
@@ -113,6 +128,36 @@ export function WriteScreen({ partId }: { partId: ID }) {
     [ready, heading],
   );
   useGhostText(editor, ghostEnabled && spark === null, titles);
+  useProofread(editor, proofEnabled, ready?.book.language ?? null);
+  const proofMark = useOpenProofMark(editor);
+
+  const closeProof = useCallback((refocus: boolean) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    dispatchIf(editor.view, closeProofTr(editor.state));
+    if (refocus) editor.commands.focus();
+  }, []);
+
+  // Accept / reject / accept all, then back to the text.
+  const resolveProof = useCallback(
+    (build: typeof acceptProofTr) => {
+      const editor = editorRef.current;
+      if (!editor || !proofMark) return;
+      dispatchIf(editor.view, build(editor.state, proofMark.id));
+      editor.commands.focus();
+    },
+    [proofMark],
+  );
+
+  let proofAnchor: SparkAnchor | null = null;
+  if (proofMark && editor) {
+    try {
+      const { left, top, bottom } = editor.view.coordsAtPos(proofMark.from);
+      proofAnchor = { left, top, bottom };
+    } catch {
+      // Not laid out yet — no popover this render.
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -290,6 +335,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
           onToggleStructure={togglePanel}
           ghostEnabled={ghostEnabled}
           onToggleGhost={toggleGhost}
+          proofEnabled={proofEnabled}
+          onToggleProof={toggleProof}
         />
         <main className="flex-1 overflow-y-auto px-6">
           <div className="mx-auto max-w-[66ch] py-16">
@@ -304,6 +351,16 @@ export function WriteScreen({ partId }: { partId: ID }) {
             />
           </div>
         </main>
+        {proofMark && proofAnchor && (
+          <ProofPopover
+            mark={proofMark}
+            anchor={proofAnchor}
+            onAccept={() => resolveProof(acceptProofTr)}
+            onReject={() => resolveProof(rejectProofTr)}
+            onAcceptDiacritics={() => resolveProof(acceptDiacriticsTr)}
+            onClose={closeProof}
+          />
+        )}
         {spark && (
           <SparkPalette
             context={spark.context}

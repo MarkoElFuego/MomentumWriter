@@ -1,4 +1,5 @@
 // Browser side of /api/spark. Types only from lib/ai — never the SDK or the key.
+import type { ProofreadRequest } from "./proofread";
 import type { SparkRequest, SparkResponse } from "./schemas";
 
 export type SparkClientError = "offline" | "timeout" | "unavailable";
@@ -25,5 +26,28 @@ export async function requestSpark(body: SparkRequest, signal: AbortSignal): Pro
   } catch {
     if (timeout.aborted) return { ok: false, error: "timeout" };
     return { ok: false, error: navigator.onLine ? "unavailable" : "offline" };
+  }
+}
+
+/**
+ * One paragraph → the corrected paragraph. Failures are silent (no underlines);
+ * `retry` is false when the server rejected this text — sending it again would
+ * get the same answer and cost the same.
+ */
+export type ProofreadClientResult = { ok: true; corrected: string } | { ok: false; retry: boolean };
+
+export async function requestProofread(body: ProofreadRequest, signal: AbortSignal): Promise<ProofreadClientResult> {
+  try {
+    const response = await fetch("/api/spark", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.any([signal, AbortSignal.timeout(CLIENT_TIMEOUT_MS)]),
+    });
+    if (!response.ok) return { ok: false, retry: response.status !== 502 && response.status !== 400 };
+    const { data } = (await response.json()) as { data: { corrected: string } };
+    return { ok: true, corrected: data.corrected };
+  } catch {
+    return { ok: false, retry: true };
   }
 }

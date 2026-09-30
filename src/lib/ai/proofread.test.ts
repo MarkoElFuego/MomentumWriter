@@ -42,10 +42,10 @@ describe("runProofread", () => {
     expect(result).toEqual({ ok: true, data: { corrected: "„Čekaj me“, rekla je." } });
   });
 
-  it("rejects a rewrite that changes the word count too much", async () => {
+  it("rejects a reply that retells the paragraph", async () => {
     const result = await runProofread(
       request,
-      completer("Čekao sam je dugo, dugo ispred stare škole u kiši."),
+      completer("Stajao je satima pred zgradom i nadao se da će doći."),
       neverAborted(),
     );
     expect(result).toEqual({ ok: false, error: "unavailable" });

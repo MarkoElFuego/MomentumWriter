@@ -124,7 +124,7 @@ Ti si lektor za srpski jezik (latinica). Ispravi SAMO pravopisne i gramatičke g
 User poruka: samo tekst pasusa (najviše 400 reči). Odgovor: ceo ispravljen pasus kao čist tekst → server vraća `{ corrected }`. Tekst se **nikad ne ubacuje** — klijent ga pretvara u ispravke po rečima (`lib/text/proofDiff.ts`).
 
 - Parametri (varijanta A iz 5a): `reasoning_effort: "none"`, `temperature: 0.2`, `response_format: text`. 1 pokušaj, timeout 10 s.
-- Umesto guardraila: ceo odgovor se odbacuje ako se broj reči razlikuje > 20%; pojedinačna ispravka se odbacuje ako je udaljenost (bez kvačica, `đ` = `dj`) > 3 ili > 40% dužine reči. Samo zamene reč-za-reč, dodate/izbačene reči se ne nude.
+- Umesto guardraila: ceo odgovor se odbacuje ako je model **prepričao** pasus — manje od polovine reči odgovora (bez kvačica, velikih slova i interpunkcije, redom) postoji u originalu (`isProofreadOf`). Izbačen duplikat rečenice prolazi. Server tada vraća 502 i klijent taj tekst više ne šalje; pojedinačna ispravka se odbacuje ako je udaljenost (bez kvačica, `đ` = `dj`) > 3 ili > 40% dužine reči. Pored zamena reč-za-reč nude se i male ispravke od više reči: spojene/razdvojene reči („kapkeDosao” → „kapke. Došao”), zamena kratkih reči („je” → „su”) i do 3 dodate/izbačene kratke reči (≤ 4 slova), koje se kače na susednu nepromenjenu reč („njega” → „za njega”). Veće izmene (izbačena rečenica, nova duga reč) se ne nude — to je uređivanje, ne lektura.
 - Server skida ```-ograde i navodnike oko celog odgovora (osim ako ih je autor napisao).
 - Log: `[proofread] 812ms in=486 cached=0 out=231`.
 

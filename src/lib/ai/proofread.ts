@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getLanguage, LANGUAGES } from "@/lib/languages";
 import { countWords } from "@/lib/text/countWords";
-import { wordCountClose } from "@/lib/text/proofDiff";
+import { isProofreadOf } from "@/lib/text/proofDiff";
 import type { Completer } from "./spark";
 
 // Proofread is the one mode that may change the author's text — and even then
@@ -60,8 +60,8 @@ export async function runProofread(
   }
 
   const corrected = unwrap(raw, request.text);
-  if (!wordCountClose(request.text, corrected)) {
-    console.warn("[proofread] rejected: word-count");
+  if (!isProofreadOf(request.text, corrected)) {
+    console.warn("[proofread] rejected: rewrite");
     return { ok: false, error: "unavailable" };
   }
   return { ok: true, data: { corrected } };

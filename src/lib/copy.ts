@@ -18,11 +18,20 @@ export const copy = {
     placeholder: "Tekst fusnote…  Esc vraća u tekst",
     refLabel: (n: number) => `Fusnota ${n}`,
   },
+  proofread: {
+    label: "Ispravka",
+    accept: "Prihvati",
+    reject: "Odbaci",
+    acceptDiacritics: (n: number) => `Prihvati sve kvačice u pasusu (${n})`,
+    describe: (from: string, to: string) => `${from} u ${to}`,
+  },
   menu: {
     structure: "Struktura",
     structureShortcut: "Ctrl/Cmd+\\",
     ghostOn: "Dopune: uključene",
     ghostOff: "Dopune: isključene",
+    proofOn: "Provera jezika: uključena",
+    proofOff: "Provera jezika: isključena",
     allBooks: "Sve knjige",
   },
   save: {

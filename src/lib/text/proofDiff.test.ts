@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { proofDiff, stripDiacritics, wordCountClose } from "./proofDiff";
+import { isProofreadOf, proofDiff, stripDiacritics, type DroppedChange } from "./proofDiff";
 
 describe("proofDiff", () => {
   it("returns nothing for an unchanged paragraph", () => {
@@ -44,26 +44,77 @@ describe("proofDiff", () => {
     expect(proofDiff("Bio je veoma umoran od puta.", "Bio je strašno umoran od puta.")).toEqual([]);
   });
 
-  it("drops changes over 40% of a short word", () => {
-    expect(proofDiff("Otišao je sa njim.", "Otišao je s njim.")).toEqual([]);
+  it("offers a swap of short function words as grammar", () => {
+    expect(proofDiff("Prognoze su bili je dobre.", "Prognoze su bili su dobre.")).toMatchObject([
+      { from: "je", to: "su", type: "grammar" },
+    ]);
+  });
+
+  it("joins a split and a missing space into one correction", () => {
+    const original = "San mu je otežavao kapkeDosao je kući.";
+    const edits = proofDiff(original, "San mu je otežavao kapke. Došao je kući.");
+    expect(edits).toMatchObject([{ from: "kapkeDosao", to: "kapke. Došao", type: "grammar" }]);
+    expect(original.slice(edits[0]!.start, edits[0]!.end)).toBe("kapkeDosao");
+  });
+
+  it("an added short word joins the word next to it", () => {
+    const original = "Istraživanje je bilo povoljno njega.";
+    const edits = proofDiff(original, "Istraživanje je bilo povoljno za njega.");
+    expect(edits).toMatchObject([{ from: "njega.", to: "za njega." }]);
+    expect(original.slice(edits[0]!.start, edits[0]!.end)).toBe("njega.");
+  });
+
+  it("each correction stays separate when words change and one is added", () => {
+    const edits = proofDiff("Bili je povoljno njega.", "Bili su povoljni za njega.");
+    expect(edits.map(({ from, to }) => [from, to])).toEqual([
+      ["je", "su"],
+      ["povoljno", "povoljni"],
+      ["njega.", "za njega."],
+    ]);
   });
 
   it("keeps later offsets right when the model adds or drops a word", () => {
     const original = "Nisam znao da ces doci tako rano ove godine.";
     const edits = proofDiff(original, "Nisam znao da ćeš doći rano ove godine.");
-    expect(edits.map((e) => e.to)).toEqual(["ćeš", "doći"]);
+    expect(edits.map((e) => [e.from, e.to])).toEqual([
+      ["ces", "ćeš"],
+      ["doci", "doći"],
+      ["tako rano", "rano"],
+    ]);
     for (const edit of edits) expect(original.slice(edit.start, edit.end)).toBe(edit.from);
   });
 
-  it("rejects the whole reply when the word count drifts over 20%", () => {
-    expect(proofDiff("Jedan dva tri četiri pet.", "Jedan dva tri četiri pet šest sedam.")).toEqual([]);
+  it("still offers fixes when the model drops a duplicated sentence", () => {
+    const original = "Dosao je kuci i seo. Dosao je kuci i seo.";
+    const edits = proofDiff(original, "Došao je kući i seo.");
+    expect(edits.map((e) => e.to)).toEqual(["Došao", "kući"]);
+    for (const edit of edits) expect(original.slice(edit.start, edit.end)).toBe(edit.from);
+  });
+
+  it("does not offer dropping a whole sentence, and says why", () => {
+    const dropped: DroppedChange[] = [];
+    const original = "Dosao je kuci. Onda je dugo sedeo sam u mraku.";
+    expect(proofDiff(original, "Došao je kući.", dropped).map((e) => e.to)).toEqual(["Došao", "kući."]);
+    expect(dropped).toMatchObject([{ reason: "too-big" }]);
+  });
+
+  it("rejects the whole reply when the paragraph was retold", () => {
+    expect(proofDiff("Cekao sam je ispred skole.", "Stajao je satima pred zgradom i nadao se da će doći.")).toEqual([]);
   });
 });
 
-describe("wordCountClose", () => {
-  it("allows up to 20% more or fewer words", () => {
-    expect(wordCountClose("a b c d e", "a b c d e f")).toBe(true);
-    expect(wordCountClose("a b c d e", "a b c")).toBe(false);
+describe("isProofreadOf", () => {
+  it("counts words without diacritics, case or punctuation", () => {
+    expect(isProofreadOf("Cekao sam je ispred skole", "Čekao sam je ispred škole.")).toBe(true);
+  });
+
+  it("passes a reply made only of the author's words", () => {
+    expect(isProofreadOf("a b c d e f g h", "a b c d")).toBe(true);
+  });
+
+  it("fails a reply with mostly new words", () => {
+    expect(isProofreadOf("a b c d", "a x y z w")).toBe(false);
+    expect(isProofreadOf("a b c", "")).toBe(false);
   });
 });
 

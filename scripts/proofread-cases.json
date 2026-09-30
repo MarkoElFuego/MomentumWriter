@@ -113,5 +113,20 @@
     "name": "govor u dijalogu (ne dira se)",
     "input": "— Ma, š'a ćeš, brate. Nema tu pomoći — rekao je deda.",
     "expected": "— Ma, š'a ćeš, brate. Nema tu pomoći — rekao je deda."
+  },
+  {
+    "name": "autor: pametna kuca + pomisio",
+    "input": "Ovo je njima pametna kuca? Ha, malo otrcano - pomisio je u sebi.",
+    "expected": "Ovo je njima pametna kuća? Ha, malo otrcano - pomislio je u sebi."
+  },
+  {
+    "name": "autor: ošišan pasus sa crticom",
+    "input": "Mislim da ljudi uopste nisu svesni pametnih kuca i sta to znaci, mogao bih da pisem blog o tome - rodila se misao u njemu.",
+    "expected": "Mislim da ljudi uopšte nisu svesni pametnih kuća i šta to znači, mogao bih da pišem blog o tome - rodila se misao u njemu."
+  },
+  {
+    "name": "autor: anglicizmi ostaju",
+    "input": "Opet je 23 uveče, rekao je Luis u sebi kada je započeo sa novim hustle-om.",
+    "expected": "Opet je 23 uveče, rekao je Luis u sebi kada je započeo sa novim hustle-om."
   }
 ]

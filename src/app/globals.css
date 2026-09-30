@@ -5,6 +5,7 @@
   --ink: #1f1d1a;
   --muted: #8a857c;
   --focus: #8a857c;
+  --proof: #6f8aa6;
   color-scheme: light;
 }
 
@@ -14,6 +15,7 @@
     --ink: #e6e1d8;
     --muted: #7d786f;
     --focus: #a39d92;
+    --proof: #8ea6bf;
     color-scheme: dark;
   }
 }
@@ -155,4 +157,22 @@
   height: 0;
   color: var(--muted);
   pointer-events: none;
+}
+
+/* Provera jezika: tačkasto = kvačice, talasasto = gramatika. Tiha boja — nikad crvena. */
+.proof-mark {
+  text-decoration-color: var(--proof);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.proof-diacritic {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+}
+
+.proof-grammar {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
 }

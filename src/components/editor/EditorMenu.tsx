@@ -10,9 +10,18 @@ interface EditorMenuProps {
   onToggleStructure: () => void;
   ghostEnabled: boolean;
   onToggleGhost: () => void;
+  proofEnabled: boolean;
+  onToggleProof: () => void;
 }
 
-export function EditorMenu({ saveStatus, onToggleStructure, ghostEnabled, onToggleGhost }: EditorMenuProps) {
+export function EditorMenu({
+  saveStatus,
+  onToggleStructure,
+  ghostEnabled,
+  onToggleGhost,
+  proofEnabled,
+  onToggleProof,
+}: EditorMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -76,6 +85,14 @@ export function EditorMenu({ saveStatus, onToggleStructure, ghostEnabled, onTogg
             onClick={onToggleGhost}
           >
             {ghostEnabled ? copy.menu.ghostOn : copy.menu.ghostOff}
+          </button>
+          <button
+            type="button"
+            aria-pressed={proofEnabled}
+            className="ui-button block w-full px-3 py-2 text-left"
+            onClick={onToggleProof}
+          >
+            {proofEnabled ? copy.menu.proofOn : copy.menu.proofOff}
           </button>
           <Link href="/" className="ui-button block px-3 py-2">
             {copy.menu.allBooks}

@@ -8,3 +8,6 @@ export const GHOST_PAUSE_AFTER_MS = 3_000;
 
 /** Empty paragraph: only a quiet hint, and only after a real stall. No AI call is made. */
 export const STUCK_HINT_MS = 6_000;
+
+/** Language check of the paragraph being written, once the author stops typing. */
+export const PROOFREAD_PAUSE_MS = 3_000;

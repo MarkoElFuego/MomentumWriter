@@ -7,6 +7,8 @@ interface EditorHeaderProps {
   onToggleStructure: () => void;
   ghostEnabled: boolean;
   onToggleGhost: () => void;
+  proofEnabled: boolean;
+  onToggleProof: () => void;
 }
 
 export function EditorHeader({
@@ -15,6 +17,8 @@ export function EditorHeader({
   onToggleStructure,
   ghostEnabled,
   onToggleGhost,
+  proofEnabled,
+  onToggleProof,
 }: EditorHeaderProps) {
   return (
     <header className="flex items-center justify-end gap-4 px-6 py-4 text-sm text-muted">
@@ -24,6 +28,8 @@ export function EditorHeader({
         onToggleStructure={onToggleStructure}
         ghostEnabled={ghostEnabled}
         onToggleGhost={onToggleGhost}
+        proofEnabled={proofEnabled}
+        onToggleProof={onToggleProof}
       />
     </header>
   );

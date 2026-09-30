@@ -18,7 +18,8 @@ interface Token {
   end: number;
 }
 
-const MAX_WORD_COUNT_DRIFT = 0.2;
+/** At least this share of the reply's words must come from the paragraph. */
+const MIN_SHARED_SHARE = 0.5;
 const MAX_DISTANCE = 3;
 const MAX_DISTANCE_SHARE = 0.4;
 
@@ -57,70 +58,151 @@ function isSimilar(from: string, to: string): boolean {
   return distance <= MAX_DISTANCE && distance <= MAX_DISTANCE_SHARE * Math.max(a.length, b.length);
 }
 
-/** More than 20% words added or dropped means the model rewrote instead of proofreading. */
-export function wordCountClose(original: string, corrected: string): boolean {
-  const a = tokenize(original).length;
-  const b = tokenize(corrected).length;
-  return Math.abs(a - b) <= MAX_WORD_COUNT_DRIFT * Math.max(a, 1);
-}
+// The word without diacritics, case or punctuation — "Škole," and "skole" match.
+const bare = (word: string) => stripDiacritics(word).toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
 
-// Longest common subsequence of words → the pairs of runs that differ between them.
-function changedRuns(a: Token[], b: Token[]): [Token[], Token[]][] {
-  const lcs = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+type Op = { kind: "pair"; a: Token; b: Token } | { kind: "del"; a: Token } | { kind: "ins"; b: Token };
+
+/**
+ * Lines the reply up with the paragraph word by word. Identical words pair
+ * first, then corrections of each other ("skole"/"škole."); the rest is
+ * dropped (del) or added (ins) by the proofreader.
+ */
+function align(a: Token[], b: Token[]): Op[] {
+  const score = (x: Token, y: Token) => (x.text === y.text ? 2 : isSimilar(x.text, y.text) ? 1 : 0);
+  const pairScore = a.map((x) => b.map((y) => score(x, y)));
+  const best = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
   for (let i = a.length - 1; i >= 0; i--) {
     for (let j = b.length - 1; j >= 0; j--) {
-      lcs[i]![j] = a[i]!.text === b[j]!.text ? lcs[i + 1]![j + 1]! + 1 : Math.max(lcs[i + 1]![j]!, lcs[i]![j + 1]!);
+      const pair = pairScore[i]![j]! > 0 ? pairScore[i]![j]! + best[i + 1]![j + 1]! : 0;
+      best[i]![j] = Math.max(pair, best[i + 1]![j]!, best[i]![j + 1]!);
     }
   }
-
-  const runs: [Token[], Token[]][] = [];
+  const ops: Op[] = [];
   let i = 0;
   let j = 0;
-  let runA: Token[] = [];
-  let runB: Token[] = [];
-  const flush = () => {
-    if (runA.length || runB.length) runs.push([runA, runB]);
-    runA = [];
-    runB = [];
-  };
   while (i < a.length || j < b.length) {
-    if (i < a.length && j < b.length && a[i]!.text === b[j]!.text) {
-      flush();
-      i++;
-      j++;
-    } else if (j >= b.length || (i < a.length && lcs[i + 1]![j]! >= lcs[i]![j + 1]!)) {
-      runA.push(a[i++]!);
+    const s = i < a.length && j < b.length ? pairScore[i]![j]! : 0;
+    if (s > 0 && best[i]![j] === s + best[i + 1]![j + 1]!) {
+      ops.push({ kind: "pair", a: a[i++]!, b: b[j++]! });
+    } else if (j >= b.length || (i < a.length && best[i + 1]![j]! >= best[i]![j + 1]!)) {
+      ops.push({ kind: "del", a: a[i++]! });
     } else {
-      runB.push(b[j++]!);
+      ops.push({ kind: "ins", b: b[j++]! });
     }
   }
-  flush();
-  return runs;
+  return ops;
 }
 
-export function proofDiff(original: string, corrected: string): ProofEdit[] {
-  if (!wordCountClose(original, corrected)) return [];
-  const edits: ProofEdit[] = [];
-  for (const [runA, runB] of changedRuns(tokenize(original), tokenize(corrected))) {
-    // Only word-for-word replacements are offered; an added or dropped word is
-    // skipped on the longer side so the words around it still pair up.
-    let i = 0;
-    let j = 0;
-    while (i < runA.length && j < runB.length) {
-      const word = runA[i]!;
-      const to = runB[j]!.text;
-      if (isSimilar(word.text, to)) {
-        const type = stripDiacritics(word.text) === stripDiacritics(to) ? "diacritic" : "grammar";
-        edits.push({ from: word.text, to, start: word.start, end: word.end, type });
-        i++;
-        j++;
-      } else if (runA.length - i > runB.length - j) i++;
-      else if (runB.length - j > runA.length - i) j++;
-      else {
-        i++;
-        j++;
-      }
+/**
+ * Proofread, not rewritten: at least half of the reply's words are the
+ * author's words (same or corrected). Dropping a duplicated sentence still
+ * passes; a paragraph retold in new words does not.
+ */
+export function isProofreadOf(original: string, corrected: string): boolean {
+  const reply = tokenize(corrected);
+  if (reply.length === 0) return false;
+  const kept = align(tokenize(original), reply).filter((op) => op.kind === "pair").length;
+  return kept >= MIN_SHARED_SHARE * reply.length;
+}
+
+/** A correction the proofreader made that is not offered, and why (dev console). */
+export interface DroppedChange {
+  from: string;
+  to: string;
+  reason: "not-a-correction" | "too-big";
+}
+
+const MAX_CLUSTER_WORDS = 3;
+const SHORT_WORD_LETTERS = 4;
+
+interface Segment {
+  a: Token[];
+  b: Token[];
+  changed: boolean;
+}
+
+/**
+ * Word-level corrections from the proofreader's paragraph. Most are one word
+ * ("skole" → "škole"); a few words may be joined, split, added or dropped when
+ * that is the correction ("kapkeDosao" → "kapke. Došao", "njega" → "za njega",
+ * "je" → "su"). Anything bigger — a new long word, a dropped sentence — is not
+ * offered: that's editing, not proofreading. Offsets point into `original`.
+ */
+export function proofDiff(original: string, corrected: string, dropped?: DroppedChange[]): ProofEdit[] {
+  if (!isProofreadOf(original, corrected)) {
+    dropped?.push({ from: original, to: corrected, reason: "too-big" });
+    return [];
+  }
+
+  const text = (tokens: Token[]) => tokens.map((t) => t.text).join(" ");
+  const segments: Segment[] = [];
+  const ops = align(tokenize(original), tokenize(corrected));
+
+  for (let k = 0; k < ops.length; ) {
+    const op = ops[k]!;
+    if (op.kind === "pair") {
+      segments.push({ a: [op.a], b: [op.b], changed: op.a.text !== op.b.text });
+      k++;
+      continue;
     }
+    const dels: Token[] = [];
+    const inss: Token[] = [];
+    while (k < ops.length && ops[k]!.kind !== "pair") {
+      const extra = ops[k]!;
+      if (extra.kind === "del") dels.push(extra.a);
+      else if (extra.kind === "ins") inss.push(extra.b);
+      k++;
+    }
+
+    const small =
+      dels.length <= MAX_CLUSTER_WORDS &&
+      inss.length <= MAX_CLUSTER_WORDS &&
+      [...dels, ...inss].every((t) => bare(t.text).length <= SHORT_WORD_LETTERS);
+    const joinedSimilar = dels.length > 0 && inss.length > 0 && isSimilar(text(dels), text(inss));
+    if (!small && !joinedSimilar) {
+      const reason = dels.length + inss.length > 2 * MAX_CLUSTER_WORDS ? "too-big" : "not-a-correction";
+      dropped?.push({ from: text(dels), to: text(inss), reason });
+      continue;
+    }
+    if (dels.length && inss.length) {
+      segments.push({ a: dels, b: inss, changed: true });
+      continue;
+    }
+
+    // Only added or only dropped words: ride on a neighbor so there's a word to
+    // underline — an unchanged one first, so each correction stays separate.
+    const prev = segments.at(-1);
+    const nextOp = ops[k];
+    const next: Segment | undefined =
+      nextOp?.kind === "pair" ? { a: [nextOp.a], b: [nextOp.b], changed: nextOp.a.text !== nextOp.b.text } : undefined;
+    if (next && !next.changed) {
+      segments.push({ a: [...dels, ...next.a], b: [...inss, ...next.b], changed: true });
+      k++;
+    } else if (prev && !prev.changed) {
+      prev.a.push(...dels);
+      prev.b.push(...inss);
+      prev.changed = true;
+    } else if (prev) {
+      prev.a.push(...dels);
+      prev.b.push(...inss);
+    } else if (next) {
+      segments.push({ a: [...dels, ...next.a], b: [...inss, ...next.b], changed: true });
+      k++;
+    }
+  }
+
+  const edits: ProofEdit[] = [];
+  for (const { a, b, changed } of segments) {
+    if (!changed || a.length === 0 || b.length === 0) continue;
+    const start = a[0]!.start;
+    const end = a.at(-1)!.end;
+    const from = original.slice(start, end);
+    const to = corrected.slice(b[0]!.start, b.at(-1)!.end);
+    // A line break inside can't be matched back to the paragraph reliably.
+    if (from.includes("\n")) continue;
+    const type = stripDiacritics(from) === stripDiacritics(to) ? "diacritic" : "grammar";
+    edits.push({ from, to, start, end, type });
   }
   return edits;
 }
