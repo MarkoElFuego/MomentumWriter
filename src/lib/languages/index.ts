@@ -11,6 +11,8 @@ export interface LanguagePrompts {
   writer: string;
   /** Push/ghost: match the author's language, script and spelling. */
   sameScript: string;
+  /** Proofread system prompt — always identical, so the provider can cache it. */
+  proofreader: string;
 }
 
 export interface Typography {

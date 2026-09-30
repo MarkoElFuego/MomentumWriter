@@ -10,6 +10,8 @@ export interface RequestOptions {
   effort?: ReasoningEffort;
   temperature?: number;
   topP?: number;
+  /** "json" (default) → JSON mode; "text" → plain reply (proofread). */
+  format?: "json" | "text";
 }
 
 /**
@@ -25,6 +27,7 @@ export function buildRequestParams({
   effort,
   temperature,
   topP,
+  format = "json",
 }: RequestOptions): ChatCompletionCreateParamsNonStreaming {
   const sampling = effort === "none" ? { temperature, top_p: topP } : {};
   const params: ChatCompletionCreateParamsNonStreaming = {
@@ -33,7 +36,7 @@ export function buildRequestParams({
       { role: "system", content: system },
       { role: "user", content: user },
     ],
-    response_format: { type: "json_object" },
+    response_format: { type: format === "json" ? "json_object" : "text" },
     max_completion_tokens: maxCompletionTokens,
     ...(effort ? { reasoning_effort: effort } : {}),
     ...sampling,

@@ -28,4 +28,9 @@ describe("buildRequestParams", () => {
       ["max_completion_tokens", "messages", "model", "reasoning_effort", "response_format"],
     );
   });
+
+  it("asks for plain text when format is text", () => {
+    expect(buildRequestParams({ ...base, format: "text" }).response_format).toEqual({ type: "text" });
+    expect(buildRequestParams(base).response_format).toEqual({ type: "json_object" });
+  });
 });

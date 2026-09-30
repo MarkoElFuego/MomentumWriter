@@ -1,0 +1,117 @@
+[
+  {
+    "name": "ošišana latinica",
+    "input": "Cekao sam je ispred skole, ali nije dosla. Ceo dan sam razmisljao sta da joj kazem.",
+    "expected": "Čekao sam je ispred škole, ali nije došla. Ceo dan sam razmišljao šta da joj kažem."
+  },
+  {
+    "name": "kuci / kuca (imenica)",
+    "input": "Vratio se kuci kasno, a kuca je bila mracna i hladna.",
+    "expected": "Vratio se kući kasno, a kuća je bila mračna i hladna."
+  },
+  {
+    "name": "kuca (glagol) ostaje",
+    "input": "Neko kuca na vrata, pa sam otisao da otvorim.",
+    "expected": "Neko kuca na vrata, pa sam otišao da otvorim."
+  },
+  {
+    "name": "sto / što",
+    "input": "Stavio je casu na sto, sto me je iznenadilo.",
+    "expected": "Stavio je čašu na sto, što me je iznenadilo."
+  },
+  {
+    "name": "sto (broj) ostaje",
+    "input": "Imao je sto dinara u dzepu i nista vise.",
+    "expected": "Imao je sto dinara u džepu i ništa više."
+  },
+  {
+    "name": "cas / čas",
+    "input": "Kasnio sam na cas matematike jer je autobus stao kod mosta.",
+    "expected": "Kasnio sam na čas matematike jer je autobus stao kod mosta."
+  },
+  {
+    "name": "legitimno dj (ne sme u đ)",
+    "input": "Odjednom je podjednako snazno pokusao da nadjaca vetar.",
+    "expected": "Odjednom je podjednako snažno pokušao da nadjača vetar."
+  },
+  {
+    "name": "dj → đ",
+    "input": "Djordje je dosao iz Djakovice sa gradjevinskim alatom.",
+    "expected": "Đorđe je došao iz Đakovice sa građevinskim alatom."
+  },
+  {
+    "name": "padeži",
+    "input": "Razgovarao sam sa mojim bratom o tvoj problem.",
+    "expected": "Razgovarao sam sa mojim bratom o tvom problemu."
+  },
+  {
+    "name": "rod i padež",
+    "input": "Videla sam ga juce kod njegovog kuće.",
+    "expected": "Videla sam ga juče kod njegove kuće."
+  },
+  {
+    "name": "nesam → nisam",
+    "input": "Nesam znao da ces doci tako rano.",
+    "expected": "Nisam znao da ćeš doći tako rano."
+  },
+  {
+    "name": "zarez pre ali",
+    "input": "Rekao sam mu da dodje ali on nije hteo.",
+    "expected": "Rekao sam mu da dođe, ali on nije hteo."
+  },
+  {
+    "name": "delimične kvačice",
+    "input": "Ušao je u sobu i video da je sve razbacano. Na podu su bile carape, knjige i jedna slomljena solja.",
+    "expected": "Ušao je u sobu i video da je sve razbacano. Na podu su bile čarape, knjige i jedna slomljena šolja."
+  },
+  {
+    "name": "uvjek / reć",
+    "input": "Srećem ga svaki dan i uvjek mi kaže istu reć.",
+    "expected": "Srećem ga svaki dan i uvek mi kaže istu reč."
+  },
+  {
+    "name": "dijalog sa žargonom (ne dira se)",
+    "input": "— Brate, to je bilo ludilo, kapiraš? — rekao je Mika. — Ajde, bre, ne smaraj.",
+    "expected": "— Brate, to je bilo ludilo, kapiraš? — rekao je Mika. — Ajde, bre, ne smaraj."
+  },
+  {
+    "name": "dijalog: žargon ostaje, kvačica se dodaje",
+    "input": "— Sta ima, burazeru? Ajmo na pivce — viknuo je Zoki.",
+    "expected": "— Šta ima, burazeru? Ajmo na pivce — viknuo je Zoki."
+  },
+  {
+    "name": "potpuno ispravan pasus",
+    "input": "Jutro je bilo hladno i sivo. Ana je stajala na prozoru i gledala kako se reka polako budi ispod magle.",
+    "expected": "Jutro je bilo hladno i sivo. Ana je stajala na prozoru i gledala kako se reka polako budi ispod magle."
+  },
+  {
+    "name": "ijekavica ispravna (ne sme u ekavicu)",
+    "input": "Dijete je uvijek sjedjelo pored prozora i gledalo kako snijeg pada na rijeku.",
+    "expected": "Dijete je uvijek sjedjelo pored prozora i gledalo kako snijeg pada na rijeku."
+  },
+  {
+    "name": "ijekavica: kvačice da, ekavica ne",
+    "input": "Uvijek je govorio da ce se vratiti, ali nikad nije dosao do mjesta gdje smo se rastali.",
+    "expected": "Uvijek je govorio da će se vratiti, ali nikad nije došao do mjesta gdje smo se rastali."
+  },
+  {
+    "name": "dug pasus (~140 reči)",
+    "input": "Kada je voz konacno stao, Marko je uzeo kofer i izasao na peron. Stanica je bila gotovo prazna, samo je jedan starac sedeo na klupi i hranio golubove mrvicama hleba. Vazduh je mirisao na kisu i ugalj. Marko je dugo stajao i gledao u sat iznad ulaza, kao da ceka da mu neko kaze sta dalje. Nije bio ovde dvadeset godina. Sve je izgledalo manje nego sto je pamtio: zgrada, drvece, cak i nebo. Krenuo je prema gradu sporim korakom, osluskujuci svoje korake na kaldrmi. Na uglu je i dalje stajala ona pekara u kojoj je kao dete kupovao kifle, ali je sada imala novi natpis i staklena vrata. Zastao je, oklevao, pa ipak usao. Iza pulta je stajala zena koja nije prepoznao, a ona je njega pogledala kao da ga poznaje oduvek.",
+    "expected": "Kada je voz konačno stao, Marko je uzeo kofer i izašao na peron. Stanica je bila gotovo prazna, samo je jedan starac sedeo na klupi i hranio golubove mrvicama hleba. Vazduh je mirisao na kišu i ugalj. Marko je dugo stajao i gledao u sat iznad ulaza, kao da čeka da mu neko kaže šta dalje. Nije bio ovde dvadeset godina. Sve je izgledalo manje nego što je pamtio: zgrada, drveće, čak i nebo. Krenuo je prema gradu sporim korakom, osluškujući svoje korake na kaldrmi. Na uglu je i dalje stajala ona pekara u kojoj je kao dete kupovao kifle, ali je sada imala novi natpis i staklena vrata. Zastao je, oklevao, pa ipak ušao. Iza pulta je stajala žena koju nije prepoznao, a ona je njega pogledala kao da ga poznaje oduvek."
+  },
+  {
+    "name": "stilsko ponavljanje (ne dira se)",
+    "input": "Tiho, tiho je padao sneg. I padao je, i padao, kao da nikad neće stati.",
+    "expected": "Tiho, tiho je padao sneg. I padao je, i padao, kao da nikad neće stati."
+  },
+  {
+    "name": "strane reči i imena",
+    "input": "Poslao mi je mejl sa laptopa, a onda otisao na koncert Radiohead-a u Beogradu.",
+    "expected": "Poslao mi je mejl sa laptopa, a onda otišao na koncert Radiohead-a u Beogradu."
+  },
+  {
+    "name": "govor u dijalogu (ne dira se)",
+    "input": "— Ma, š'a ćeš, brate. Nema tu pomoći — rekao je deda.",
+    "expected": "— Ma, š'a ćeš, brate. Nema tu pomoći — rekao je deda."
+  }
+]

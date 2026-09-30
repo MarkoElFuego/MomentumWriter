@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eval:proofread": "tsx scripts/eval-proofread.ts"
   },
   "dependencies": {
     "@tiptap/extension-placeholder": "^3.31.3",
@@ -33,6 +34,7 @@
     "eslint-config-next": "15",
     "fake-indexeddb": "^6.2.5",
     "tailwindcss": "4",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^5.0.2"
   }
