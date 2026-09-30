@@ -79,6 +79,24 @@
   color: var(--ink);
 }
 
+/* Prelom scene (*** u praznom redu) — simbol dolazi iz tipografije jezika. */
+.scene-break {
+  margin: 2em 0;
+  text-align: center;
+  color: var(--muted);
+  letter-spacing: 0.5em;
+  user-select: none;
+}
+
+.scene-break::before {
+  content: attr(data-symbol);
+}
+
+.scene-break.ProseMirror-selectednode {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+
 /* Sivi predlog posle kursora — samo prikaz, nije deo teksta. */
 .ghost-text {
   color: var(--muted);

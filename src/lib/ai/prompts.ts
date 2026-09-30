@@ -94,15 +94,14 @@ export function buildSystemPrompt(mode: SparkMode, language?: Language): string 
 export interface SparkContext {
   bookTitle: string;
   chapterTitle: string;
-  sceneTitle: string;
   context: string;
 }
 
 export function buildUserMessage(
   mode: SparkMode,
-  { bookTitle, chapterTitle, sceneTitle, context }: SparkContext,
+  { bookTitle, chapterTitle, context }: SparkContext,
 ): string {
-  const message = `Knjiga: ${bookTitle}\nPoglavlje: ${chapterTitle}\nScena: ${sceneTitle}\n\n---TEKST---\n${context}`;
+  const message = `Knjiga: ${bookTitle}\nPoglavlje: ${chapterTitle}\n\n---TEKST---\n${context}`;
   if (mode !== "push" && mode !== "ghost") return message;
   // Spelled out so the model finishes the author's thought instead of guessing where it stands.
   const cursor = endsMidSentence(context)

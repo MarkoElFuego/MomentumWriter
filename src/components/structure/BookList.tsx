@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { copy } from "@/lib/copy";
-import { createBook, firstSceneId, listBooks } from "@/lib/db/books";
+import { createBook, firstPartId, listBooks } from "@/lib/db/books";
 import type { Book, ID } from "@/lib/db/schema";
 
 export function BookList() {
@@ -22,15 +22,15 @@ export function BookList() {
   }, []);
 
   const open = async (bookId: ID) => {
-    const sceneId = await firstSceneId(bookId);
-    if (sceneId) router.push(`/write/${sceneId}`);
+    const partId = await firstPartId(bookId);
+    if (partId) router.push(`/write/${partId}`);
   };
 
   const create = async () => {
     setBusy(true);
     try {
-      const { scene } = await createBook();
-      router.push(`/write/${scene.id}`);
+      const { part } = await createBook();
+      router.push(`/write/${part.id}`);
     } catch (error) {
       console.error("Failed to create book", error);
       setFailed(true);

@@ -8,9 +8,11 @@ interface InlineEditProps {
   onSave: (value: string) => void;
   onCancel: () => void;
   className?: string;
+  /** Chapters may drop their name and fall back to the bare number. */
+  allowEmpty?: boolean;
 }
 
-export function InlineEdit({ value, onSave, onCancel, className }: InlineEditProps) {
+export function InlineEdit({ value, onSave, onCancel, className, allowEmpty = false }: InlineEditProps) {
   const [draft, setDraft] = useState(value);
   // Enter and the blur that follows unmounting must not both commit.
   const done = useRef(false);
@@ -19,7 +21,7 @@ export function InlineEdit({ value, onSave, onCancel, className }: InlineEditPro
     if (done.current) return;
     done.current = true;
     const title = draft.trim();
-    if (commit && title && title !== value) onSave(title);
+    if (commit && (title || allowEmpty) && title !== value) onSave(title);
     else onCancel();
   };
 

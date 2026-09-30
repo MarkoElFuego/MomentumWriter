@@ -34,11 +34,21 @@ export const copy = {
   structure: {
     panelLabel: "Struktura knjige",
     defaultBookTitle: "Nova knjiga",
-    chapterTitle: (n: number) => `Poglavlje ${toRoman(n)}`,
-    sceneTitle: (n: number) => `Scena ${n}`,
-    addChapter: "+ Poglavlje",
-    addScene: "+ Scena",
-    renameHint: "Dupli klik ili F2 za preimenovanje",
+    // Chapters number themselves; the optional name follows the number.
+    chapterHeading: (n: number, title: string) =>
+      title ? `Poglavlje ${toRoman(n)} · ${title}` : `Poglavlje ${toRoman(n)}`,
+    chapterLabel: (n: number, title: string) => (title ? `${toRoman(n)} · ${title}` : toRoman(n)),
+    untitledPart: "Bez naslova",
+    frontMatter: "Uvodni delovi",
+    chapters: "Poglavlja",
+    backMatter: "Završni delovi",
+    addChapter: "+ Novo poglavlje",
+    addPart: "+ Dodaj deo",
+    partPresets: {
+      front: ["Naslovna", "Posveta", "Predgovor"],
+      back: ["Epilog", "Zahvalnica", "Beleška o autoru"],
+    },
+    renameHint: "Dupli klik ili F2 za preimenovanje · prevuci ili Alt+↑/↓ za redosled",
     renameLabel: "Novi naziv",
     close: "Zatvori",
   },

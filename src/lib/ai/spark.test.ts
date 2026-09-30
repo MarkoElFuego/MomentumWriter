@@ -8,7 +8,6 @@ const request: SparkRequest = {
   context: "Petar je stajao na pragu i gledao u mračno dvorište.",
   bookTitle: "Kiša",
   chapterTitle: "Poglavlje I",
-  sceneTitle: "Scena 1",
 };
 
 const good = JSON.stringify({ question: "Šta ako Petar ne sme da uđe u kuću?" });

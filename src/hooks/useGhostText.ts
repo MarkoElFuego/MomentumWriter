@@ -18,7 +18,6 @@ interface Titles {
   bookTitle: string;
   language: Language;
   chapterTitle: string;
-  sceneTitle: string;
 }
 
 /**

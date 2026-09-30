@@ -9,10 +9,9 @@ import { StructurePanel } from "@/components/structure/StructurePanel";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useGhostText } from "@/hooks/useGhostText";
 import { copy } from "@/lib/copy";
-import { getChapter } from "@/lib/db/chapters";
+import { chapterNumber, getPart, listParts, partHeading, savePart } from "@/lib/db/parts";
 import type { ID } from "@/lib/db/schema";
-import { saveScene } from "@/lib/db/scenes";
-import { openScene, type OpenedScene } from "@/lib/db/session";
+import { openPart, type OpenedPart } from "@/lib/db/session";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
 import { extractContext } from "@/lib/text/extractContext";
@@ -22,7 +21,7 @@ import { Editor } from "./Editor";
 import { EditorFooter } from "./EditorFooter";
 import { EditorHeader } from "./EditorHeader";
 
-// Panel open/closed survives scene switches (the page remounts on each one).
+// Panel open/closed survives part switches (the page remounts on each one).
 const PANEL_KEY = "momentum:structureOpen";
 
 function readPanelOpen(): boolean {
@@ -72,12 +71,12 @@ type LoadState =
   | { kind: "loading" }
   | { kind: "missing" }
   | { kind: "failed" }
-  | { kind: "ready"; data: OpenedScene };
+  | { kind: "ready"; data: OpenedPart };
 
-export function WriteScreen({ sceneId }: { sceneId: ID }) {
+export function WriteScreen({ partId }: { partId: ID }) {
   const router = useRouter();
   const [state, setState] = useState<LoadState>({ kind: "loading" });
-  const [chapterTitle, setChapterTitle] = useState("");
+  const [heading, setHeading] = useState("");
   const [wordCount, setWordCount] = useState(0);
   const [panel, setPanel] = useState<{ open: boolean; autoFocus: boolean }>({
     open: false,
@@ -107,33 +106,32 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
         ? {
             bookTitle: ready.book.title,
             language: ready.book.language,
-            chapterTitle,
-            sceneTitle: ready.scene.title,
+            chapterTitle: heading,
           }
         : null,
-    [ready, chapterTitle],
+    [ready, heading],
   );
   useGhostText(editor, ghostEnabled && spark === null, titles);
 
   useEffect(() => {
     let cancelled = false;
-    openScene(sceneId, localDateKey())
+    openPart(partId, localDateKey())
       .then((data) => {
         if (cancelled) return;
         if (!data) return setState({ kind: "missing" });
         setState({ kind: "ready", data });
-        setChapterTitle(data.chapter.title);
-        setWordCount(data.scene.wordCount);
+        setHeading(partHeading(data.part, data.chapterNumber));
+        setWordCount(data.part.wordCount);
       })
       .catch((error) => {
-        console.error("Failed to open scene", error);
+        console.error("Failed to open part", error);
         if (!cancelled) setState({ kind: "failed" });
       });
     if (readPanelOpen()) setPanel({ open: true, autoFocus: false });
     return () => {
       cancelled = true;
     };
-  }, [sceneId]);
+  }, [partId]);
 
   const save = useCallback(async () => {
     if (!latest.current) return;
@@ -143,14 +141,14 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
       pos: editor.state.selection.from,
       lastSentence: lastSentence(editor.state.doc.textBetween(0, editor.state.selection.from, "\n\n")),
     };
-    await saveScene(
-      sceneId,
+    await savePart(
+      partId,
       latest.current.content,
       latest.current.wordCount,
       localDateKey(),
       cursor ?? undefined,
     );
-  }, [sceneId]);
+  }, [partId]);
 
   const { status, schedule, flush } = useAutosave(save);
 
@@ -248,9 +246,10 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
 
   const refreshTitles = useCallback(async () => {
     if (state.kind !== "ready") return;
-    const chapter = await getChapter(state.data.chapter.id);
-    if (chapter) setChapterTitle(chapter.title);
-  }, [state]);
+    // Renames and reordering can both change the heading ("Poglavlje III" → "II").
+    const [part, parts] = await Promise.all([getPart(partId), listParts(state.data.book.id)]);
+    if (part) setHeading(partHeading(part, chapterNumber(parts, part.id)));
+  }, [state, partId]);
 
   if (state.kind === "loading") return <div className="h-dvh" />;
 
@@ -266,14 +265,14 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
   }
 
   const { data } = state;
-  const wordsToday = wordsDelta(data.startWordTotal, data.otherScenesTotal + wordCount);
+  const wordsToday = wordsDelta(data.startWordTotal, data.otherPartsTotal + wordCount);
 
   return (
     <div className="flex h-dvh">
       {panel.open && (
         <StructurePanel
           bookId={data.book.id}
-          currentSceneId={sceneId}
+          currentPartId={partId}
           autoFocus={panel.autoFocus}
           onNavigate={(id) => void navigate(id)}
           onClose={() => setPanelOpen(false, false)}
@@ -282,7 +281,7 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
       )}
       <div className="relative flex min-w-0 flex-1 flex-col">
         <EditorHeader
-          chapterTitle={chapterTitle}
+          chapterTitle={heading}
           saveStatus={status}
           onToggleStructure={togglePanel}
           ghostEnabled={ghostEnabled}
@@ -291,7 +290,8 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
         <main className="flex-1 overflow-y-auto px-6">
           <div className="mx-auto max-w-[66ch] py-16">
             <Editor
-              initialContent={data.scene.content}
+              initialContent={data.part.content}
+              language={data.book.language}
               onChange={handleChange}
               onReady={(instance) => {
                 editorRef.current = instance;
@@ -307,8 +307,7 @@ export function WriteScreen({ sceneId }: { sceneId: ID }) {
             onInsert={insertStarter}
             bookTitle={data.book.title}
             language={data.book.language}
-            chapterTitle={chapterTitle}
-            sceneTitle={data.scene.title}
+            chapterTitle={heading}
             onClose={closeSpark}
           />
         )}

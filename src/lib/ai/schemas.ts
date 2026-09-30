@@ -6,8 +6,8 @@ export const SparkRequestSchema = z.object({
   mode: z.enum(SPARK_MODES),
   context: z.string().trim().min(1).max(20_000),
   bookTitle: z.string().max(200),
+  /** Heading of the open part: "Poglavlje IV · Dolazak", "Posveta"… */
   chapterTitle: z.string().max(200),
-  sceneTitle: z.string().max(200),
   /** Book language; older clients omit it → DEFAULT_LANGUAGE. */
   language: z.enum(LANGUAGES).optional(),
 });

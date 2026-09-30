@@ -45,7 +45,6 @@ interface SparkPaletteProps {
   bookTitle: string;
   language: Language;
   chapterTitle: string;
-  sceneTitle: string;
   /** Push only: the author picked a starter; the palette closes afterwards. */
   onInsert: (starter: string) => void;
   onClose: () => void;
@@ -57,7 +56,6 @@ export function SparkPalette({
   bookTitle,
   language,
   chapterTitle,
-  sceneTitle,
   onInsert,
   onClose,
 }: SparkPaletteProps) {
@@ -76,7 +74,7 @@ export function SparkPalette({
       request.current = controller;
       setView({ kind: "loading", tool });
 
-      const body = { mode: tool, context, bookTitle, chapterTitle, sceneTitle, language };
+      const body = { mode: tool, context, bookTitle, chapterTitle, language };
       const result = await requestSpark(body, controller.signal);
       if (controller.signal.aborted) return;
       setView(
@@ -85,7 +83,7 @@ export function SparkPalette({
           : { kind: "error", tool, error: result.error },
       );
     },
-    [context, bookTitle, chapterTitle, sceneTitle, language],
+    [context, bookTitle, chapterTitle, language],
   );
 
   // Drop any in-flight request when the palette closes.

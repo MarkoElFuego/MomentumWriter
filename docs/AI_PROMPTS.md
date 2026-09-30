@@ -154,7 +154,7 @@ Pre parsiranja: skini ```json ograde ako postoje.
 - `model: process.env.AI_MODEL`
 - `max_completion_tokens: 1200` — gpt-6-luna je model koji „razmišlja”, a skriveno razmišljanje se računa u limit; vidljiv odgovor i dalje drži šema
 - parametri se grade samo preko `buildRequestParams` (`src/lib/ai/requestParams.ts`): `temperature`/`top_p` idu **samo** uz `reasoning_effort: "none"`, inače gpt-6-luna vraća 400. Trenutno se `temperature` nigde ne šalje.
-- Korisnička poruka: `Knjiga: {bookTitle}\nPoglavlje: {chapterTitle}\nScena: {sceneTitle}\n\n---TEKST---\n{context}`
+- Korisnička poruka: `Knjiga: {bookTitle}\nPoglavlje: {chapterTitle}\n\n---TEKST---\n{context}`
 
 ## Testni slučajevi (Vitest, `schemas.test.ts` + `guardrail.test.ts`)
 

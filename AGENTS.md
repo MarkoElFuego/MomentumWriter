@@ -50,13 +50,13 @@ Pre nego što kažeš da je zadatak gotov: `pnpm typecheck && pnpm lint && pnpm 
 src/
   app/
     page.tsx                 # biblioteka knjiga / ulaz
-    write/[sceneId]/page.tsx # editor
+    write/[partId]/page.tsx  # editor (jedan deo knjige)
     resume/page.tsx          # Resume ekran
     api/spark/route.ts       # jedini AI endpoint
   components/
     editor/                  # TipTap editor, footer, brojač
     spark/                   # Spark paleta (Ctrl+/) i kartice odgovora
-    structure/               # Book → Chapter → Scene navigacija
+    structure/               # sadržaj knjige: uvodni delovi / poglavlja / završni delovi
     resume/
   lib/
     db/                      # Dexie šema, migracije, repo funkcije

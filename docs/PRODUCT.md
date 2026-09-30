@@ -65,7 +65,7 @@ Klik → editor, kursor tačno gde si stao.
 
 ## Roadmap
 
-- **v0.1** — editor, Book→Chapter→Scene, sivi tekst + Spark paleta, lokalno čuvanje + autosave
+- **v0.1** — editor, Book→Chapter→Scene (u v0.2 zamenjeno poglavljima), sivi tekst + Spark paleta, lokalno čuvanje + autosave
 - **v0.2** — vidi `docs/ZADATAK_v0.2.md`: priprema za više jezika, poglavlja umesto scena, fusnote, provera jezika, sinonimi, vizuelne teme; zatim Resume i polish
 - **kasnije** — `[[likovi]]`, stranice + kalendar, export u DOCX
 - **v0.3** — nalozi (Supabase), sync, email „nezavršena rečenica” + nedeljni pregled narativa, magic link

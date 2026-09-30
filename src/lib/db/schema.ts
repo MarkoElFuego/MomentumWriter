@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable, type Table } from "dexie";
 import type { JSONContent } from "@tiptap/react";
 import { DEFAULT_LANGUAGE, type Language } from "@/lib/languages";
+import { upgradeToParts } from "./migrations";
 
 export type ID = string;
 
@@ -13,20 +14,16 @@ export interface Book {
   updatedAt: number;
 }
 
-export interface Chapter {
-  id: ID;
-  bookId: ID;
-  title: string;
-  order: number;
-  createdAt: number;
-  updatedAt: number;
-}
+/** Front matter, a numbered chapter, or back matter — each is one document. */
+export type PartKind = "front" | "chapter" | "back";
 
-export interface Scene {
+export interface Part {
   id: ID;
-  chapterId: ID;
   bookId: ID;
+  kind: PartKind;
+  /** Chapters are numbered automatically; the title is an optional name ("" = none). */
   title: string;
+  /** Order within its kind; the kinds always come front → chapter → back. */
   order: number;
   content: JSONContent;
   wordCount: number;
@@ -43,7 +40,7 @@ export interface DailyStat {
 
 export interface ResumeState {
   bookId: ID;
-  sceneId: ID;
+  partId: ID;
   cursorPos: number;
   lastSentence: string;
   lastWrittenAt: number;
@@ -56,8 +53,7 @@ export const ORDER_STEP = 1000;
 
 export class MomentumDB extends Dexie {
   books!: EntityTable<Book, "id">;
-  chapters!: EntityTable<Chapter, "id">;
-  scenes!: EntityTable<Scene, "id">;
+  parts!: EntityTable<Part, "id">;
   dailyStats!: Table<DailyStat, [string, ID]>;
   resumeState!: EntityTable<ResumeState, "bookId">;
 
@@ -82,6 +78,11 @@ export class MomentumDB extends Dexie {
             book.language ??= DEFAULT_LANGUAGE;
           }),
       );
+    // v3: each chapter's scenes merge into one Part; chapters/scenes are dropped
+    // after the upgrade has copied them.
+    this.version(3)
+      .stores({ parts: "id, bookId", chapters: null, scenes: null })
+      .upgrade(upgradeToParts);
   }
 }
 

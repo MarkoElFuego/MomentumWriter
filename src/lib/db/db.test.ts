@@ -1,12 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Dexie from "dexie";
-import { bookWordTotal, createBook, firstSceneId, getBook, listBooks, renameBook } from "./books";
-import { createChapter, listChapters, renameChapter } from "./chapters";
+import { bookWordTotal, createBook, firstPartId, getBook, listBooks, renameBook } from "./books";
 import { getDailyStat } from "./dailyStats";
+import { mergeScenes, type LegacyScene } from "./migrations";
+import {
+  chapterNumber,
+  createPart,
+  getPart,
+  listParts,
+  partHeading,
+  renamePart,
+  reorderParts,
+  savePart,
+} from "./parts";
 import { getResumeState } from "./resume";
 import { db } from "./schema";
-import { createScene, getScene, listScenes, listScenesByBook, renameScene, saveScene } from "./scenes";
-import { openScene } from "./session";
+import { openPart } from "./session";
 
 const doc = (text: string) => ({
   type: "doc",
@@ -22,13 +31,12 @@ beforeEach(async () => {
 });
 
 describe("books", () => {
-  it("creates a book with Poglavlje I and Scena 1", async () => {
-    const { book, chapter, scene } = await createBook();
+  it("creates a book that opens into Poglavlje I", async () => {
+    const { book, part } = await createBook();
     expect(book.title).toBe("Nova knjiga");
-    expect(chapter.title).toBe("Poglavlje I");
-    expect(scene.title).toBe("Scena 1");
-    expect(scene.bookId).toBe(book.id);
-    expect(await firstSceneId(book.id)).toBe(scene.id);
+    expect(part).toMatchObject({ bookId: book.id, kind: "chapter", title: "" });
+    expect(await firstPartId(book.id)).toBe(part.id);
+    expect(partHeading(part, 1)).toBe("Poglavlje I");
   });
 
   it("lists books by most recently updated", async () => {
@@ -38,101 +46,105 @@ describe("books", () => {
     const titles = (await listBooks()).map((b) => b.title);
     expect(titles).toEqual(["A2", "B"]);
   });
+
+  it("gives new books the default language", async () => {
+    const { book } = await createBook();
+    expect((await getBook(book.id))!.language).toBe("sr-Latn");
+  });
 });
 
-describe("chapters and scenes", () => {
-  it("appends chapters with roman titles, each with its own first scene", async () => {
-    const { book } = await createBook();
-    const { chapter, scene } = await createChapter(book.id);
-    expect(chapter.title).toBe("Poglavlje II");
-    expect(scene.chapterId).toBe(chapter.id);
+describe("parts", () => {
+  it("keeps front matter, chapters and back matter in book order", async () => {
+    const { book, part: first } = await createBook();
+    const epilogue = await createPart(book.id, "back", "Epilog");
+    const second = await createPart(book.id, "chapter");
+    const dedication = await createPart(book.id, "front", "Posveta");
 
-    const chapters = await listChapters(book.id);
-    expect(chapters.map((c) => c.title)).toEqual(["Poglavlje I", "Poglavlje II"]);
-    expect(chapters[1]!.order).toBeGreaterThan(chapters[0]!.order);
+    const parts = await listParts(book.id);
+    expect(parts.map((p) => p.id)).toEqual([dedication.id, first.id, second.id, epilogue.id]);
+    expect(chapterNumber(parts, second.id)).toBe(2);
+    expect(chapterNumber(parts, dedication.id)).toBeUndefined();
+    expect(await firstPartId(book.id)).toBe(first.id);
   });
 
-  it("appends scenes in order and renames them", async () => {
-    const { chapter } = await createBook();
-    const s2 = await createScene(chapter.id);
-    await createScene(chapter.id);
-    await renameScene(s2.id, "Na stanici");
-    await renameChapter(chapter.id, "Dolazak");
-
-    const titles = (await listScenes(chapter.id)).map((s) => s.title);
-    expect(titles).toEqual(["Scena 1", "Na stanici", "Scena 3"]);
-    expect((await listChapters(chapter.bookId))[0]!.title).toBe("Dolazak");
+  it("names chapters by number, with an optional title", async () => {
+    const { book, part } = await createBook();
+    await renamePart(part.id, "Dolazak");
+    const renamed = (await getPart(part.id))!;
+    expect(partHeading(renamed, 1)).toBe("Poglavlje I · Dolazak");
+    const posveta = await createPart(book.id, "front", "Posveta");
+    expect(partHeading(posveta, undefined)).toBe("Posveta");
   });
 
-  it("builds a 2 × 3 book", async () => {
-    const { book, chapter } = await createBook();
-    await createScene(chapter.id);
-    await createScene(chapter.id);
-    const second = await createChapter(book.id);
-    await createScene(second.chapter.id);
-    await createScene(second.chapter.id);
-    expect(await listScenesByBook(book.id)).toHaveLength(6);
+  it("renumbers chapters after reordering", async () => {
+    const { book, part: a } = await createBook();
+    const b = await createPart(book.id, "chapter");
+    const c = await createPart(book.id, "chapter");
+    await reorderParts([c.id, a.id, b.id]);
+
+    const parts = await listParts(book.id);
+    expect(parts.map((p) => p.id)).toEqual([c.id, a.id, b.id]);
+    expect(chapterNumber(parts, a.id)).toBe(2);
   });
 });
 
 describe("saving and words today", () => {
   it("persists content and word count", async () => {
-    const { scene } = await createBook();
-    await saveScene(scene.id, doc("Petar je zastao."), 3, "2026-09-25");
-    const saved = await getScene(scene.id);
+    const { part } = await createBook();
+    await savePart(part.id, doc("Petar je zastao."), 3, "2026-09-25");
+    const saved = await getPart(part.id);
     expect(saved!.content).toEqual(doc("Petar je zastao."));
     expect(saved!.wordCount).toBe(3);
   });
 
   it("fixes startWordTotal on first open of the day and keeps it on reopen", async () => {
-    const { book, scene } = await createBook();
-    await openScene(scene.id, "2026-09-25");
-    await saveScene(scene.id, doc("x"), 10, "2026-09-25");
+    const { book, part } = await createBook();
+    await openPart(part.id, "2026-09-25");
+    await savePart(part.id, doc("x"), 10, "2026-09-25");
 
-    const reopened = await openScene(scene.id, "2026-09-25");
+    const reopened = await openPart(part.id, "2026-09-25");
     expect(reopened!.startWordTotal).toBe(0);
     const stat = await getDailyStat(book.id, "2026-09-25");
     expect(stat!.endWordTotal).toBe(10);
   });
 
   it("starts the next day from the previous total", async () => {
-    const { scene } = await createBook();
-    await saveScene(scene.id, doc("x"), 10, "2026-09-25");
+    const { part } = await createBook();
+    await savePart(part.id, doc("x"), 10, "2026-09-25");
 
-    const tomorrow = await openScene(scene.id, "2026-09-26");
+    const tomorrow = await openPart(part.id, "2026-09-26");
     expect(tomorrow!.startWordTotal).toBe(10);
   });
 
   it("uses the pre-save total when the day rolls over mid-session", async () => {
-    const { book, scene } = await createBook();
-    await saveScene(scene.id, doc("x"), 10, "2026-09-25");
-    await saveScene(scene.id, doc("x"), 14, "2026-09-26");
+    const { book, part } = await createBook();
+    await savePart(part.id, doc("x"), 10, "2026-09-25");
+    await savePart(part.id, doc("x"), 14, "2026-09-26");
 
     const stat = await getDailyStat(book.id, "2026-09-26");
     expect(stat).toMatchObject({ startWordTotal: 10, endWordTotal: 14 });
   });
 
-  it("sums words across scenes and reports the rest of the book", async () => {
-    const { book, chapter, scene } = await createBook();
-    const other = await createScene(chapter.id);
-    await saveScene(scene.id, doc("x"), 5, "2026-09-25");
-    await saveScene(other.id, doc("x"), 7, "2026-09-25");
+  it("sums words across parts and reports the rest of the book", async () => {
+    const { book, part } = await createBook();
+    const other = await createPart(book.id, "chapter");
+    await savePart(part.id, doc("x"), 5, "2026-09-25");
+    await savePart(other.id, doc("x"), 7, "2026-09-25");
 
     expect(await bookWordTotal(book.id)).toBe(12);
-    const opened = await openScene(scene.id, "2026-09-25");
-    expect(opened!.otherScenesTotal).toBe(7);
-    expect((await getBook(book.id))!.updatedAt).toBeGreaterThan(0);
+    const opened = await openPart(other.id, "2026-09-25");
+    expect(opened).toMatchObject({ otherPartsTotal: 5, chapterNumber: 2 });
   });
 
-  it("returns undefined for a missing scene", async () => {
-    expect(await openScene("missing", "2026-09-25")).toBeUndefined();
+  it("returns undefined for a missing part", async () => {
+    expect(await openPart("missing", "2026-09-25")).toBeUndefined();
   });
 });
 
 describe("resume state", () => {
-  it("records scene, cursor, last sentence and time on save", async () => {
-    const { book, scene } = await createBook();
-    await saveScene(scene.id, doc("Petar je zastao."), 3, "2026-09-25", {
+  it("records part, cursor, last sentence and time on save", async () => {
+    const { book, part } = await createBook();
+    await savePart(part.id, doc("Petar je zastao."), 3, "2026-09-25", {
       pos: 17,
       lastSentence: "Petar je zastao.",
     });
@@ -140,25 +152,25 @@ describe("resume state", () => {
     const state = await getResumeState(book.id);
     expect(state).toMatchObject({
       bookId: book.id,
-      sceneId: scene.id,
+      partId: part.id,
       cursorPos: 17,
       lastSentence: "Petar je zastao.",
     });
-    expect(state!.lastWrittenAt).toBe((await getScene(scene.id))!.updatedAt);
+    expect(state!.lastWrittenAt).toBe((await getPart(part.id))!.updatedAt);
   });
 
   it("moves the resume point on later saves but keeps the cached open question", async () => {
-    const { book, chapter, scene } = await createBook();
-    await saveScene(scene.id, doc("x"), 1, "2026-09-25", { pos: 2, lastSentence: "x" });
+    const { book, part } = await createBook();
+    await savePart(part.id, doc("x"), 1, "2026-09-25", { pos: 2, lastSentence: "x" });
     await db.resumeState.update(book.id, { openQuestion: "Ko je na vratima?", openQuestionFor: "abc" });
     const first = (await getResumeState(book.id))!.lastWrittenAt;
 
-    const other = await createScene(chapter.id);
-    await saveScene(other.id, doc("y z"), 2, "2026-09-25", { pos: 4, lastSentence: "y z" });
+    const other = await createPart(book.id, "chapter");
+    await savePart(other.id, doc("y z"), 2, "2026-09-25", { pos: 4, lastSentence: "y z" });
 
     const state = await getResumeState(book.id);
     expect(state).toMatchObject({
-      sceneId: other.id,
+      partId: other.id,
       cursorPos: 4,
       lastSentence: "y z",
       openQuestion: "Ko je na vratima?",
@@ -168,38 +180,121 @@ describe("resume state", () => {
   });
 
   it("leaves the resume point alone when saving without a cursor", async () => {
-    const { book, scene } = await createBook();
-    await saveScene(scene.id, doc("x"), 1, "2026-09-25");
+    const { book, part } = await createBook();
+    await savePart(part.id, doc("x"), 1, "2026-09-25");
     expect(await getResumeState(book.id)).toBeUndefined();
   });
 });
 
+describe("mergeScenes", () => {
+  const scene = (order: number, title: string, text: string, words: number): LegacyScene => ({
+    id: `s${order}`,
+    chapterId: "c",
+    bookId: "b",
+    title,
+    order,
+    content: text ? doc(text) : { type: "doc", content: [{ type: "paragraph" }] },
+    wordCount: words,
+    createdAt: 1,
+    updatedAt: 1,
+  });
+
+  it("joins scenes with breaks, keeps real titles in italics and drops empty scenes", () => {
+    const { content, wordCount } = mergeScenes([
+      scene(1, "Scena 1", "Prva.", 1),
+      scene(2, "Scena 2", "", 0),
+      scene(3, "Na stanici", "Druga scena.", 2),
+    ]);
+    expect(content.content).toEqual([
+      doc("Prva.").content[0],
+      { type: "sceneBreak" },
+      { type: "paragraph", content: [{ type: "text", text: "Na stanici", marks: [{ type: "italic" }] }] },
+      doc("Druga scena.").content[0],
+    ]);
+    expect(wordCount).toBe(1 + 2 + 2);
+  });
+
+  it("gives a chapter of only empty scenes an empty document", () => {
+    expect(mergeScenes([scene(1, "Scena 1", "", 0)]).content).toEqual({
+      type: "doc",
+      content: [{ type: "paragraph" }],
+    });
+  });
+});
+
 describe("migrations", () => {
-  it("v1 → v2 gives old books a language and keeps their text", async () => {
+  const V1_STORES = {
+    books: "id, updatedAt",
+    chapters: "id, bookId, [bookId+order]",
+    scenes: "id, chapterId, bookId, [chapterId+order], updatedAt",
+    dailyStats: "[date+bookId], bookId",
+    resumeState: "bookId",
+  };
+
+  async function seedV1(seed: (v1: Dexie) => Promise<void>) {
     db.close();
     await Dexie.delete("momentum");
     const v1 = new Dexie("momentum");
-    v1.version(1).stores({
-      books: "id, updatedAt",
-      chapters: "id, bookId, [bookId+order]",
-      scenes: "id, chapterId, bookId, [chapterId+order], updatedAt",
-      dailyStats: "[date+bookId], bookId",
-      resumeState: "bookId",
-    });
-    await v1.table("books").add({ id: "b1", title: "Stara", createdAt: 1, updatedAt: 1 });
-    await v1.table("scenes").add({
-      id: "s1", chapterId: "c1", bookId: "b1", title: "Scena 1", order: 1000,
-      content: doc("Petar je zastao."), wordCount: 3, createdAt: 1, updatedAt: 1,
-    });
+    v1.version(1).stores(V1_STORES);
+    await seed(v1);
     v1.close();
-
     await db.open();
-    expect(await getBook("b1")).toMatchObject({ title: "Stara", language: "sr-Latn" });
-    expect((await getScene("s1"))!.content).toEqual(doc("Petar je zastao."));
+  }
+
+  const legacyScene = (id: string, chapterId: string, order: number, title: string, text: string) => ({
+    id,
+    chapterId,
+    bookId: "b1",
+    title,
+    order,
+    content: doc(text),
+    wordCount: text.split(" ").length,
+    createdAt: 1,
+    updatedAt: 1,
   });
 
-  it("new books get the default language", async () => {
-    const { book } = await createBook();
-    expect((await getBook(book.id))!.language).toBe("sr-Latn");
+  it("v1 → v3: 2 chapters × 3 scenes keep all text in order", async () => {
+    await seedV1(async (v1) => {
+      await v1.table("books").add({ id: "b1", title: "Stara", createdAt: 1, updatedAt: 1 });
+      await v1.table("chapters").bulkAdd([
+        { id: "c2", bookId: "b1", title: "Dolazak", order: 2000, createdAt: 1, updatedAt: 1 },
+        { id: "c1", bookId: "b1", title: "Poglavlje I", order: 1000, createdAt: 1, updatedAt: 1 },
+      ]);
+      // Added out of order on purpose: the merge must follow `order`.
+      await v1.table("scenes").bulkAdd([
+        legacyScene("s3", "c1", 3000, "Scena 3", "Treća scena."),
+        legacyScene("s1", "c1", 1000, "Scena 1", "Prva scena."),
+        legacyScene("s2", "c1", 2000, "Noć", "Druga scena."),
+        legacyScene("s4", "c2", 1000, "Scena 1", "Četvrta."),
+        legacyScene("s5", "c2", 2000, "Scena 2", "Peta."),
+        legacyScene("s6", "c2", 3000, "Scena 3", "Šesta."),
+      ]);
+      await v1.table("resumeState").add({
+        bookId: "b1",
+        sceneId: "s5",
+        cursorPos: 42,
+        lastSentence: "Peta.",
+        lastWrittenAt: 5,
+      });
+    });
+
+    const [c1, c2] = await listParts("b1");
+    expect(c1).toMatchObject({ id: "c1", kind: "chapter", title: "" });
+    expect(c2).toMatchObject({ id: "c2", kind: "chapter", title: "Dolazak" });
+
+    const lines = (content: typeof c1) =>
+      content!.content.content!.map((node) =>
+        node.type === "sceneBreak" ? "***" : node.content?.[0]?.text,
+      );
+    expect(lines(c1)).toEqual(["Prva scena.", "***", "Noć", "Druga scena.", "***", "Treća scena."]);
+    expect(lines(c2)).toEqual(["Četvrta.", "***", "Peta.", "***", "Šesta."]);
+    expect(c1!.wordCount).toBe(2 + 1 + 2 + 2);
+    expect(await bookWordTotal("b1")).toBe(7 + 3);
+
+    expect(await getBook("b1")).toMatchObject({ title: "Stara", language: "sr-Latn" });
+    const resume = await getResumeState("b1");
+    expect(resume).toMatchObject({ partId: "c2", cursorPos: 0, lastSentence: "Peta." });
+    expect(resume).not.toHaveProperty("sceneId");
+    expect(db.tables.map((t) => t.name).sort()).toEqual(["books", "dailyStats", "parts", "resumeState"]);
   });
 });

@@ -4,6 +4,8 @@ import { EditorContent, useEditor, type Editor as TiptapEditor, type JSONContent
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { copy } from "@/lib/copy";
+import { getLanguage, type Language } from "@/lib/languages";
+import { SceneBreak } from "./sceneBreak";
 import {
   acceptGhost,
   acceptGhostWord,
@@ -24,10 +26,12 @@ function run(action: () => void): true {
 interface EditorProps {
   initialContent: JSONContent;
   onChange: (content: JSONContent, text: string) => void;
+  /** Book language — picks the scene-break symbol. */
+  language: Language;
   onReady?: (editor: TiptapEditor) => void;
 }
 
-export function Editor({ initialContent, onChange, onReady }: EditorProps) {
+export function Editor({ initialContent, language, onChange, onReady }: EditorProps) {
   const editor = useEditor({
     // Next.js renders on the server first; TipTap must mount on the client only.
     immediatelyRender: false,
@@ -44,6 +48,7 @@ export function Editor({ initialContent, onChange, onReady }: EditorProps) {
       }),
       Placeholder.configure({ placeholder: copy.editor.placeholder }),
       GhostText,
+      SceneBreak.configure({ symbol: getLanguage(language).typography.sceneBreak }),
     ],
     editorProps: {
       attributes: { class: "prose-editor", spellcheck: "true", lang: "sr" },

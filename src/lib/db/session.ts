@@ -1,37 +1,34 @@
 import { ensureDailyStat } from "./dailyStats";
-import { db, type Book, type Chapter, type ID, type Scene } from "./schema";
+import { chapterNumber } from "./parts";
+import { db, type Book, type ID, type Part } from "./schema";
 
-export interface OpenedScene {
-  scene: Scene;
-  chapter: Chapter;
+export interface OpenedPart {
+  part: Part;
   book: Book;
-  /** Words in the book outside this scene — lets the footer update live. */
-  otherScenesTotal: number;
+  /** 1-based for chapters, undefined for front/back matter. */
+  chapterNumber: number | undefined;
+  /** Words in the book outside this part — lets the footer update live. */
+  otherPartsTotal: number;
   startWordTotal: number;
 }
 
 /** Loads everything the editor needs and records the day's starting total. */
-export async function openScene(sceneId: ID, date: string): Promise<OpenedScene | undefined> {
-  return db.transaction("rw", db.books, db.chapters, db.scenes, db.dailyStats, async () => {
-    const scene = await db.scenes.get(sceneId);
-    if (!scene) return undefined;
-    const [chapter, book] = await Promise.all([
-      db.chapters.get(scene.chapterId),
-      db.books.get(scene.bookId),
-    ]);
-    if (!chapter || !book) return undefined;
+export async function openPart(partId: ID, date: string): Promise<OpenedPart | undefined> {
+  return db.transaction("rw", db.books, db.parts, db.dailyStats, async () => {
+    const part = await db.parts.get(partId);
+    if (!part) return undefined;
+    const book = await db.books.get(part.bookId);
+    if (!book) return undefined;
 
-    let bookTotal = 0;
-    await db.scenes.where("bookId").equals(book.id).each((s) => {
-      bookTotal += s.wordCount;
-    });
+    const parts = await db.parts.where("bookId").equals(book.id).toArray();
+    const bookTotal = parts.reduce((sum, p) => sum + p.wordCount, 0);
     const stat = await ensureDailyStat(book.id, date, bookTotal);
 
     return {
-      scene,
-      chapter,
+      part,
       book,
-      otherScenesTotal: bookTotal - scene.wordCount,
+      chapterNumber: chapterNumber(parts, part.id),
+      otherPartsTotal: bookTotal - part.wordCount,
       startWordTotal: stat.startWordTotal,
     };
   });

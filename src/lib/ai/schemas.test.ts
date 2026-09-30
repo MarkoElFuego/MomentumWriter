@@ -66,7 +66,7 @@ describe("parseSparkResponse", () => {
 });
 
 describe("SparkRequestSchema", () => {
-  const request = { mode: "push", context: "Petar je", bookTitle: "", chapterTitle: "", sceneTitle: "" };
+  const request = { mode: "push", context: "Petar je", bookTitle: "", chapterTitle: "" };
 
   it("accepts a known language and requests without one", () => {
     expect(SparkRequestSchema.safeParse({ ...request, language: "sr-Latn" }).success).toBe(true);

@@ -24,22 +24,16 @@ interface Book {
   updatedAt: number;
 }
 
-interface Chapter {
+// v3: knjiga je niz delova; svaki deo je jedan dokument.
+type PartKind = "front" | "chapter" | "back"; // naslovna/posveta/predgovor · poglavlje · epilog/zahvalnica/beleška o autoru
+
+interface Part {
   id: ID;
   bookId: ID;
-  title: string;      // "Poglavlje VII"
-  order: number;      // sortiranje; koristi razmake (1000, 2000…) za lako ubacivanje
-  createdAt: number;
-  updatedAt: number;
-}
-
-interface Scene {
-  id: ID;
-  chapterId: ID;
-  bookId: ID;         // denormalizovano radi brzih upita
-  title: string;
-  order: number;
-  content: JSONContent; // TipTap JSON
+  kind: PartKind;
+  title: string;        // poglavlje: opciono ime ("" = samo broj); broj se računa (rimski) po redosledu
+  order: number;        // redosled unutar vrste; razmaci 1000, 2000…; vrste idu front → chapter → back
+  content: JSONContent; // TipTap JSON; scene unutar poglavlja deli čvor sceneBreak (✱ ✱ ✱)
   wordCount: number;    // keširano pri svakom save-u
   createdAt: number;
   updatedAt: number;
@@ -54,8 +48,8 @@ interface DailyStat {
 
 interface ResumeState {
   bookId: ID;            // primarni ključ
-  sceneId: ID;
-  cursorPos: number;     // ProseMirror pozicija
+  partId: ID;
+  cursorPos: number;     // ProseMirror pozicija u delu
   lastSentence: string;  // poslednja rečenica pre kursora
   lastWrittenAt: number;
   openQuestion?: string; // iz AI "resume" moda, keširano
@@ -63,7 +57,7 @@ interface ResumeState {
 }
 ```
 
-Dexie indeksi (verzija 1):
+Dexie indeksi:
 ```ts
 db.version(1).stores({
   books: "id, updatedAt",
@@ -74,6 +68,11 @@ db.version(1).stores({
 });
 // v2: Book.language — bez novih indeksa; .upgrade() upisuje "sr-Latn" starim knjigama
 db.version(2).stores({}).upgrade(/* … */);
+// v3: scene svakog poglavlja se spajaju u jedan Part (lib/db/migrations.ts):
+//   redom, sceneBreak između, pravi naslov scene kao pasus u kurzivu, prazne scene i
+//   automatski naslovi („Scena N”, „Poglavlje IV”) otpadaju; resumeState.sceneId → partId
+//   (cursorPos = 0). Tabele chapters i scenes se brišu posle upgrade-a.
+db.version(3).stores({ parts: "id, bookId", chapters: null, scenes: null }).upgrade(upgradeToParts);
 ```
 Svaka promena šeme = nova `db.version(n)` sa `.upgrade()` — nikad ne menjaj postojeću verziju.
 
@@ -89,13 +88,13 @@ Svaka promena šeme = nova `db.version(n)` sa `.upgrade()` — nikad ne menjaj p
 
 ## Autosave
 
-- `onUpdate` iz TipTap-a → debounce 800 ms → `saveScene()` (content, wordCount, updatedAt) + ažuriraj `dailyStat.endWordTotal` + `resumeState`.
+- `onUpdate` iz TipTap-a → debounce 800 ms → `savePart()` (content, wordCount, updatedAt) + ažuriraj `dailyStat.endWordTotal` + `resumeState`.
 - `visibilitychange` (hidden) i `beforeunload` → odmah flush.
 - Mali indikator statusa u `···` meniju (ne u footeru): „Sačuvano” / „Čuvam…”.
 
 ## Kada se prikazuje Resume
 
-Pri otvaranju knjige: ako `resumeState.lastWrittenAt` je stariji od **6 sati** → `/resume?book=…`, inače direktno u editor na `sceneId` + `cursorPos`.
+Pri otvaranju knjige: ako `resumeState.lastWrittenAt` je stariji od **6 sati** → `/resume?book=…`, inače direktno u editor na `partId` + `cursorPos`.
 
 ## Prečice
 
@@ -108,7 +107,10 @@ Pri otvaranju knjige: ako `resumeState.lastWrittenAt` je stariji od **6 sati** �
 | `Esc` (sivi tekst vidljiv) | Skloni sivi tekst |
 | `1`–`4` (dok je paleta otvorena) | Izbor alata |
 | `Esc` | Zatvori paletu |
-| `Ctrl/Cmd + \` | Prikaži/sakrij strukturu (Book → Chapter → Scene) |
+| `Ctrl/Cmd + \` | Prikaži/sakrij sadržaj knjige (uvodni delovi / poglavlja / završni delovi) |
+| `F2` / dupli klik (u panelu) | Preimenuj deo |
+| `Alt + ↑/↓` (u panelu) | Pomeri deo unutar njegove grupe (isto kao prevlačenje) |
+| `***` u praznom pasusu | Prelom scene `✱ ✱ ✱` |
 
 Na srpskom rasporedu `/` je `Shift+7` — prečica se hvata i po `event.code === "Slash"`, kao `Ctrl+\` po `"Backslash"`.
 
@@ -119,8 +121,7 @@ Ulaz (Zod):
 {
   mode: "push" | "complicate" | "missing" | "resume" | "ghost",
   context: string,          // max ~3000 karaktera
-  sceneTitle?: string,
-  chapterTitle?: string,
+  chapterTitle?: string,    // naslov otvorenog dela: „Poglavlje IV · Dolazak”, „Posveta”
   bookTitle?: string,
   language?: "sr-Latn"      // iz book.language; bez njega važi DEFAULT_LANGUAGE
 }
