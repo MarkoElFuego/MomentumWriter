@@ -7,6 +7,9 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
 **Sledeće:** U2 — gornja traka i formatiranje (`docs/ZADATAK_UI.md`). Pre koda: plan i „ok” od autora.
+- Stanje 2026-10-02: commitovano sve do `746f389` (Resume). Autor je ručno proverio Resume: stara knjiga → Resume sa pitanjem, nova (0 reči) → editor.
+- Otvoreno pitanje za autora: „nova knjiga otvara nov prozor” — da li je to isti tab (u redu) ili novi tab/prozor browsera (greška)? Proveriti pre U2.
+- Za U2 važi i napomena iz ZADATAK_UI: u traci samo „Sačuvano” / „Čuvam…” — „Nacrt 1 ·” dolazi tek sa Tiron T1. Obostrano poravnanje: screenshotovi sa i bez `hyphens`, odluku donosi autor.
 
 ## Faza 0 — Postavka
 - [x] Next.js + TS + Tailwind + ESLint (pnpm)
