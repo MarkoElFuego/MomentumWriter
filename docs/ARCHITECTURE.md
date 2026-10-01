@@ -5,11 +5,12 @@
 ```
 Browser (Next.js klijent)
  ├─ TipTap editor ──► Dexie (IndexedDB)  ← sav rukopis živi lokalno
- ├─ Spark paleta ──► POST /api/spark ──► OpenAI API
+ ├─ sivi tekst, provera jezika ──► POST /api/spark ──► OpenAI API
+ ├─ desni panel (Tiron, „Zapeo sam”) ──► POST /api/spark   (planirano: U5, ZADATAK_Tiron)
  └─ Resume ekran ──► Dexie (resumeState) + /api/spark (mode: resume)
 ```
 
-API ključ postoji samo na serveru (`src/app/api/spark/route.ts`). Rukopis se šalje AI-ju samo kroz AI akcije (paleta, sivi tekst posle pauze, u v0.2 provera jezika za završen pasus), i nikad cela knjiga — najviše ~400 reči konteksta.
+API ključ postoji samo na serveru (`src/app/api/spark/route.ts`). Rukopis se šalje AI-ju samo kroz AI akcije (sivi tekst posle pauze, provera jezika po pasusu, Resume pitanje; kasnije „Zapeo sam” i Tiron), i nikad cela knjiga — najviše ~400 reči konteksta.
 
 ## Model podataka (Dexie, `src/lib/db/schema.ts`)
 
@@ -100,26 +101,27 @@ Pri otvaranju knjige: ako `resumeState.lastWrittenAt` je stariji od **6 sati** �
 
 | Prečica | Akcija |
 |---|---|
-| `Ctrl/Cmd + /` ili klik na „✦ Treba mi impuls” | Spark paleta na mestu kursora (opet zatvara). `/` se kuca normalno |
 | `Tab` (u editoru) | Prihvati sivi tekst ako je vidljiv; inače ne radi ništa (ne izbacuje iz editora). `Shift+Tab` i dalje izlazi iz editora |
 | `Ctrl/Cmd + →` (sivi tekst vidljiv) | Prihvati jednu reč sivog teksta |
 | `↓` / `↑` (sivi tekst vidljiv, više predloga) | Sledeći / prethodni od 3 predloga; brojač „1/3” iza sivog teksta |
 | `Esc` (sivi tekst vidljiv) | Skloni sivi tekst |
-| `1`–`4` (dok je paleta otvorena) | Izbor alata |
-| `Esc` | Zatvori paletu |
+| `Alt + Enter` (na podvučenoj reči) | Popover provere jezika (Enter prihvata, Esc nazad u tekst) |
+| `Ctrl + Shift + F` | Ubaci fusnotu; `Esc`/`Enter` u fusnoti vraća iza broja |
 | `Ctrl/Cmd + \` | Prikaži/sakrij sadržaj knjige (uvodni delovi / poglavlja / završni delovi) |
 | `F2` / dupli klik (u panelu) | Preimenuj deo |
 | `Alt + ↑/↓` (u panelu) | Pomeri deo unutar njegove grupe (isto kao prevlačenje) |
 | `***` u praznom pasusu | Prelom scene `✱ ✱ ✱` |
 
-Na srpskom rasporedu `/` je `Shift+7` — prečica se hvata i po `event.code === "Slash"`, kao `Ctrl+\` po `"Backslash"`.
+`/` je običan znak. Na srpskom rasporedu `Ctrl+\` se hvata i po `event.code === "Backslash"` (taster „ž”).
+
+Planirano (ZADATAK_UI U2): `Ctrl/Cmd+B`/`I`, `Ctrl/Cmd+Alt+1`/`2`/`0` (Naslov 1 / Naslov 2 / Tekst), `# ` `## ` `> ` na početku reda. Tiron T3: `Ctrl+Shift+N` beleška za kasnije.
 
 ## API: `POST /api/spark`
 
 Ulaz (Zod):
 ```ts
 {
-  mode: "push" | "complicate" | "missing" | "resume" | "ghost",
+  mode: "resume" | "ghost",  // "proofread" ima svoju šemu; "stuck" (U5) i Tiron modovi dolaze kasnije; ostalo → 400
   context: string,          // max ~3000 karaktera
   chapterTitle?: string,    // naslov otvorenog dela: „Poglavlje IV · Dolazak”, „Posveta”
   bookTitle?: string,
@@ -145,4 +147,4 @@ Zajednička pravila promptova ostaju u `lib/ai/prompts.ts`; `buildSystemPrompt(m
 2. U `index.ts` dodaj kod u `LANGUAGES` i modul u `MODULES` — TypeScript javlja ako nešto fali.
 3. Ako jezik ima drugačija pravila za kraj rečenice ili navodnike, proveri `lib/text/sentences.ts` (`endsSentence`) i dodaj testove.
 4. Dodaj izbor jezika pri pravljenju knjige (UI) — tek kad bude potreban; `Book.language` već postoji, pa migracija nije potrebna.
-5. Pokreni `pnpm test` i ručno probaj sivi tekst i ✦ Poguraj me na tekstu tog jezika.
+5. Pokreni `pnpm test` i ručno probaj sivi tekst i proveru jezika na tekstu tog jezika.

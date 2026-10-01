@@ -1,16 +1,22 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { SparkAnchor } from "@/components/spark/SparkPalette";
 import { copy } from "@/lib/copy";
 import type { OpenProofMark } from "./proofMarks";
+
+/** Viewport coordinates of the word the popover belongs to. */
+export interface PopoverAnchor {
+  left: number;
+  top: number;
+  bottom: number;
+}
 
 const GAP = 6;
 const EDGE = 16;
 const ROOM_BELOW = 140;
 
 // Under the word, or above it near the bottom of the window.
-function placeAt(anchor: SparkAnchor): React.CSSProperties {
+function placeAt(anchor: PopoverAnchor): React.CSSProperties {
   const left = Math.min(Math.max(anchor.left, EDGE), window.innerWidth - 260 - EDGE);
   return window.innerHeight - anchor.bottom >= ROOM_BELOW
     ? { position: "fixed", left, top: anchor.bottom + GAP }
@@ -19,7 +25,7 @@ function placeAt(anchor: SparkAnchor): React.CSSProperties {
 
 interface ProofPopoverProps {
   mark: OpenProofMark;
-  anchor: SparkAnchor;
+  anchor: PopoverAnchor;
   onAccept: () => void;
   onReject: () => void;
   onAcceptDiacritics: () => void;

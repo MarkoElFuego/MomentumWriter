@@ -4,13 +4,14 @@ import type { SparkRequest } from "./schemas";
 import { runSpark, type Completer } from "./spark";
 
 const request: SparkRequest = {
-  mode: "complicate",
+  mode: "resume",
   context: "Petar je stajao na pragu i gledao u mračno dvorište.",
   bookTitle: "Kiša",
   chapterTitle: "Poglavlje I",
 };
 
-const good = JSON.stringify({ question: "Šta ako Petar ne sme da uđe u kuću?" });
+const summary = ["Petar je došao kući.", "Stoji na pragu.", "Ne zna ko je u dvorištu."];
+const good = JSON.stringify({ summary, openQuestion: "Šta ako Petar ne sme da uđe u kuću?" });
 
 // Returns the given replies in order; an Error entry is thrown instead.
 function completer(...replies: (string | Error)[]) {
@@ -31,7 +32,7 @@ describe("runSpark", () => {
   it("returns parsed data from the first good reply", async () => {
     const complete = completer(good);
     const result = await runSpark(request, complete, neverAborted());
-    expect(result).toEqual({ ok: true, data: { question: "Šta ako Petar ne sme da uđe u kuću?" } });
+    expect(result).toEqual({ ok: true, data: { summary, openQuestion: "Šta ako Petar ne sme da uđe u kuću?" } });
     expect(complete).toHaveBeenCalledTimes(1);
   });
 
@@ -42,7 +43,7 @@ describe("runSpark", () => {
   });
 
   it("retries once when the guardrail rejects prose", async () => {
-    const complete = completer(JSON.stringify({ question: "„Ne diraj to”, rekao je Petar." }), good);
+    const complete = completer(JSON.stringify({ summary, openQuestion: "„Ne diraj to”, rekao je Petar." }), good);
     expect((await runSpark(request, complete, neverAborted())).ok).toBe(true);
     expect(complete).toHaveBeenCalledTimes(2);
   });
@@ -68,17 +69,17 @@ describe("runSpark", () => {
     expect(complete).toHaveBeenCalledTimes(1);
   });
 
-  it("tells the model where the cursor stands for push", async () => {
-    const push = JSON.stringify({
+  it("tells the ghost model when the cursor is mid-sentence", async () => {
+    const finishes = JSON.stringify({
       items: [
         { kind: "finish", text: "nakupi se do velikog iznosa." },
         { kind: "finish", text: "na kraju je to plata." },
         { kind: "finish", text: "nisu mali kad se saberu." },
       ],
     });
-    const complete = completer(push);
-    const open = { ...request, mode: "push" as const, context: "Kisa je stala. Govorila je da su to mali iznosi ali" };
-    expect((await runSpark(open, complete, neverAborted())).ok).toBe(true);
+    const complete = completer(finishes);
+    const open = { ...request, mode: "ghost" as const, context: "Kisa je stala. Govorila je da su to mali iznosi ali" };
+    expect((await runSpark(open, complete, neverAborted(), { attempts: 1 })).ok).toBe(true);
     const user = complete.mock.calls[0]![0].user;
     expect(user).toContain(
       "---KURSOR---\nUSRED rečenice. Nedovršena rečenica: „Govorila je da su to mali iznosi ali”",

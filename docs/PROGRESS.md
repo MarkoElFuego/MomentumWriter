@@ -2,14 +2,11 @@
 
 Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen zadatak.
 
-**Trenutna faza:** Faza 4 — Resume (posle v0.2; plan: `docs/PLAN.md` → „Faza 4 — Resume ekran”). v0.2 je završena (Faza 6 sinonimi i Faza 8 odložene).
+**Trenutna faza:** ZADATAK_UI (`docs/ZADATAK_UI.md`). Izvor istine za raspored i funkcije: `docs/PRODUCT.md`.
 
-**Sledeće (2026-10-01):** prvi nezavršen zadatak je „Pravilo 6h → /resume”. Pre koda: plan i „ok” od autora.
-- Otvaranje knjige: `lastWrittenAt` stariji od 6 h → `/resume?book=…`, inače editor tačno na poziciji kursora (`ResumeState` već postoji i puni se pri autosave-u).
-- `/resume`: „Dobrodošao nazad.” · „Juče si stao ovde:” / „Pre N dana…” · citat poslednje rečenice · „Otvoreno pitanje:” (AI mode `resume`, keš po hash-u konteksta, skeleton; ako AI padne, sekcija se sakrije) · dugme „Nastavi da pišeš” radi odmah, bez čekanja AI-ja.
-- „Nastavi” → editor, kursor na `cursorPos`, skrolovano do njega. Pazi: PLAN još piše `sceneId` — sada je sve na `partId` (Faza 3), a `cursorPos` je resetovan na 0 pri migraciji.
-- Zatim 4. alat u paleti „↩ Vrati me u priču” (3 reda sižea + pitanje).
-- Gotovo kada: `lastWrittenAt` u DevTools-u na juče → otvaranje knjige vodi na Resume · „Nastavi” vraća tačno na kursor · radi i bez AI-ja.
+**Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
+
+**Sledeće:** Faza 4 — „Pravilo 6h → /resume” (Resume bez 4. alata). Pre toga posebnim docs commitom: odluke autora za ZADATAK_Tiron.md (2026-10-01). Pre koda: plan i „ok” od autora.
 
 ## Faza 0 — Postavka
 - [x] Next.js + TS + Tailwind + ESLint (pnpm)
@@ -77,7 +74,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 - [x] 5b: podvlake (tačkasta / talasasta), popover Prihvati/Odbaci, „Prihvati sve kvačice u pasusu”
 - [x] 5b: prekidač u ··· + log `[proofread] …`
 
-### v0.2 · Faza 6 — Sinonimi — ODLOŽENO (odluka autora 2026-09-30, preskoči)
+### v0.2 · Faza 6 — Sinonimi — IZBAČENO (PRODUCT.md → „Izbačeno”; ranije odloženo 2026-09-30)
 _`[-]` = namerno preskočeno za sada; agent ne radi ove stavke dok ih autor ne vrati._
 - [-] BubbleMenu „≈ Sinonimi” / Alt+S na jednoj reči
 - [-] mode `synonyms` (isti padež/rod/broj/vreme) + Zod + keš
@@ -91,13 +88,35 @@ _`[-]` = namerno preskočeno za sada; agent ne radi ove stavke dok ih autor ne v
 
 _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne dira se bez odluke autora._
 
-## Faza 4 — Resume (posle v0.2)
-- [x] ResumeState + lastSentence + testovi
-- [ ] Pravilo 6h → /resume
-- [ ] Resume ekran (radi i bez AI-ja)
-- [ ] 4. alat „↩ Vrati me u priču”
+## ZADATAK_UI (`docs/ZADATAK_UI.md`)
+- [x] U0 — Dokumentacija: PRODUCT.md, ZADATAK_UI.md, AGENTS/ARCHITECTURE/AI_PROMPTS/PLAN usklađeni; paleta samo u „Izbačeno”
+- [x] U1 — Uklanjanje AI palete (komponente, prečice, „Treba mi impuls”, podsetnik „Zapeo si?”, modovi push/complicate/missing; `resume` ostaje)
 
-## Faza 5 — Polish (posle v0.2)
+## Faza 4 — Resume (posle U1)
+- [x] ResumeState + lastSentence + testovi
+- [ ] Pravilo 6h → /resume — `lastWrittenAt` stariji od 6 h → `/resume?book=…`, inače editor tačno na kursoru (`ResumeState` se već puni pri autosave-u; `cursorPos` resetovan na 0 u v0.2 Faza 3, sve je na `partId`)
+- [ ] Resume ekran (radi i bez AI-ja) — „Dobrodošao nazad.” · „Juče si stao ovde:” / „Pre N dana…” · poslednja rečenica · „Otvoreno pitanje:” (mode `resume`, keš po hash-u konteksta, skeleton; AI padne → sekcija se sakrije) · „Nastavi da pišeš” radi odmah i vraća kursor na `cursorPos`
+- [-] ~~4. alat „↩ Vrati me u priču”~~ — izbačeno sa paletom (PRODUCT.md → „Izbačeno”)
+
+## ZADATAK_UI — nastavak (posle Resume)
+- [ ] U2 — Gornja traka i formatiranje (stilovi pasusa, B/I, poravnanje + screenshotovi za hyphens, traka bledi)
+- [ ] U3 — Naslov poglavlja povezan sa sadržajem (+ migracija starog H1)
+- [ ] U4 — Levi panel: animirano prevlačenje (`@dnd-kit`) i brisanje sa „Poništi”
+- [ ] U5 — Desni panel: 4 sekcije i „Zapeo sam” (mode `stuck`, `AI_EFFORT_STUCK=low`)
+- [ ] U6 — Fokus, ceo ekran, footer, uski ekrani
+- [ ] U7 — Ocena jezika (`languageScore.ts`, bez novih AI poziva)
+
+## ZADATAK_Tiron (`docs/ZADATAK_Tiron.md`, posle U7)
+- [ ] T0 — Provera stanja i dokumentacija (postoji / delimično / ne postoji)
+- [ ] T1 — Srce knjige i prvi korak
+- [ ] T2 — Tiron pamti: StoryMemory, sažeci poglavlja i najjače rečenice
+- [ ] T3 — Beleška za kasnije (`Ctrl+Shift+N`)
+- [ ] T4 — Signali procesa (lokalno, bez AI-ja)
+- [ ] T5 — Tiron šapuće
+- [ ] T6 — Mala pobeda i Resume
+- [ ] T7 — Put do kraja (kraj nacrta)
+
+## Faza 5 — Polish (redosled određuje autor)
 - [ ] copy.ts ton
 - [ ] Tipografija + prazna stanja
 - [ ] Export Markdown
@@ -157,6 +176,9 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - 2026-09-30: Provera jezika gleda **svaki tekstualni blok** (pasus i naslov, i unutar citata/liste — nalepljen tekst često završi tamo), ne samo pasuse na vrhu dokumenta; fusnote i dalje ne. U dev konzoli se sada vide i neuspeli zahtevi, odbijeni odgovori, preskočeni predugi pasusi i pasusi promenjeni pre nego što je odgovor stigao.
 - 2026-09-30: **Faza 6 (sinonimi) je odložena — preskačemo je za sada** (odluka autora). Ne ide se na nju dok autor ne kaže; sledeća je Faza 7 (vizuelne teme).
 - 2026-09-30: v0.2 Faza 7: teme u `src/styles/themes.css` na `<html data-theme>`; bez izbora nema `data-theme` i CSS prati sistem (tamni → noc). Paper/ink/font tačno iz ZADATAK-a; **`--ink-muted` i `--ghost` minimalno potamnjeni** (autor odobrio) da pređu kontrast ≥ 4,5 i ≥ 3,0 — `lib/themes.test.ts` čita pravi CSS i proverava ink ≥ 7, ink-muted ≥ 4,5, ghost ≥ 3 (i bleđi od ink-muted), podvlake ≥ 3. Podvlake: plavo-siva (kvačice) i oker (gramatika), nikad crvena. `--muted/--focus/--proof` zamenjeni; Tailwind `text-muted` sada pokazuje na `--ink-muted`. Fontovi: Courier Prime i Inter preko `next/font` sa `preload: false` (učitavaju se tek kad tema zatreba). Izbor se čuva u Dexie **v4** (tabela `settings`, jedan zapis `appearance`: `theme?`, `focusMode`, `typewriter`) + test v3→v4; **kopija teme u `localStorage` (`momentum:theme`) samo za prvi prikaz** — inline skripta u `<head>` je postavlja pre crtanja (autor odobrio), Dexie pobeđuje pri učitavanju. Fokus mod: dekoracija `has-focus` na bloku sa kursorom (uvek), CSS pod `.focus-mode` bledi ostale na 0,35 za 150 ms. Pisaća mašina: posle svakog pomeranja kursora `requestAnimationFrame` skroluje `<main>` da red bude na sredini (tolerancija 12 px), dno teksta dobija `pb-[50vh]`. Obrisan zaostali `src/app/write/[sceneId]/page.tsx`.
+
+- 2026-10-01: **ZADATAK_UI U0 (odluke autora).** Novi `docs/PRODUCT.md` je izvor istine za raspored i funkcije. **AI paleta je izbačena sa svim alatima** (Treba mi impuls, Poguraj me, Zakomplikuj, Šta mi nedostaje, Vrati me u priču, Zamisli scenu, Sprint) i prečicom `Ctrl+/` — kod se uklanja u U1; beleške o paleti gore su istorija. Ghost se ne dira: dopune se pojavljuju same posle pauze, `↑↓` bira, `Tab` prihvata, `/` je običan znak. „Slash meni” u „Izbačeno” = meni u stilu Hemingway editora. Provera jezika ostaje tačno kako radi (automatski, podvlake odmah); odložene podvlake su odbačene. Effort po pozivu: `AI_EFFORT_STUCK=low`, `AI_EFFORT_TIRON=medium`, `AI_EFFORT_SESSION_END=low`, `AI_EFFORT_MEMORY=medium`, bez `temperature` kod Tirona — tabela u `AI_PROMPTS.md`. Dodata U7 (ocena jezika). Redosled: U0 → U1 → Resume → U2–U7 → Tiron T0–T7.
+- 2026-10-01: **U1:** obrisani `components/spark/`, dugme „✦ Treba mi impuls” (footer ima samo „reči danas”), `Ctrl/Cmd+/` i podsetnik „Zapeo si?” (prazan pasus sada ne dobija ništa; `cursorSituation` i dalje vraća `"empty"`, samo se na to ne reaguje). `SPARK_MODES = ["resume", "ghost"]`; `push`/`complicate`/`missing` → 400. `PushSchema` → `GhostSchema`. Sistem promptovi i korisničke poruke za ghost i resume provereni **znak po znak identični** pre/posle. Testovi za uklonjene modove prebačeni na ghost (iste granice) i resume (pravila za pitanja). `SparkAnchor` → `PopoverAnchor` u `ProofPopover.tsx`. `copy.write` sada kaže „poglavlje” umesto „scena”. `joinStarter` ostaje (ghost ga koristi).
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

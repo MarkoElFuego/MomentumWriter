@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseSparkResponse, SparkRequestSchema } from "./schemas";
 
-const validPush = {
+const validGhost = {
   items: [
     { kind: "inner", text: "a Marko se plašio" },
     { kind: "outer", text: "kad je neko pokucao" },
@@ -10,26 +10,26 @@ const validPush = {
 };
 
 describe("parseSparkResponse", () => {
-  it("accepts a valid push with 3 items", () => {
-    const result = parseSparkResponse("push", JSON.stringify(validPush));
-    expect(result).toEqual({ ok: true, data: validPush });
+  it("accepts a valid ghost reply with 3 items", () => {
+    const result = parseSparkResponse("ghost", JSON.stringify(validGhost));
+    expect(result).toEqual({ ok: true, data: validGhost });
   });
 
-  it("accepts a push with 1–3 items but not 0 or 4", () => {
-    const twoItems = { items: validPush.items.slice(0, 2) };
-    expect(parseSparkResponse("push", JSON.stringify(twoItems)).ok).toBe(true);
-    expect(parseSparkResponse("push", JSON.stringify({ items: [] })).ok).toBe(false);
-    const four = { items: [...validPush.items, validPush.items[0]] };
-    expect(parseSparkResponse("push", JSON.stringify(four))).toEqual({ ok: false, reason: "schema" });
+  it("accepts a ghost reply with 1–3 items but not 0 or 4", () => {
+    const twoItems = { items: validGhost.items.slice(0, 2) };
+    expect(parseSparkResponse("ghost", JSON.stringify(twoItems)).ok).toBe(true);
+    expect(parseSparkResponse("ghost", JSON.stringify({ items: [] })).ok).toBe(false);
+    const four = { items: [...validGhost.items, validGhost.items[0]] };
+    expect(parseSparkResponse("ghost", JSON.stringify(four))).toEqual({ ok: false, reason: "schema" });
   });
 
   it("parses a reply wrapped in ```json fences", () => {
-    const raw = "```json\n" + JSON.stringify(validPush) + "\n```";
-    expect(parseSparkResponse("push", raw).ok).toBe(true);
+    const raw = "```json\n" + JSON.stringify(validGhost) + "\n```";
+    expect(parseSparkResponse("ghost", raw).ok).toBe(true);
   });
 
   it("rejects text that is not JSON", () => {
-    expect(parseSparkResponse("complicate", "Evo pitanja: zašto?")).toEqual({
+    expect(parseSparkResponse("resume", "Evo pitanja: zašto?")).toEqual({
       ok: false,
       reason: "invalid-json",
     });
@@ -37,11 +37,12 @@ describe("parseSparkResponse", () => {
 
   it("clips overlong items at a word boundary instead of rejecting them", () => {
     const long = `Zašto ${"Marko ".repeat(60)}ćuti?`;
-    const result = parseSparkResponse("complicate", JSON.stringify({ question: long }));
+    const raw = JSON.stringify({ summary: ["Marko ćuti.", "Kod kuće je.", "Pismo nije otvoreno."], openQuestion: long });
+    const result = parseSparkResponse("resume", raw);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.question.length).toBeLessThanOrEqual(220);
-    expect(result.data.question).toMatch(/Marko…$/);
+    expect(result.data.openQuestion.length).toBeLessThanOrEqual(220);
+    expect(result.data.openQuestion).toMatch(/Marko…$/);
   });
 
   it("clips resume summary lines to 160 characters", () => {
@@ -53,24 +54,30 @@ describe("parseSparkResponse", () => {
     expect(result.data.summary[0]!.length).toBeLessThanOrEqual(160);
   });
 
-  it("rejects a push item over 80 characters instead of clipping it", () => {
-    const long = { items: [...validPush.items.slice(0, 2), { kind: "shift", text: "a".repeat(81) }] };
-    expect(parseSparkResponse("push", JSON.stringify(long))).toEqual({ ok: false, reason: "schema" });
+  it("rejects a ghost item over 80 characters instead of clipping it", () => {
+    const long = { items: [...validGhost.items.slice(0, 2), { kind: "shift", text: "a".repeat(81) }] };
+    expect(parseSparkResponse("ghost", JSON.stringify(long))).toEqual({ ok: false, reason: "schema" });
   });
 
   it("rejects missing fields and unknown kinds", () => {
-    expect(parseSparkResponse("missing", JSON.stringify({ observation: "Nema mirisa." })).ok).toBe(false);
-    const badKind = { items: validPush.items.map((item) => ({ ...item, kind: "other" })) };
-    expect(parseSparkResponse("push", JSON.stringify(badKind)).ok).toBe(false);
+    expect(parseSparkResponse("resume", JSON.stringify({ summary: ["Nema mirisa."] })).ok).toBe(false);
+    const badKind = { items: validGhost.items.map((item) => ({ ...item, kind: "other" })) };
+    expect(parseSparkResponse("ghost", JSON.stringify(badKind)).ok).toBe(false);
   });
 });
 
 describe("SparkRequestSchema", () => {
-  const request = { mode: "push", context: "Petar je", bookTitle: "", chapterTitle: "" };
+  const request = { mode: "ghost", context: "Petar je", bookTitle: "", chapterTitle: "" };
 
   it("accepts a known language and requests without one", () => {
     expect(SparkRequestSchema.safeParse({ ...request, language: "sr-Latn" }).success).toBe(true);
     expect(SparkRequestSchema.safeParse(request).success).toBe(true);
+  });
+
+  it("rejects the removed palette modes", () => {
+    for (const mode of ["push", "complicate", "missing"]) {
+      expect(SparkRequestSchema.safeParse({ ...request, mode }).success).toBe(false);
+    }
   });
 
   it("rejects an unknown language", () => {

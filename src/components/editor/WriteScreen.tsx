@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor as TiptapEditor, JSONContent } from "@tiptap/react";
-import { SparkPalette, type SparkAnchor } from "@/components/spark/SparkPalette";
 import { StructurePanel } from "@/components/structure/StructurePanel";
 import { useAppearance } from "@/hooks/useAppearance";
 import { useAutosave } from "@/hooks/useAutosave";
@@ -17,14 +16,12 @@ import type { ID } from "@/lib/db/schema";
 import { openPart, type OpenedPart } from "@/lib/db/session";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
-import { extractContext } from "@/lib/text/extractContext";
-import { joinStarter } from "@/lib/text/joinStarter";
 import { lastSentence } from "@/lib/text/lastSentence";
 import { Editor } from "./Editor";
 import { EditorFooter } from "./EditorFooter";
 import { EditorHeader } from "./EditorHeader";
 import { mainTextEnd } from "./footnotes";
-import { ProofPopover } from "./ProofPopover";
+import { ProofPopover, type PopoverAnchor } from "./ProofPopover";
 import { acceptDiacriticsTr, acceptProofTr, closeProofTr, dispatchIf, rejectProofTr } from "./proofMarks";
 
 // Panel open/closed survives part switches (the page remounts on each one).
@@ -66,14 +63,6 @@ function writeEnabled(key: string, enabled: boolean) {
   }
 }
 
-interface SparkSession {
-  pos: number;
-  /** The document at open time — tells us whether `pos` is still valid. */
-  doc: TiptapEditor["state"]["doc"];
-  context: string;
-  anchor: SparkAnchor | null;
-}
-
 type LoadState =
   | { kind: "loading" }
   | { kind: "missing" }
@@ -89,8 +78,6 @@ export function WriteScreen({ partId }: { partId: ID }) {
     open: false,
     autoFocus: false,
   });
-  // Cursor position and context are frozen when the palette opens.
-  const [spark, setSpark] = useState<SparkSession | null>(null);
   const latest = useRef<{ content: JSONContent; wordCount: number } | null>(null);
   const editorRef = useRef<TiptapEditor | null>(null);
   // State copy of the editor so hooks can subscribe once it exists.
@@ -132,7 +119,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const appearance = useAppearance();
   const scrollRef = useRef<HTMLElement>(null);
   useTypewriterScroll(editor, scrollRef, appearance.typewriter);
-  useGhostText(editor, ghostEnabled && spark === null, titles);
+  useGhostText(editor, ghostEnabled, titles);
   useProofread(editor, proofEnabled, ready?.book.language ?? null);
   const proofMark = useOpenProofMark(editor);
 
@@ -154,7 +141,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
     [proofMark],
   );
 
-  let proofAnchor: SparkAnchor | null = null;
+  let proofAnchor: PopoverAnchor | null = null;
   if (proofMark && editor) {
     try {
       const { left, top, bottom } = editor.view.coordsAtPos(proofMark.from);
@@ -227,68 +214,18 @@ export function WriteScreen({ partId }: { partId: ID }) {
     [panel.open, setPanelOpen],
   );
 
-  const openSpark = useCallback(() => {
-    const editor = editorRef.current;
-    if (!editor) return;
-    const pos = editor.state.selection.from;
-    let anchor: SparkAnchor | null = null;
-    try {
-      const { left, top, bottom } = editor.view.coordsAtPos(pos);
-      anchor = { left, top, bottom };
-    } catch {
-      // View not laid out yet — the palette falls back to the footer corner.
-    }
-    setSpark({ pos, doc: editor.state.doc, context: extractContext(editor.state.doc, pos), anchor });
-  }, []);
-
-  const closeSpark = useCallback(() => {
-    const editor = editorRef.current;
-    // If the writer already clicked back into the text, don't yank the cursor.
-    if (spark && editor && !editor.isFocused) {
-      editor.chain().focus().setTextSelection(spark.pos).run();
-    }
-    setSpark(null);
-  }, [spark]);
-
-  const insertStarter = useCallback(
-    (starter: string) => {
-      const editor = editorRef.current;
-      if (!spark || !editor) return;
-      // If the writer typed while the palette was open, the frozen spot moved.
-      const pos = editor.state.doc === spark.doc ? spark.pos : editor.state.selection.from;
-      const text = joinStarter(editor.state.doc.textBetween(Math.max(0, pos - 1), pos), starter);
-      editor
-        .chain()
-        .focus()
-        .insertContentAt(pos, { type: "text", text })
-        .setTextSelection(pos + text.length)
-        .run();
-      setSpark(null);
-    },
-    [spark],
-  );
-
-  const toggleSpark = useCallback(
-    () => (spark ? closeSpark() : openSpark()),
-    [spark, closeSpark, openSpark],
-  );
-
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey)) return;
-      // event.code keeps shortcuts working where "\" needs AltGr and "/" is
-      // Shift+7 (Serbian); event.key catches Ctrl+Shift+7 there.
+      // event.code keeps the shortcut working where "\" needs AltGr (Serbian: "ž").
       if (event.key === "\\" || event.code === "Backslash") {
         event.preventDefault();
         togglePanel();
-      } else if (event.key === "/" || event.code === "Slash") {
-        event.preventDefault();
-        toggleSpark();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [togglePanel, toggleSpark]);
+  }, [togglePanel]);
 
   const navigate = useCallback(
     async (targetId: ID) => {
@@ -371,18 +308,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
             onClose={closeProof}
           />
         )}
-        {spark && (
-          <SparkPalette
-            context={spark.context}
-            anchor={spark.anchor}
-            onInsert={insertStarter}
-            bookTitle={data.book.title}
-            language={data.book.language}
-            chapterTitle={heading}
-            onClose={closeSpark}
-          />
-        )}
-        <EditorFooter wordsToday={wordsToday} sparkOpen={spark !== null} onSpark={toggleSpark} />
+        <EditorFooter wordsToday={wordsToday} />
       </div>
     </div>
   );

@@ -1,75 +1,132 @@
-# PRODUCT.md — Vizija i principi
+# PRODUCT.md — Momentum
 
-## Pozicioniranje
+> Kad se nešto ovde i u drugim dokumentima razlikuje, važi ovaj fajl.
 
-> **AI writing software koji ne pokušava da napiše knjigu — nego da natera autora da je završi.**
+## U jednoj rečenici
 
-Nije „Word + ChatGPT”. Nije ghostwriter. To je **minimalistički prostor koji pomaže čoveku da nastavi da piše**.
+**Editor za pisanje knjiga sa mentorom koji ti pomaže da je završiš.**
 
-## Četiri stuba
+Obećanje korisniku: **završićeš knjigu.** Svaka funkcija se meri time da li pomaže tom obećanju.
 
-1. **Čist editor** — bez UI gužve. Tekst, kursor, tišina.
-2. **AI sparing partner** — pomaže ti da ideš napred: sivi tekst koji dovršava tvoju rečenicu kad zastaneš (Tab prihvata) i mala paleta alata kad zapneš. AI predlaže, ti odlučuješ. Nikad ne piše pasus umesto tebe i nikad ne ocenjuje.
-3. **Provera jezika za srpski** — dijakritici, pravopis i gramatika, kao Grammarly. Nijedan postojeći alat to ne radi dobro za srpski. Ispravke su podvučene reči koje prihvataš ili odbacuješ; stil i žargon se ne diraju (v0.2).
-4. **Povratak u priču** — Resume ekran, kasnije email koji te zove nazad kroz samu priču (v0.3).
+Pozicioniranje: *AI ne piše tvoju knjigu — pomaže ti da je ti napišeš.*
 
-## Ekran za pisanje
+## Za koga
+
+Neko ko piše prvi ili drugi roman, uz posao, uveče. Ima ideju i volju, ali nema urednika, rok ni društvo.
+Jezik: srpski prvo (latinica, ekavica). Kasnije ijekavica i ćirilica (region), pa engleski.
+
+## Problem
+
+Ljudi ne odustaju zbog manjka talenta, nego zbog: perfekcionizma na početku, izgubljenosti u sredini, nestalog oduševljenja, pauze iz koje se teško vraća i usamljenosti.
+
+## Pet principa
+
+1. **Tekst i tišina.** Editor je prazan papir. Sve ostalo je nevidljivo dok ne zatreba.
+2. **Autor piše, AI pomaže.** Ništa ne ulazi u tekst bez klika autora. AI nikad ne piše pasuse.
+3. **Napred, pa nazad.** Prvi nacrt se piše; prepravka dolazi posle.
+4. **Napredak u priči, ne u brojkama.** Pobeda je „Petar je otvorio kofer", ne „347 reči".
+5. **Nikad prekor.** Nema streak-ova, kazni, crvenih upozorenja ni krivice.
+
+Kad nisi siguran: **„Da li bi Tiron ovo uradio?"** (vidi dole)
+
+## Raspored ekrana
 
 ```text
 ┌──────────────────────────────────────────────────────────────────┐
-│                                                  Poglavlje 7  ··· │
-│                       POGLAVLJE VII                              │
-│             Petar je zastao ispred vrata.                        │
-│             Nije se sećao da su juče bila zaključana.            │
-│             |                                                    │
-│      347 reči danas                          ✦ Treba mi impuls    │
-└──────────────────────────────────────────────────────────────────┘
+│ ☰  Tekst ▾  B  I  ≡▾        Sačuvano        ◐  ⌨  ◎  ⛶   T•     │
+├───────────┬───────────────────────────────────┬──────────────────┤
+│ SADRŽAJ   │          II · Kofer               │ TIRON            │
+│           │                                   │  šapat           │
+│ Posveta   │   Petar je zastao ispred vrata.   │  [ Zapeo sam ]   │
+│ I Vrata   │   Nije se sećao da su juče bila   │ KNJIGA        ›  │
+│ II Kofer ⋮│   zaključana|                     │ ZA KASNIJE    ›  │
+│ + Novo    │                                   │ JEZIK  94        │
+│ 347 reči danas                                │                  │
+└───────────┴───────────────────────────────────┴──────────────────┘
 ```
 
-## AI: četiri mala alata (`Ctrl/Cmd + /` ili „✦ Treba mi impuls”)
+Oba panela su podrazumevano zatvorena. Gornja traka bledi dok kucaš.
 
-> **ZA MENJANJE** — paleta i alati ostaju za sada, ali autor razmišlja kako da ih promeni.
+### Gore — traka
+- **Tekst ▾** — stil pasusa: Tekst, Naslov 1, Naslov 2, Citat
+- **B**, **I**
+- **≡▾** — poravnanje: levo (podrazumevano), centar, obostrano
+- „Sačuvano" — bledo, u sredini
+- **◐** teme · **⌨** pisaća mašina · **◎** fokus · **⛶** ceo ekran · **T** Tiron panel (tačkica = novi šapat)
 
-| Alat | Šta vraća | Primer |
-|---|---|---|
-| **✦ Poguraj me** | Usred rečenice: 3 načina da se dovrši *tvoja* misao (najbolje 2–5 reči, najviše 7). Posle tačke: 3 početka sledeće rečenice (do 5 reči). Biraš jedan, ubaci se na kursor. | „…mali iznosi ali” → „nakupi se do velikog iznosa.” |
-| **⚔ Zakomplikuj** | 1 neprijatno pitanje (đavolji advokat) | „Zar Petar ovo nije rešio previše lako? Koju grešku bi napravio iz ponosa?” |
-| **👁 Šta mi nedostaje?** | 1 zapažanje o čulu/detalju | „Puno dijaloga, malo prostora. Šta Petar čuje iza zida?” |
-| **↩ Vrati me u priču** | 3 reda sižea + otvoreno pitanje | „Poslednji put: Petar je stigao do kuće…” |
+### Levo — sadržaj knjige
+Uvodni delovi, poglavlja (automatski I, II, III), završni delovi. Prevlačenje sa animacijom, brisanje sa potvrdom i „Poništi", preimenovanje.
 
-## Resume ekran
+### Sredina — tekst
+Naslov poglavlja na vrhu (povezan sa sadržajem), tekst, prelom scene `***`, fusnote. Ghost dopune i provera jezika.
+
+### Desno — Tiron (četiri sekcije)
+1. **Tiron** — poslednji šapat, istorija, dugme **„Zapeo sam"**
+2. **Knjiga** — Srce knjige, likovi, mesta, otvorene niti, sažeci poglavlja
+3. **Za kasnije** — beleške za prepravku
+4. **Jezik** — ocena jezika u jednom redu
+
+## Funkcije
+
+### Editor
+- 4 teme (Papir, Noć, Mašina, Magla) — menjaju samo boje i font
+- Fokus mod, pisaća mašina skrol, ceo ekran
+- Stilovi: Tekst, Naslov 1, Naslov 2, Citat · B, I · poravnanje
+- Prelom scene, fusnote
+- Autosave, sve lokalno (IndexedDB)
+
+### Pomoć u rečenici
+- **Ghost dopune** — 3 predloga za kraj rečenice; pojavljuju se same posle pauze, `↑↓` bira, `Tab` prihvata; `/` je običan znak
+- **Provera jezika** — kvačice (tačkasta linija) i gramatika (talasasta), klik ispravlja
+- **Ocena jezika** — samo za poglavlja koja su iza tebe, nikad za ono koje upravo pišeš
+
+### Tiron — mentor
+Tiron je bio Ciceronov sekretar: zapisivao, pamtio i savetovao — ali govore je pisao Ciceron.
+- **Pamti:** Srce knjige (o čemu je, kako se završava, zašto je pišeš), likove, mesta, otvorene niti, sažetke poglavlja, najjače rečenice autora
+- **Šapuće:** pri ulasku, na kraju poglavlja, kad primeti obrazac (vrtenje u krug, pad u sredini, duga pauza), na kraju sesije
+- **Zapeo sam:** jedno pitanje za trenutnu scenu, na klik
+- **Beleška za kasnije:** `Ctrl+Shift+N` — zapiši problem umesto da ga popravljaš
+- **Kraj nacrta:** tih ekran sa prvom i poslednjom rečenicom knjige
+
+Tiron: kratak, topao, više pita nego tvrdi, pohvaljuje konkretno, nikad ne ocenjuje kvalitet nacrta, nikad ne piše tekst umesto autora, nikad ne šapuće dok autor kuca.
+
+### Povratak
+**Resume ekran:** gde si stao, šta si prošli put pomerio u priči, jedno pitanje za danas.
+
+## Dnevna petlja
 
 ```text
-Dobrodošao nazad.
-Juče si stao ovde:
-„Petar je spustio ruku na kvaku, ali...”
-────────────────
-Otvoreno pitanje:
-Zašto su vrata otključana?
-[ Nastavi da pišeš ]
+ULAZAK    Resume: "Prošli put: Petar je našao kofer. Za danas: Šta je u koferu?"
+   ↓
+PISANJE   ghost dopune · Zapeo sam · beleška za kasnije
+   ↓
+IZLAZAK   Tiron: šta se danas pomerilo u priči
+   ↓
+SUTRA     to postaje sledeći ulazak
 ```
-Klik → editor, kursor tačno gde si stao.
 
-## Motivacija: skoro nevidljiva
+## Šta Momentum NIJE
 
-- Napredak u **stranicama** (1 stranica ≈ 300 reči), ne „12.430 / 90.000 reči”.
-- Mali kalendar sa tačkicama (v0.2). Bez streak-ova, bez kazni.
+Nije ghostwriter. Nije Scrivener sa sto opcija. Nije Grammarly za mejlove. Nije Duolingo sa plamenčićima. Nije urednik koji ocenjuje nacrt.
 
-## Šta NE radimo (namerno)
+## Izbačeno (ne vraćati bez odluke autora proizvoda)
 
-- Generisanje proze, „nastavi tekst”, „prepiši pasus”
-- Streak, bedževi, notifikacije krivice
-- Veliki AI chat panel
-- Prepravljanje stila, ocene i kritika teksta
-- Cloud sync, nalozi, email u v0.1
+AI paleta i svi njeni alati (Treba mi impuls, Poguraj me, Zakomplikuj, Šta mi nedostaje, Vrati me u priču, Zamisli scenu, Sprint) i prečica `Ctrl+/` · sinonimi · slash meni (meni u stilu Hemingway editora) · Urednik režim · odložene podvlake (podvlake tek kada pasus ostane iza autora) — odbačeno; provera ostaje kao sada.
 
-## Roadmap
+## Posle verzije 1.0 (tek kad zatreba)
 
-- **v0.1** — editor, Book→Chapter→Scene (u v0.2 zamenjeno poglavljima), sivi tekst + Spark paleta, lokalno čuvanje + autosave
-- **v0.2** — vidi `docs/ZADATAK_v0.2.md`: priprema za više jezika, poglavlja umesto scena, fusnote, provera jezika, sinonimi, vizuelne teme; zatim Resume i polish
-- **kasnije** — `[[likovi]]`, stranice + kalendar, export u DOCX
-- **v0.3** — nalozi (Supabase), sync, email „nezavršena rečenica” + nedeljni pregled narativa, magic link
+Urednik (otključava se posle kraja nacrta) · čitanje naglas · izvoz DOCX/EPUB/PDF · nalozi i sync · email podsetnici · ijekavica i ćirilica · engleski.
 
-## Test uspeha za v0.1
+## Rizici koje pratimo
 
-Ako autor (ti) **sam poželi da se svako veče vrati u editor** — pogodili smo proizvod.
+- **Rast funkcija** — najveća pretnja minimalizmu. Panel ostaje na 4 sekcije.
+- **Privatnost** — rukopis ide na AI API; mora jasno da piše šta se šalje i da AI može da se isključi.
+- **Jedan provajder** — svi AI pozivi idu kroz jedan helper, da zamena modela bude moguća.
+- **Tržište** — srpski je prednost ali malo tržište; rano proveriti spremnost na plaćanje.
+
+## Kako znamo da radi
+
+- Da li se autor vraća (dani pisanja nedeljno)
+- Da li ide napred (nove reči naspram prepravki)
+- Da li završava poglavlja
+- Kasnije, sa korisnicima: **koliko ljudi završi nacrt**

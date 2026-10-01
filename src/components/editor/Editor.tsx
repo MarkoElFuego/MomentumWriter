@@ -16,7 +16,6 @@ import {
   GhostText,
   hasGhost,
   hasGhostChoices,
-  hasHint,
   stepGhost,
 } from "./ghostText";
 
@@ -82,9 +81,6 @@ export function Editor({ initialContent, language, onChange, onReady }: EditorPr
           }
           if (event.key === "Escape") return run(() => clearGhost(view));
         }
-
-        // The "stuck?" hint goes away on the first key; the key still does its job.
-        if (hasHint(view.state)) clearGhost(view);
 
         // A popover opened by a click leaves the cursor here; Esc closes it.
         if (event.key === "Escape" && openProofMark(view.state)) {

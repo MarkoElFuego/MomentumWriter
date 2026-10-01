@@ -70,6 +70,6 @@ describe("ProofreadRequestSchema", () => {
     expect(ProofreadRequestSchema.safeParse(request).success).toBe(true);
     const long = { ...request, text: Array.from({ length: 401 }, () => "reč").join(" ") };
     expect(ProofreadRequestSchema.safeParse(long).success).toBe(false);
-    expect(ProofreadRequestSchema.safeParse({ ...request, mode: "push" }).success).toBe(false);
+    expect(ProofreadRequestSchema.safeParse({ ...request, mode: "ghost" }).success).toBe(false);
   });
 });

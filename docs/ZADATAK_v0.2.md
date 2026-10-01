@@ -1,5 +1,7 @@
 # ZADATAK v0.2 — Momentum
 
+> **Istorija (završeno 2026-10-01).** Paleta, Faza 1b (`Ctrl+/`) i sinonimi (Faza 6) su izbačeni — važi `docs/PRODUCT.md`, a sledeći plan je `docs/ZADATAK_UI.md`.
+
 Agent radi **jednu fazu po razgovoru**, redom.
 Pre svake faze: pročitaj `AGENTS.md`, ovaj fajl i `docs/PROGRESS.md`. Prvo plan, pa kod.
 

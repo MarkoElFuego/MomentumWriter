@@ -9,7 +9,7 @@ export const DEFAULT_LANGUAGE: Language = "sr-Latn";
 export interface LanguagePrompts {
   /** Who writes and in which language; follows the shared role line. */
   writer: string;
-  /** Push/ghost: match the author's language, script and spelling. */
+  /** Ghost: match the author's language, script and spelling. */
   sameScript: string;
   /** Proofread system prompt — always identical, so the provider can cache it. */
   proofreader: string;

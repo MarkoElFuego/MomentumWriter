@@ -7,8 +7,6 @@ export const copy = {
   editor: {
     placeholder: "Počni ovde…",
     menuLabel: "Meni",
-    sparkButton: "✦ Treba mi impuls",
-    stuckHint: "Zapeo si?  Pritisni Ctrl/Cmd+/",
     // 1, 21, 31… reč; sve ostalo reči (11 je izuzetak)
     wordsToday: (n: number) =>
       `${n} ${n % 10 === 1 && n % 100 !== 11 ? "reč" : "reči"} danas`,
@@ -72,35 +70,9 @@ export const copy = {
     renameLabel: "Novi naziv",
     close: "Zatvori",
   },
-  spark: {
-    dialogLabel: "Sparing partner",
-    shortcut: "Ctrl/Cmd+/",
-    tools: {
-      push: "✦ Poguraj me",
-      complicate: "⚔ Zakomplikuj",
-      missing: "👁 Šta mi nedostaje?",
-    },
-    kinds: {
-      finish: "Dovrši",
-      inner: "Iznutra",
-      outer: "Spolja",
-      shift: "Pomeri fokus",
-    },
-    starterHint: "Izaberi nastavak — dalje pišeš ti.",
-    loading: "Razmišljam…",
-    again: "Još jednom",
-    back: "Drugi alat",
-    close: "Zatvori",
-    empty: "Napiši prvo nekoliko rečenica — onda imam na šta da reagujem.",
-    errors: {
-      offline: "Nema veze sa internetom. Tvoj tekst je bezbedan — probaj kad se veza vrati.",
-      timeout: "Ovog puta mi treba predugo. Probaj ponovo za trenutak.",
-      unavailable: "Sad nemam dobar odgovor. Probaj ponovo za trenutak.",
-    },
-  },
   write: {
-    notFound: "Ova scena ne postoji.",
-    loadFailed: "Scena trenutno ne može da se učita. Osveži stranicu.",
+    notFound: "Ovo poglavlje ne postoji.",
+    loadFailed: "Poglavlje trenutno ne može da se učita. Osveži stranicu.",
     backToLibrary: "Nazad na knjige",
   },
   resume: {

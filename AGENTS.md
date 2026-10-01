@@ -4,19 +4,19 @@ Ovo je glavni fajl sa pravilima za sve AI agente koji rade na projektu. Pročita
 
 ## 1. Šta pravimo
 
-Minimalistički editor za pisanje proze (romani, priče) sa AI **sparing partnerom** koji autora gura napred kada zapne — ali **nikada ne piše umesto njega**.
+**Editor za pisanje knjiga sa mentorom (Tironom) koji ti pomaže da je završiš** — AI pomaže, ali **nikada ne piše umesto autora**.
 
-Detalji: `docs/PRODUCT.md` · Arhitektura: `docs/ARCHITECTURE.md` · AI promptovi: `docs/AI_PROMPTS.md`
+Detalji: `docs/PRODUCT.md` (izvor istine za raspored ekrana i listu funkcija) · Arhitektura: `docs/ARCHITECTURE.md` · AI promptovi: `docs/AI_PROMPTS.md`
 
 ## 2. Zlatna pravila (ne krši ih nikad)
 
-1. **AI predlaže, autor odlučuje.** Ništa ne ulazi u tekst bez eksplicitnog prihvatanja (Tab, broj, klik, Enter, „Prihvati”). AI **dodaje** tekst samo kao dopunu do kraja rečenice: **dovršetak započete rečenice** ≤ 7 reči (najbolje 2–5) ili **početak sledeće** ≤ 5 reči, bez tačke (sivi tekst dok pišeš ili ✦ Poguraj me). AI **menja** postojeći tekst samo kroz **proveru jezika** (pravopis, gramatika, dijakritici — kao Grammarly): svaka ispravka je podvučena reč koju autor prihvata ili odbacuje; stil, redosled i izbor reči i žargon u dijalogu se ne diraju. AI nikad ne piše pasuse, više rečenica, dijalog ni „nastavi tekst”, i nikad ne ocenjuje ni kritikuje tekst. *(Izmenjeno 2026-09-29, odluka autora.)*
-2. **Editor je svetinja.** Na ekranu za pisanje: tekst, kursor, brojač reči danas, jedno AI dugme. Ništa više bez eksplicitnog odobrenja.
+1. **AI predlaže, autor odlučuje.** Ništa ne ulazi u tekst bez eksplicitnog prihvatanja (Tab, broj, klik, Enter, „Prihvati”). AI **dodaje** tekst samo kao dopunu do kraja rečenice: **dovršetak započete rečenice** ≤ 7 reči (najbolje 2–5) ili **početak sledeće** ≤ 5 reči, bez tačke (sivi tekst dok pišeš). AI **menja** postojeći tekst samo kroz **proveru jezika** (pravopis, gramatika, dijakritici — kao Grammarly): svaka ispravka je podvučena reč koju autor prihvata ili odbacuje; stil, redosled i izbor reči i žargon u dijalogu se ne diraju. AI nikad ne piše pasuse, više rečenica, dijalog ni „nastavi tekst”, i nikad ne ocenjuje ni kritikuje tekst. *(Izmenjeno 2026-09-29, odluka autora.)*
+2. **Editor je svetinja.** Raspored je tačno onaj iz `docs/PRODUCT.md` → „Raspored ekrana”: gornja traka koja bledi dok kucaš, tekst, „reči danas”, levi panel (sadržaj) i desni panel (Tiron, 4 sekcije) — oba panela podrazumevano zatvorena. Ništa više bez eksplicitnog odobrenja.
 3. **Tekst korisnika se nikad ne gubi.** Autosave (debounce ~800 ms) + save na `visibilitychange`/`beforeunload`. Svaka izmena modela podataka = nova Dexie verzija + migracija + test migracije.
 4. **Bez gamifikacije u Duolingo stilu.** Nema streak-ova, plamenčića, kažnjavanja, crvenih upozorenja.
-5. **Radi samo trenutnu fazu** iz `docs/PROGRESS.md` (plan za v0.2 je u `docs/ZADATAK_v0.2.md`). Ne dodaj funkcije iz kasnijih faza ili verzija (email, sync, auth…) čak i ako „izgleda lako”.
+5. **Radi samo trenutnu fazu** iz `docs/PROGRESS.md` (planovi: `docs/ZADATAK_UI.md`, pa `docs/ZADATAK_Tiron.md`). Ne dodaj funkcije iz kasnijih faza ili verzija (email, sync, auth…) čak i ako „izgleda lako”.
 6. **Minimalizam.** Editor je tekst, kursor i tišina. Sve je nevidljivo dok ne zatreba. Nema novih dugmadi, panela ni funkcija van trenutne faze.
-7. **Ne diraj ono što radi.** Sivi tekst (dopune), Spark paleta, Resume i autosave zadržavaju postojeće ponašanje osim ako faza kaže drugačije.
+7. **Ne diraj ono što radi.** Sivi tekst (dopune), provera jezika, Resume i autosave zadržavaju postojeće ponašanje osim ako faza kaže drugačije.
 
 ## 3. Stack
 
@@ -55,7 +55,6 @@ src/
     api/spark/route.ts       # jedini AI endpoint
   components/
     editor/                  # TipTap editor, footer, brojač
-    spark/                   # Spark paleta (Ctrl+/) i kartice odgovora
     structure/               # sadržaj knjige: uvodni delovi / poglavlja / završni delovi
     resume/
   lib/
@@ -76,14 +75,25 @@ src/
 
 ## 7. AI pravila (tehnička)
 
-- Jedan endpoint: `POST /api/spark` sa `mode: "push" | "complicate" | "missing" | "resume" | "ghost"` (u v0.2 je dodat `"proofread"`; `"synonyms"` je odložen).
-- `ghost` (sivi tekst) radi po stanju kursora — usred rečenice dovršetak, posle završene rečenice početak sledeće, u praznom pasusu **nema API poziva** (samo podsetnik); koristi `AI_GHOST_CONTEXT_WORDS` (~150 reči), 1 pokušaj i timeout 6 s; zahtev se otkazuje čim autor nastavi da kuca. Pauze su u `src/lib/timing.ts`. Radi dobro — ne optimizuj bez odluke autora.
+- Jedan endpoint: `POST /api/spark`. Modovi: `ghost` (sivi tekst), `proofread` (provera jezika), `resume` (Resume ekran); planirani `stuck` („Zapeo sam”, U5) i Tironovi modovi iz `docs/ZADATAK_Tiron.md`.
+- `ghost` (sivi tekst) radi po stanju kursora — usred rečenice dovršetak, posle završene rečenice početak sledeće, u praznom pasusu **nema API poziva** (ni podsetnika); koristi `AI_GHOST_CONTEXT_WORDS` (~150 reči), 1 pokušaj i timeout 6 s; zahtev se otkazuje čim autor nastavi da kuca. Pauze su u `src/lib/timing.ts`. Radi dobro — ne optimizuj bez odluke autora.
 - `proofread` (v0.2): model vraća ceo ispravljen pasus kao čist tekst, ali on se **nikad ne ubacuje** — služi samo za diff po rečima (`lib/text/proofDiff.ts`), a autor prihvata ispravke reč po reč. Guardrail protiv proze za ovaj mode ne važi; umesto njega važe pravila iz `proofDiff` (sličnost reči, razlika u broju reči).
 - Kontekst: poslednjih ~400 reči pre kursora (vidi `lib/text/extractContext.ts`). Ne šalji celu knjigu.
 - Model mora da vrati JSON: koristi JSON mode (`response_format: { type: "json_object" }`) i svejedno parsiraj kroz Zod (izuzetak: `proofread` vraća čist tekst). Na grešku: jedan retry, pa ljubazna poruka u UI.
 - Server odseca stavke duže od 220 karaktera i odbacuje odgovor koji liči na prozu (vidi `docs/AI_PROMPTS.md` → „Guardrail”).
 - **GPT-6 Luna parametri:** `temperature` sme da se pošalje SAMO uz `reasoning_effort: "none"`; uz bilo koji drugi effort `temperature`/`top_p` ne smeju biti u zahtevu (API vraća 400). Parametre zahteva uvek gradi preko jednog helpera (`lib/ai/requestParams.ts`, v0.2 Faza 2).
-- Timeout 15 s. Prikaži skeleton dok čekaš. Esc zatvara paletu.
+- **Reasoning effort po pozivu** (env, podrazumevane vrednosti u kodu i u `.env.example`; tabela sa obrazloženjem u `docs/AI_PROMPTS.md`): `AI_GHOST_REASONING_EFFORT=none`, proofread `none` + `temperature: 0.2`, `AI_EFFORT_STUCK=low`, `AI_EFFORT_TIRON=medium`, `AI_EFFORT_SESSION_END=low`, `AI_EFFORT_MEMORY=medium`. Kod Tirona nikad `none` ni `temperature`. Log sadrži effort, npr. `[tiron] moment=… effort=medium ms in cached out`.
+- Timeout 15 s (ghost 6 s, proofread 10 s). Prikaži skeleton dok čekaš.
+
+## 7a. Prečice (važeća tabela: `docs/ARCHITECTURE.md` → „Prečice”)
+
+- Sivi tekst se pojavljuje sam posle pauze · `↑`/`↓` bira predlog · `Tab` prihvata · `Ctrl/Cmd+→` jednu reč · `Esc` sklanja. `/` je običan znak.
+- `Ctrl/Cmd+\` levi panel · `Ctrl+Shift+F` fusnota · `***` u praznom pasusu prelom scene · `Alt+Enter` ispravka provere jezika.
+- Planirano: `Ctrl/Cmd+B`/`I`, `Ctrl/Cmd+Alt+0/1/2` stil pasusa, `# ` `## ` `> ` na početku reda (U2) · `Ctrl+Shift+N` beleška za kasnije (Tiron T3).
+
+## 7b. Izbačeno (ne vraćati bez odluke autora proizvoda)
+
+Kopija iz `docs/PRODUCT.md`: AI paleta i svi njeni alati (Treba mi impuls, Poguraj me, Zakomplikuj, Šta mi nedostaje, Vrati me u priču, Zamisli scenu, Sprint) i prečica `Ctrl+/` · sinonimi · slash meni (meni u stilu Hemingway editora) · Urednik režim · odložene podvlake (podvlake tek kada pasus ostane iza autora) — odbačeno; provera ostaje kao sada.
 
 ## 8. Način rada
 

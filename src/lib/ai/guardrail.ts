@@ -3,7 +3,7 @@ import { endsMidSentence, SENTENCE_END, splitSentences } from "@/lib/text/senten
 import type { SparkMode } from "./prompts";
 import type { SparkResponse } from "./schemas";
 
-// Golden rule 1: AI suggests, the author decides. Push and ghost may finish the
+// Golden rule 1: AI suggests, the author decides. Ghost may finish the
 // sentence the author left open, or offer a *starter* for the next one; every
 // other mode gets only questions and notes. These checks catch replies that
 // slipped past the prompt.
@@ -21,7 +21,7 @@ export function checkGuardrail(mode: SparkMode, data: SparkResponse, context: st
   const copiesContext = (text: string) => [...wordRuns(normalizeWords(text))].some((run) => contextRuns.has(run));
 
   // Suggestions are judged one by one: two good ones beat an empty screen.
-  if ((mode === "push" || mode === "ghost") && "items" in data) {
+  if (mode === "ghost" && "items" in data) {
     // Same rule as the client's cursorSituation: finish an open sentence, or start the next.
     const check = endsMidSentence(context) ? finishProblem : starterProblem;
     const seen = new Set<string>();

@@ -57,7 +57,9 @@ Faza 2 iz docs/PLAN.md. Implementiraj Dexie šemu tačno po docs/ARCHITECTURE.md
 
 ---
 
-## Faza 3 — AI sparing partner (Spark paleta)
+## Faza 3 — AI sparing partner (Spark paleta) — ISTORIJA
+
+> Paleta i svi njeni alati su izbačeni (`docs/PRODUCT.md` → „Izbačeno”); kod se uklanja u `docs/ZADATAK_UI.md` U1. Od ove faze ostaju `extractContext`, `/api/spark`, šeme i guardrail.
 
 **Prompt:**
 ```
@@ -83,7 +85,6 @@ Faza 4 iz docs/PLAN.md. Implementiraj povratak u priču:
 - Otvaranje knjige: ako je lastWrittenAt stariji od 6h → /resume?book=..., inače direktno editor na poziciji kursora.
 - /resume: "Dobrodošao nazad." · "Juče si stao ovde:" (ili "Pre N dana…") · citat poslednje rečenice · linija · "Otvoreno pitanje:" (AI mode "resume", keširano po hash-u konteksta; skeleton dok se učitava; ako AI padne, sekcija se samo sakrije) · dugme [Nastavi da pišeš] koje radi odmah, bez čekanja AI-ja.
 - Klik → editor, kursor tačno na cursorPos, skrolovano do njega.
-- Dodaj 4. alat u Spark paletu: "↩ Vrati me u priču" (prikazuje 3 reda sižea + pitanje).
 ```
 **Gotovo kada:** zatvorim tab, promenim `lastWrittenAt` u DevTools-u na juče, otvorim → vidim Resume · „Nastavi” me vraća tačno na kursor · Resume radi i bez AI-ja.
 
@@ -98,7 +99,7 @@ Faza 5 iz docs/PLAN.md. Samo poliranje, bez novih funkcija:
 - tipografija: line-height, veličina, širina kolone; fokus stil; animacije ≤150ms
 - prazna stanja (nema knjiga, prazna scena)
 - export trenutne knjige u Markdown (··· meni) kao sigurnosna kopija
-- proveri Ctrl/Cmd+/ i ostale prečice u Chrome/Firefox/Safari
+- proveri prečice (ARCHITECTURE.md → „Prečice”) u Chrome/Firefox/Safari
 - pokreni /review i popravi sve ❌
 ```
 **Gotovo kada:** pišeš 7 dana zaredom u sopstvenoj aplikaciji. Beleži šta smeta u `docs/PROGRESS.md` → „Utisci”.
@@ -110,6 +111,10 @@ Faza 5 iz docs/PLAN.md. Samo poliranje, bez novih funkcija:
 ## v0.2
 
 Plan i „Gotovo kada” po fazama: **`docs/ZADATAK_v0.2.md`** (redosled i status u `docs/PROGRESS.md`). Faze 4 (Resume) i 5 (Polish) iz v0.1 rade se posle v0.2.
+
+## Posle v0.2
+
+Redosled (status u `docs/PROGRESS.md`): `docs/ZADATAK_UI.md` U0 → U1 → ostatak Faze 4 (Resume, bez 4. alata) → U2–U7 → `docs/ZADATAK_Tiron.md` T0–T7. Mesto Faze 5 (Polish) u redosledu određuje autor.
 
 ## Kasnije (bez roka)
 

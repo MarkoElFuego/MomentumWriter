@@ -4,7 +4,7 @@ import { endsSentence } from "./sentences";
  * Where the cursor stands, judged only by the current paragraph:
  * - "mid"   — inside an unfinished sentence → gray completion of that sentence
  * - "after" — right after a finished sentence → gray start of the next one
- * - "empty" — empty paragraph → no AI, only the quiet "stuck?" hint
+ * - "empty" — empty paragraph → nothing (no AI call)
  * - "none"  — a selection, or text after the cursor → nothing
  */
 export type CursorSituation = "mid" | "after" | "empty" | "none";
