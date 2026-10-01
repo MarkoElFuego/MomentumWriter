@@ -76,9 +76,17 @@ export const copy = {
     backToLibrary: "Nazad na knjige",
   },
   resume: {
-    title: "Resume",
-  },
-  placeholder: {
-    comingSoon: "Uskoro.",
+    title: "Knjiga te čeka.",
+    // Same calendar day after 6 h+ = "ranije danas"; 1, 21, 31… dan, everything else (11 too) dana.
+    stoppedAt: (days: number) => {
+      if (days <= 0) return "Ovde je priča stala ranije danas:";
+      if (days === 1) return "Ovde je priča stala juče:";
+      return `Ovde je priča stala pre ${days} ${days % 10 === 1 && days % 100 !== 11 ? "dan" : "dana"}:`;
+    },
+    openQuestion: "Otvoreno pitanje:",
+    loadingQuestion: "Tražim pitanje za danas…",
+    continue: "Nastavi da pišeš",
+    notFound: "Ova knjiga ne postoji.",
+    loadFailed: "Knjiga trenutno ne može da se učita. Osveži stranicu.",
   },
 } as const;

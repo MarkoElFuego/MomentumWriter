@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { copy } from "@/lib/copy";
-import { createBook, firstPartId, listBooks } from "@/lib/db/books";
+import { createBook, listBooks } from "@/lib/db/books";
+import { bookEntryHref } from "@/lib/db/resume";
 import type { Book, ID } from "@/lib/db/schema";
 
 export function BookList() {
@@ -22,8 +23,8 @@ export function BookList() {
   }, []);
 
   const open = async (bookId: ID) => {
-    const partId = await firstPartId(bookId);
-    if (partId) router.push(`/write/${partId}`);
+    const href = await bookEntryHref(bookId);
+    if (href) router.push(href);
   };
 
   const create = async () => {

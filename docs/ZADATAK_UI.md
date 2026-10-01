@@ -51,7 +51,7 @@ Pre svake faze: pročitaj `AGENTS.md`, `docs/PRODUCT.md`, ovaj fajl i `docs/PROG
 - **Tekst ▾** — meni stila pasusa: Tekst, Naslov 1, Naslov 2, Citat. Uvek prikazuje stil pasusa u kom je kursor.
 - **B**, **I** — aktivno stanje vidljivo kad je kursor u boldovanom/kurziv tekstu
 - **≡▾** — meni poravnanja: levo, centar, obostrano; ikonica prikazuje trenutno poravnanje
-- **Sačuvano / Čuvam…** — bledo, centrirano (premesti iz `···` menija)
+- **Sačuvano / Čuvam…** — bledo, centrirano (premesti iz `···` menija). Prikaz „Nacrt 1 · Sačuvano" (tooltip „Nacrt 1 — ovo niko ne čita") dolazi tek sa ZADATAK_Tiron T1 — u U2 samo „Sačuvano" / „Čuvam…".
 - `◐` teme (mali meni sa 4 kružića) · `⌨` pisaća mašina · `◎` fokus · `⛶` ceo ekran — prekidači sa vidljivim aktivnim stanjem
 - `T` — otvara/zatvara Tiron panel; tačkica kad postoji novi šapat (ako Tiron šapati još ne postoje, bez tačkice)
 - Ako `···` meni posle ovoga ostane sa podešavanjima (Provera jezika, Tiron tih/prisutan/isključen), zadrži ga kao poslednju ikonicu desno.

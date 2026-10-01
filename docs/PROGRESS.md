@@ -6,7 +6,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
-**Sledeće:** Faza 4 — „Pravilo 6h → /resume” (Resume bez 4. alata). Pre toga posebnim docs commitom: odluke autora za ZADATAK_Tiron.md (2026-10-01). Pre koda: plan i „ok” od autora.
+**Sledeće:** U2 — gornja traka i formatiranje (`docs/ZADATAK_UI.md`). Pre koda: plan i „ok” od autora.
 
 ## Faza 0 — Postavka
 - [x] Next.js + TS + Tailwind + ESLint (pnpm)
@@ -94,8 +94,8 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 
 ## Faza 4 — Resume (posle U1)
 - [x] ResumeState + lastSentence + testovi
-- [ ] Pravilo 6h → /resume — `lastWrittenAt` stariji od 6 h → `/resume?book=…`, inače editor tačno na kursoru (`ResumeState` se već puni pri autosave-u; `cursorPos` resetovan na 0 u v0.2 Faza 3, sve je na `partId`)
-- [ ] Resume ekran (radi i bez AI-ja) — „Dobrodošao nazad.” · „Juče si stao ovde:” / „Pre N dana…” · poslednja rečenica · „Otvoreno pitanje:” (mode `resume`, keš po hash-u konteksta, skeleton; AI padne → sekcija se sakrije) · „Nastavi da pišeš” radi odmah i vraća kursor na `cursorPos`
+- [x] Pravilo 6h → /resume — `lastWrittenAt` stariji od 6 h → `/resume?book=…`, inače editor tačno na kursoru (`ResumeState` se već puni pri autosave-u; `cursorPos` resetovan na 0 u v0.2 Faza 3, sve je na `partId`)
+- [x] Resume ekran (radi i bez AI-ja) — „Dobrodošao nazad.” · „Juče si stao ovde:” / „Pre N dana…” · poslednja rečenica · „Otvoreno pitanje:” (mode `resume`, keš po hash-u konteksta, skeleton; AI padne → sekcija se sakrije) · „Nastavi da pišeš” radi odmah i vraća kursor na `cursorPos`
 - [-] ~~4. alat „↩ Vrati me u priču”~~ — izbačeno sa paletom (PRODUCT.md → „Izbačeno”)
 
 ## ZADATAK_UI — nastavak (posle Resume)
@@ -179,6 +179,8 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 
 - 2026-10-01: **ZADATAK_UI U0 (odluke autora).** Novi `docs/PRODUCT.md` je izvor istine za raspored i funkcije. **AI paleta je izbačena sa svim alatima** (Treba mi impuls, Poguraj me, Zakomplikuj, Šta mi nedostaje, Vrati me u priču, Zamisli scenu, Sprint) i prečicom `Ctrl+/` — kod se uklanja u U1; beleške o paleti gore su istorija. Ghost se ne dira: dopune se pojavljuju same posle pauze, `↑↓` bira, `Tab` prihvata, `/` je običan znak. „Slash meni” u „Izbačeno” = meni u stilu Hemingway editora. Provera jezika ostaje tačno kako radi (automatski, podvlake odmah); odložene podvlake su odbačene. Effort po pozivu: `AI_EFFORT_STUCK=low`, `AI_EFFORT_TIRON=medium`, `AI_EFFORT_SESSION_END=low`, `AI_EFFORT_MEMORY=medium`, bez `temperature` kod Tirona — tabela u `AI_PROMPTS.md`. Dodata U7 (ocena jezika). Redosled: U0 → U1 → Resume → U2–U7 → Tiron T0–T7.
 - 2026-10-01: **U1:** obrisani `components/spark/`, dugme „✦ Treba mi impuls” (footer ima samo „reči danas”), `Ctrl/Cmd+/` i podsetnik „Zapeo si?” (prazan pasus sada ne dobija ništa; `cursorSituation` i dalje vraća `"empty"`, samo se na to ne reaguje). `SPARK_MODES = ["resume", "ghost"]`; `push`/`complicate`/`missing` → 400. `PushSchema` → `GhostSchema`. Sistem promptovi i korisničke poruke za ghost i resume provereni **znak po znak identični** pre/posle. Testovi za uklonjene modove prebačeni na ghost (iste granice) i resume (pravila za pitanja). `SparkAnchor` → `PopoverAnchor` u `ProofPopover.tsx`. `copy.write` sada kaže „poglavlje” umesto „scena”. `joinStarter` ostaje (ghost ga koristi).
+- 2026-10-01: **Odluke autora za ZADATAK_Tiron:** (1) memorija knjige ide samo u „Zapeo sam” i Tiron pozive, nikad u ghost; (2) Resume ima jedno pitanje — sa `lastWin` „Prošli put / Za danas” i bez AI poziva `resume`, a `resume` je rezerva kad `lastWin` ne postoji; (3) nema „Obećanja” — `StoryMemory` = characters, places, openThreads; (4) „Nacrt 1” nije iznad naslova: u traci „Nacrt 1 · Sačuvano” (tooltip „Nacrt 1 — ovo niko ne čita”), u praznom prvom poglavlju nove knjige placeholder „Nacrt 1 · ovo niko ne čita. Napiši scenu koju već vidiš u glavi — može biti bilo koja.”, nestaje posle „Označi kraj nacrta”; (5) `Book.genre` se definiše u T1.
+- 2026-10-01: **Faza 4 (Resume), odluke autora:** tekst bez roda („Knjiga te čeka.”, „Ovde je priča stala ranije danas / juče / pre N dana:” — isti kalendarski dan posle 6 h = „ranije danas”; 1, 21, 31… dan, ostalo dana). Knjiga sa 0 reči → uvek editor. Prazna poslednja rečenica → bez citata, linije i reda „Ovde je priča stala…”. Kursor u zoni fusnota → kraj glavnog teksta. Keš pitanja po `partId:hash`. Siže od 3 reda iz mode `resume` se ne prikazuje (PRODUCT: jedno pitanje). Tehnički: šema dokumenta je izdvojena u `components/editor/contentSchema.ts` (`contentExtensions` / `docFromJSON` / `restorablePos`), editor je koristi istim redosledom pluginova kao pre; kursor se postavlja preko TipTap `autofocus: broj` (i skroluje do njega). `openPart` vraća `resumeCursor` (samo za poslednje pisani deo, `cursorPos > 0`). `hashText` = FNV-1a 32 bit. Bez promene baze. Ako AI nije podešen ili padne, Resume radi bez pitanja.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

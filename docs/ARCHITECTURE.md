@@ -95,7 +95,11 @@ Svaka promena šeme = nova `db.version(n)` sa `.upgrade()` — nikad ne menjaj p
 
 ## Kada se prikazuje Resume
 
-Pri otvaranju knjige: ako `resumeState.lastWrittenAt` je stariji od **6 sati** → `/resume?book=…`, inače direktno u editor na `partId` + `cursorPos`.
+Pri otvaranju knjige (`bookEntry` u `lib/db/resume.ts`): knjiga bez ijedne reči → editor (prvo poglavlje); `resumeState.lastWrittenAt` stariji od **6 sati** (`RESUME_AFTER_MS`) → `/resume?book=…`; inače editor na `partId` (obrisan deo / nema stanja → prvo poglavlje).
+
+Editor vraća kursor na `cursorPos` samo za deo koji je poslednji pisan (`openPart` → `resumeCursor`). `restorablePos` (`components/editor/contentSchema.ts`) pomera poziciju iz zone fusnota na kraj glavnog teksta, a `0` znači „nepoznato” → kraj teksta. Resume ekran čita sačuvan sadržaj istom šemom (`docFromJSON`), pa su pozicije iste kao u editoru.
+
+Resume ekran: „Knjiga te čeka.” · „Ovde je priča stala ranije danas / juče / pre N dana:” (kalendarski dani) · citat poslednje rečenice + linija (ne prikazuje se ako je rečenica prazna) · slot `ResumePrompt` („Otvoreno pitanje:”, mode `resume`, keš u `openQuestion`/`openQuestionFor` po ključu `partId:hash(konteksta)`; greška → slot se sakrije) · „Nastavi da pišeš” radi odmah. U T6 isti slot prikazuje „Prošli put / Za danas” umesto pitanja.
 
 ## Prečice
 

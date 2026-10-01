@@ -13,7 +13,8 @@ import {
   reorderParts,
   savePart,
 } from "./parts";
-import { getResumeState } from "./resume";
+import { bookEntry, bookEntryHref, getResumeState, saveOpenQuestion } from "./resume";
+import type { Part, ResumeState } from "./schema";
 import { getAppearance, saveAppearance } from "./settings";
 import { db } from "./schema";
 import { openPart } from "./session";
@@ -184,6 +185,91 @@ describe("resume state", () => {
     const { book, part } = await createBook();
     await savePart(part.id, doc("x"), 1, "2026-09-25");
     expect(await getResumeState(book.id)).toBeUndefined();
+  });
+});
+
+describe("bookEntry", () => {
+  const HOUR = 60 * 60 * 1000;
+  const now = 100 * HOUR;
+  const part = (id: string, kind: Part["kind"], order: number, wordCount: number): Part => ({
+    id,
+    bookId: "b",
+    kind,
+    title: "",
+    order,
+    content: doc(""),
+    wordCount,
+    createdAt: 0,
+    updatedAt: 0,
+  });
+  const state = (partId: string, hoursAgo: number): ResumeState => ({
+    bookId: "b",
+    partId,
+    cursorPos: 5,
+    lastSentence: "Petar je zastao.",
+    lastWrittenAt: now - hoursAgo * HOUR,
+  });
+  const parts = [part("front", "front", 1, 10), part("c1", "chapter", 1, 300), part("c2", "chapter", 2, 50)];
+
+  it("opens the part last written in when the break was short", () => {
+    expect(bookEntry(parts, state("c2", 5.9), now)).toEqual({ kind: "write", partId: "c2" });
+  });
+
+  it("shows Resume after more than 6 hours", () => {
+    expect(bookEntry(parts, state("c2", 6.1), now)).toEqual({ kind: "resume" });
+    expect(bookEntry(parts, state("c2", 24 * 5), now)).toEqual({ kind: "resume" });
+  });
+
+  it("goes straight to the editor when the book has no words yet", () => {
+    const empty = [part("c1", "chapter", 1, 0), part("c2", "chapter", 2, 0)];
+    expect(bookEntry(empty, state("c2", 48), now)).toEqual({ kind: "write", partId: "c1" });
+  });
+
+  it("falls back to the first chapter without a saved state or when the part is gone", () => {
+    expect(bookEntry(parts, undefined, now)).toEqual({ kind: "write", partId: "c1" });
+    expect(bookEntry(parts, state("deleted", 1), now)).toEqual({ kind: "write", partId: "c1" });
+  });
+
+  it("has nowhere to go in a book without parts", () => {
+    expect(bookEntry([], undefined, now)).toBeNull();
+  });
+});
+
+describe("resume in the database", () => {
+  it("opens a written book on Resume after a break, and the editor right after writing", async () => {
+    const { book, part } = await createBook();
+    await savePart(part.id, doc("Petar je zastao."), 3, "2026-09-25", { pos: 9, lastSentence: "Petar je zastao." });
+    const writtenAt = (await getResumeState(book.id))!.lastWrittenAt;
+
+    expect(await bookEntryHref(book.id, writtenAt + 60_000)).toBe(`/write/${part.id}`);
+    expect(await bookEntryHref(book.id, writtenAt + 7 * 60 * 60 * 1000)).toBe(`/resume?book=${book.id}`);
+  });
+
+  it("gives the editor the saved cursor only for the part last written in", async () => {
+    const { book, part } = await createBook();
+    const other = await createPart(book.id, "chapter");
+    await savePart(part.id, doc("Petar je zastao."), 3, "2026-09-25", { pos: 9, lastSentence: "Petar je zastao." });
+
+    expect((await openPart(part.id, "2026-09-25"))!.resumeCursor).toBe(9);
+    expect((await openPart(other.id, "2026-09-25"))!.resumeCursor).toBeUndefined();
+  });
+
+  it("treats a cursor of 0 as unknown", async () => {
+    const { part } = await createBook();
+    await savePart(part.id, doc("x"), 1, "2026-09-25", { pos: 0, lastSentence: "x" });
+    expect((await openPart(part.id, "2026-09-25"))!.resumeCursor).toBeUndefined();
+  });
+
+  it("caches the open question with its key and keeps it through later saves", async () => {
+    const { book, part } = await createBook();
+    await savePart(part.id, doc("x"), 1, "2026-09-25", { pos: 2, lastSentence: "x" });
+    await saveOpenQuestion(book.id, "Ko je na vratima?", `${part.id}:abcd1234`);
+    await savePart(part.id, doc("x y"), 2, "2026-09-25", { pos: 4, lastSentence: "x y" });
+    expect(await getResumeState(book.id)).toMatchObject({
+      cursorPos: 4,
+      openQuestion: "Ko je na vratima?",
+      openQuestionFor: `${part.id}:abcd1234`,
+    });
   });
 });
 

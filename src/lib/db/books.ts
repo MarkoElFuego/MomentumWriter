@@ -1,7 +1,7 @@
 import { copy } from "@/lib/copy";
 import { DEFAULT_LANGUAGE } from "@/lib/languages";
 import { newId } from "./id";
-import { listParts, newPart } from "./parts";
+import { entryPart, listParts, newPart } from "./parts";
 import { db, ORDER_STEP, type Book, type ID, type Part } from "./schema";
 
 /** A new book opens straight into its first chapter. */
@@ -31,10 +31,8 @@ export async function renameBook(id: ID, title: string): Promise<void> {
   await db.books.update(id, { title, updatedAt: Date.now() });
 }
 
-// Where "open book" lands until Resume adds the saved position.
 export async function firstPartId(bookId: ID): Promise<ID | undefined> {
-  const parts = await listParts(bookId);
-  return (parts.find((p) => p.kind === "chapter") ?? parts[0])?.id;
+  return entryPart(await listParts(bookId))?.id;
 }
 
 export async function bookWordTotal(bookId: ID): Promise<number> {

@@ -17,6 +17,7 @@ import { openPart, type OpenedPart } from "@/lib/db/session";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
 import { lastSentence } from "@/lib/text/lastSentence";
+import { docFromJSON, restorablePos } from "./contentSchema";
 import { Editor } from "./Editor";
 import { EditorFooter } from "./EditorFooter";
 import { EditorHeader } from "./EditorHeader";
@@ -63,6 +64,17 @@ function writeEnabled(key: string, enabled: boolean) {
   }
 }
 
+// Back to where the author stopped, if this is the part last written in.
+function savedCursor({ part, book, resumeCursor }: OpenedPart): number | undefined {
+  if (resumeCursor === undefined) return undefined;
+  try {
+    return restorablePos(docFromJSON(part.content, book.language), resumeCursor);
+  } catch {
+    // Content the schema can't read — the editor will report it; start at the end.
+    return undefined;
+  }
+}
+
 type LoadState =
   | { kind: "loading" }
   | { kind: "missing" }
@@ -105,6 +117,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
   }, []);
 
   const ready = state.kind === "ready" ? state.data : null;
+  // Parsed once per open, not on every keystroke.
+  const initialCursor = useMemo(() => (ready ? savedCursor(ready) : undefined), [ready]);
   const titles = useMemo(
     () =>
       ready
@@ -289,6 +303,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
           <div className={`mx-auto max-w-[66ch] pt-16 ${appearance.typewriter ? "pb-[50vh]" : "pb-16"}`}>
             <Editor
               initialContent={data.part.content}
+              initialCursor={initialCursor}
               language={data.book.language}
               onChange={handleChange}
               onReady={(instance) => {

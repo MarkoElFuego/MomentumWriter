@@ -10,11 +10,13 @@ export interface OpenedPart {
   /** Words in the book outside this part — lets the footer update live. */
   otherPartsTotal: number;
   startWordTotal: number;
+  /** Saved cursor when this is the part last written in; undefined → default spot. */
+  resumeCursor: number | undefined;
 }
 
 /** Loads everything the editor needs and records the day's starting total. */
 export async function openPart(partId: ID, date: string): Promise<OpenedPart | undefined> {
-  return db.transaction("rw", db.books, db.parts, db.dailyStats, async () => {
+  return db.transaction("rw", [db.books, db.parts, db.dailyStats, db.resumeState], async () => {
     const part = await db.parts.get(partId);
     if (!part) return undefined;
     const book = await db.books.get(part.bookId);
@@ -23,6 +25,7 @@ export async function openPart(partId: ID, date: string): Promise<OpenedPart | u
     const parts = await db.parts.where("bookId").equals(book.id).toArray();
     const bookTotal = parts.reduce((sum, p) => sum + p.wordCount, 0);
     const stat = await ensureDailyStat(book.id, date, bookTotal);
+    const resume = await db.resumeState.get(book.id);
 
     return {
       part,
@@ -30,6 +33,8 @@ export async function openPart(partId: ID, date: string): Promise<OpenedPart | u
       chapterNumber: chapterNumber(parts, part.id),
       otherPartsTotal: bookTotal - part.wordCount,
       startWordTotal: stat.startWordTotal,
+      // 0 means "unknown" (reset when scenes became parts).
+      resumeCursor: resume?.partId === part.id && resume.cursorPos > 0 ? resume.cursorPos : undefined,
     };
   });
 }

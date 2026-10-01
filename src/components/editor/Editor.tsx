@@ -1,14 +1,13 @@
 "use client";
 
 import { EditorContent, useEditor, type Editor as TiptapEditor, type JSONContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { copy } from "@/lib/copy";
-import { getLanguage, type Language } from "@/lib/languages";
+import type { Language } from "@/lib/languages";
+import { contentExtensions } from "./contentSchema";
 import { FocusMode } from "./focusMode";
-import { SceneBreak } from "./sceneBreak";
 import { closeProofTr, dispatchIf, openProofAtCursorTr, openProofMark, ProofMarks } from "./proofMarks";
-import { atFootnoteEdge, Footnotes, insertFootnoteTr, isInFootnote, leaveFootnoteTr } from "./footnotes";
+import { atFootnoteEdge, insertFootnoteTr, isInFootnote, leaveFootnoteTr } from "./footnotes";
 import {
   acceptGhost,
   acceptGhostWord,
@@ -31,25 +30,21 @@ interface EditorProps {
   /** Book language — picks the scene-break symbol. */
   language: Language;
   onReady?: (editor: TiptapEditor) => void;
+  /** Where the cursor starts (already made safe by restorablePos); default: end of the text. */
+  initialCursor?: number;
 }
 
-export function Editor({ initialContent, language, onChange, onReady }: EditorProps) {
+export function Editor({ initialContent, language, onChange, onReady, initialCursor }: EditorProps) {
+  // Same document schema as contentSchema.ts, in the original plugin order.
+  const [starterKit, footnotes, sceneBreak] = contentExtensions(language);
   const editor = useEditor({
     // Next.js renders on the server first; TipTap must mount on the client only.
     immediatelyRender: false,
-    autofocus: "end",
+    // A number also scrolls that spot into view.
+    autofocus: initialCursor ?? "end",
     content: initialContent,
     extensions: [
-      StarterKit.configure({
-        heading: { levels: [1] },
-        // Replaced by Footnotes, which allows a note zone at the end.
-        document: false,
-        // Prose only: no code, lists-as-UI or links in v0.1.
-        code: false,
-        codeBlock: false,
-        horizontalRule: false,
-        link: false,
-      }),
+      starterKit,
       Placeholder.configure({
         // Children too, so an empty note inside the zone gets its own hint.
         includeChildren: true,
@@ -57,10 +52,10 @@ export function Editor({ initialContent, language, onChange, onReady }: EditorPr
           node.type.name === "footnote" ? copy.footnotes.placeholder : copy.editor.placeholder,
       }),
       GhostText,
-      Footnotes,
+      footnotes,
       ProofMarks,
       FocusMode,
-      SceneBreak.configure({ symbol: getLanguage(language).typography.sceneBreak }),
+      sceneBreak,
     ],
     editorProps: {
       attributes: { class: "prose-editor", spellcheck: "true", lang: "sr" },

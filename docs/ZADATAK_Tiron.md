@@ -35,22 +35,22 @@ Kad nisi siguran da li nešto sme: **„Da li bi Tiron ovo uradio?"**
 - Proveri šta već postoji: desni panel, `StoryMemory`, `Book.genre`, ocena jezika, Resume. Napiši mi kratku listu: postoji / delimično / ne postoji. Faze ispod prilagodi tome (ne pravi ponovo ono što radi).
 - `docs/PRODUCT.md` već opisuje Tirona — samo proveri da se slaže sa ovim fajlom; ako nešto fali, dodaj kratku sekciju „Put pisca" (početak → perfekcionizam → sredina → blokada → pauza → kraj).
 - `AGENTS.md`: dodaj pravila 2–5 iz ovog fajla i pitanje „Da li bi Tiron ovo uradio?".
-- `docs/PROGRESS.md`: dodaj faze T1–T7 kao checklist.
+- ~~`docs/PROGRESS.md`: dodaj faze T1–T7 kao checklist.~~ — već urađeno u ZADATAK_UI U0 (T0–T7).
 
 ---
 
 ## Faza T1 — Srce knjige i prvi korak
 
-**Model:** `Book.heart = { about: string, ending: string, why: string }` (sve opciono), `Book.targetWords?: number`.
+**Model:** `Book.heart = { about: string, ending: string, why: string }` (sve opciono), `Book.targetWords?: number`, `Book.genre?`: "misterija" | "triler" | "fantastika" | "naučna fantastika" | "ljubavni" | "horor" | "istorijski" | "literarni" | "za decu" | "drugo" (bira se na ovom ekranu, menja u sekciji Knjiga).
 
 - Pri pravljenju nove knjige, jedan ekran sa tri pitanja (može „Preskoči"):
   - „O čemu je ova knjiga, u jednoj rečenici?"
   - „Kako se završava?" (placeholder: „može i ‚ne znam još'")
   - „Zašto je pišeš?"
-  - ispod: izbor žanra (ako već ne postoji) i okvirna dužina (kratak roman ~40.000 / roman ~80.000 / dug ~120.000 / ne znam) → `targetWords`
+  - ispod: izbor žanra i okvirna dužina (kratak roman ~40.000 / roman ~80.000 / dug ~120.000 / ne znam) → `targetWords`
 - Srce knjige se vidi i menja u desnom panelu, u sekciji **Knjiga**, kao prva podsekcija „Srce knjige".
-- Prvi prazan dokument nove knjige ima placeholder: „Napiši scenu koju već vidiš u glavi. Može biti bilo koja."
-- Na vrhu dokumenta, sitno i bledo, dok je knjiga u fazi nacrta: „Nacrt 1 · ovo niko ne čita".
+- Prvo prazno poglavlje nove knjige ima placeholder: „Nacrt 1 · ovo niko ne čita. Napiši scenu koju već vidiš u glavi — može biti bilo koja."
+- Dok je knjiga u fazi nacrta (`draftFinishedAt` ne postoji), status čuvanja u gornjoj traci glasi „Nacrt 1 · Sačuvano" / „Nacrt 1 · Čuvam…", sa tooltipom „Nacrt 1 — ovo niko ne čita". Ništa se ne dodaje iznad naslova poglavlja.
 
 **Gotovo kada:** nova knjiga → 3 pitanja → editor sa novim placeholderom; odgovori su u panelu i mogu da se izmene.
 
@@ -59,16 +59,16 @@ Kad nisi siguran da li nešto sme: **„Da li bi Tiron ovo uradio?"**
 ## Faza T2 — Tiron pamti: sažeci poglavlja i najjače rečenice
 
 ### Ako `StoryMemory` još ne postoji — napravi je prvo (deo ove faze)
-- `Book.genre`: "misterija" | "triler" | "fantastika" | "naučna fantastika" | "ljubavni" | "horor" | "istorijski" | "literarni" | "za decu" | "drugo" (bira se u T1 ekranu, menja u sekciji Knjiga)
-- `StoryMemory` (jedan po knjizi): `{ bookId, characters[], places[], openThreads[], promises[], updatedAt, updatedAfterPartId }`
+- `StoryMemory` (jedan po knjizi): `{ bookId, characters[], places[], openThreads[], updatedAt, updatedAfterPartId }` — bez posebne liste obećanja: obećanja iz priče su otvorene niti.
   - stavka: `{ id, text (max ~80 karaktera), source: "ai" | "user", pinned: boolean }`; max 12 po listi
-- `/api/spark` mode `"memory"`: ulaz = trenutna memorija + tekst poglavlja + žanr; izlaz = ažurirana memorija (Zod). Effort iz `AI_EFFORT_MEMORY`.
+- `/api/spark` mode `"memory"`: ulaz = trenutna memorija + tekst poglavlja + žanr (`Book.genre` iz T1); izlaz = ažurirana memorija (Zod). Effort iz `AI_EFFORT_MEMORY`.
 - Okidač: autor napusti poglavlje sa ≥500 novih reči od poslednjeg ažuriranja, ili klik „Osveži" u sekciji Knjiga. U pozadini, ne blokira pisanje.
 - Stavke sa `pinned: true` (koje je autor dodao/izmenio) AI ne sme da menja ni briše.
-- Prikaz u sekciji **Knjiga**: podsekcije Likovi, Mesta, Otvorene niti, Obećanja — jedan red po stavci, klik = izmena, × = brisanje, „+ dodaj".
-- Kompaktna memorija (max ~300 tokena) se dodaje u ghost i „Zapeo sam" pozive POSLE fiksnog sistem prompta (keš prompta i dalje radi).
+- Prikaz u sekciji **Knjiga**: podsekcije Likovi, Mesta, Otvorene niti — jedan red po stavci, klik = izmena, × = brisanje, „+ dodaj".
+- Kompaktna memorija (max ~300 tokena) se dodaje u „Zapeo sam" i Tiron pozive (šapati, kraj sesije) POSLE fiksnog sistem prompta (keš prompta i dalje radi). **Nikad u ghost pozive** — ghost se ne dira.
 - Ako odgovor ne prođe Zod — zadrži staru memoriju i loguj grešku.
 
+### Sažeci i najjače rečenice
 
 **Model:** `Part.summary?: string` (2–3 rečenice), `Part.summaryForHash?: string`, `Book.bestLines: { partId, text, savedAt }[]`.
 
@@ -125,7 +125,9 @@ Lek za perfekcionizam: umesto da popravljaš, zapišeš i ideš dalje.
 | Ulazak | Resume ekran | Srce knjige, memorija, sažeci, signali, poslednjih 5 šapata |
 | Kraj poglavlja | autor napusti poglavlje sa ≥500 novih reči (posle T2 ažuriranja) | Srce knjige, memorija, sažeci, poslednjih ~1500 reči poglavlja |
 | Obrazac procesa | pri ulasku, ako signal pređe prag (dole) | Srce knjige, signali, najjače rečenice |
-| Kraj sesije | kraj sesije (T4) | sažeci, tekst napisan u sesiji (max ~1500 reči), signali |
+| Kraj sesije | kraj sesije (T4) | memorija, sažeci, tekst napisan u sesiji (max ~1500 reči), signali |
+
+„Memorija" = `StoryMemory` (likovi, mesta, otvorene niti); obećanja iz priče su otvorene niti.
 
 **Pragovi za obrasce** (najviše jedan obrazac po danu):
 - `rewriteRatio > 0.5` i `restartsOfCurrentPart >= 3` → perfekcionizam: ohrabri da ide napred, predloži belešku za kasnije
@@ -184,6 +186,7 @@ Odgovaraš isključivo JSON-om po zadatom formatu.
   Za danas: Šta je u koferu?
   ```
   plus šapat ulaska ispod, ako postoji. **Šapat ulaska se generiše u pozadini na KRAJU prethodne sesije** (isti trenutak kao mala pobeda) i čuva kao `Whisper` sa `moment: "entry"`; Resume ga samo prikazuje, bez čekanja. Ako ne postoji, generiši ga pri otvaranju kao fallback. Posle pauze ≥4 dana dugme dobija tekst: „Samo 10 minuta?" (vodi u editor kao i obično).
+- **Resume ima jedno pitanje:** kad `ResumeState.lastWin` postoji, prikazuje se „Prošli put / Za danas" i AI poziv mode `"resume"` se **ne šalje**. Mode `"resume"` („Otvoreno pitanje") ostaje samo kao rezerva kad `lastWin` ne postoji.
 - Ako AI ne odgovori — Resume radi bez ovih redova, kao i sada.
 
 **Gotovo kada:** završim sesiju, sutra na Resume vidim šta sam juče pomerio i pitanje za danas.
@@ -192,7 +195,7 @@ Odgovaraš isključivo JSON-om po zadatom formatu.
 
 ## Faza T7 — Put do kraja
 
-- Kad je `bookPosition == "kraj"`: u sekciji **Knjiga**, odmah ispod Srca knjige, sitno: „Još oko 30 stranica do kraja nacrta" (1 stranica = 300 reči, iz `targetWords`) i lista otvorenih niti iz memorije kao checklist.
+- Kad je `bookPosition == "kraj"`: u sekciji **Knjiga**, odmah ispod Srca knjige, sitno: „Još oko 30 stranica do kraja nacrta" (1 stranica = 300 reči, iz `targetWords`) i lista otvorenih niti iz memorije (`StoryMemory.openThreads`) kao checklist.
 - U `···` meniju: **„Označi kraj nacrta"** → potvrda → tih ekran:
   ```
   Kraj nacrta.
@@ -203,7 +206,7 @@ Odgovaraš isključivo JSON-om po zadatom formatu.
   42 dana pisanja · 268 stranica
   ```
   Bez konfeta i animacija. Dugme „Nazad u knjigu".
-- `Book.draftFinishedAt` se upisuje; oznaka „Nacrt 1 · ovo niko ne čita" nestaje.
+- `Book.draftFinishedAt` se upisuje; oznaka „Nacrt 1 ·" nestaje iz gornje trake (status čuvanja je opet samo „Sačuvano" / „Čuvam…").
 
 **Gotovo kada:** na test knjizi sa malim `targetWords` vidim odbrojavanje, a „Označi kraj nacrta" prikazuje prvu i poslednju rečenicu tačno.
 

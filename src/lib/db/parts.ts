@@ -33,6 +33,12 @@ export function newPart(bookId: ID, kind: PartKind, title: string, order: number
   };
 }
 
+/** Where a book opens without a saved position: the first chapter, else the first part. */
+export function entryPart(parts: Part[]): Part | undefined {
+  const sorted = sortParts(parts);
+  return sorted.find((p) => p.kind === "chapter") ?? sorted[0];
+}
+
 export function getPart(id: ID): Promise<Part | undefined> {
   return db.parts.get(id);
 }

@@ -8,3 +8,6 @@ export const GHOST_PAUSE_AFTER_MS = 3_000;
 
 /** Language check of the paragraph being written, once the author stops typing. */
 export const PROOFREAD_PAUSE_MS = 3_000;
+
+/** Opening a book after a longer break shows the Resume screen first. */
+export const RESUME_AFTER_MS = 6 * 60 * 60 * 1_000;

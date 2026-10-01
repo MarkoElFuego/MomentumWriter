@@ -1,6 +1,6 @@
-import { copy } from "@/lib/copy";
+import { ResumeScreen } from "@/components/resume/ResumeScreen";
 
-// Resume ekran stiže u Fazi 4.
-export default function ResumePage() {
-  return <main className="p-6">{copy.placeholder.comingSoon}</main>;
+export default async function ResumePage({ searchParams }: { searchParams: Promise<{ book?: string }> }) {
+  const { book } = await searchParams;
+  return <ResumeScreen key={book ?? ""} bookId={book ?? ""} />;
 }
