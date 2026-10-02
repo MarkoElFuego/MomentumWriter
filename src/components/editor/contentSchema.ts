@@ -1,10 +1,14 @@
 import { getSchema, type JSONContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import TextAlign from "@tiptap/extension-text-align";
 import { Node as PMNode } from "@tiptap/pm/model";
 import { TextSelection } from "@tiptap/pm/state";
 import { getLanguage, type Language } from "@/lib/languages";
 import { Footnotes, mainTextEnd } from "./footnotes";
 import { SceneBreak } from "./sceneBreak";
+
+export const TEXT_ALIGNMENTS = ["left", "center", "justify"] as const;
+export type TextAlignment = (typeof TEXT_ALIGNMENTS)[number];
 
 /**
  * The extensions that define what a part's document may contain. The editor
@@ -14,7 +18,7 @@ import { SceneBreak } from "./sceneBreak";
 export function contentExtensions(language: Language) {
   return [
     StarterKit.configure({
-      heading: { levels: [1] },
+      heading: { levels: [1, 2] },
       // Replaced by Footnotes, which allows a note zone at the end.
       document: false,
       // Prose only: no code, lists-as-UI or links in v0.1.
@@ -22,6 +26,12 @@ export function contentExtensions(language: Language) {
       codeBlock: false,
       horizontalRule: false,
       link: false,
+    }),
+    // "left" is the default and is not stored, so old content reads unchanged.
+    TextAlign.configure({
+      types: ["paragraph", "heading"],
+      alignments: [...TEXT_ALIGNMENTS],
+      defaultAlignment: "left",
     }),
     Footnotes,
     SceneBreak.configure({ symbol: getLanguage(language).typography.sceneBreak }),

@@ -75,7 +75,8 @@ export function useGhostText(editor: Editor | null, enabled: boolean, titles: Ti
       if (hasGhost(state) || isInFootnote(state)) return;
       const { selection } = state;
       const $head = selection.$head;
-      if (!$head.parent.isTextblock) return;
+      // Headings are titles, not sentences — no completions there.
+      if (!$head.parent.isTextblock || $head.parent.type.name === "heading") return;
 
       const block = $head.parent;
       const situation = cursorSituation(

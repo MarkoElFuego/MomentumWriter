@@ -11,3 +11,12 @@ export const PROOFREAD_PAUSE_MS = 3_000;
 
 /** Opening a book after a longer break shows the Resume screen first. */
 export const RESUME_AFTER_MS = 6 * 60 * 60 * 1_000;
+
+/** The toolbar fades once the author has been typing this long… */
+export const TOOLBAR_FADE_AFTER_TYPING_MS = 1_500;
+
+/** …where a longer gap between keys starts the count again. */
+export const TOOLBAR_TYPING_GAP_MS = 2_000;
+
+/** Typewriter: a click centers its line after this long — sooner would move the text under a double click. */
+export const TYPEWRITER_CLICK_DELAY_MS = 300;

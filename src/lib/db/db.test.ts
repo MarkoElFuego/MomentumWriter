@@ -245,21 +245,6 @@ describe("resume in the database", () => {
     expect(await bookEntryHref(book.id, writtenAt + 7 * 60 * 60 * 1000)).toBe(`/resume?book=${book.id}`);
   });
 
-  it("gives the editor the saved cursor only for the part last written in", async () => {
-    const { book, part } = await createBook();
-    const other = await createPart(book.id, "chapter");
-    await savePart(part.id, doc("Petar je zastao."), 3, "2026-09-25", { pos: 9, lastSentence: "Petar je zastao." });
-
-    expect((await openPart(part.id, "2026-09-25"))!.resumeCursor).toBe(9);
-    expect((await openPart(other.id, "2026-09-25"))!.resumeCursor).toBeUndefined();
-  });
-
-  it("treats a cursor of 0 as unknown", async () => {
-    const { part } = await createBook();
-    await savePart(part.id, doc("x"), 1, "2026-09-25", { pos: 0, lastSentence: "x" });
-    expect((await openPart(part.id, "2026-09-25"))!.resumeCursor).toBeUndefined();
-  });
-
   it("caches the open question with its key and keeps it through later saves", async () => {
     const { book, part } = await createBook();
     await savePart(part.id, doc("x"), 1, "2026-09-25", { pos: 2, lastSentence: "x" });

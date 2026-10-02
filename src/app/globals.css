@@ -22,19 +22,42 @@
   margin: 0 0 1em;
 }
 
-.prose-editor h1 {
-  font-size: 1rem;
+/* Naslovi i citat: font i boje teme, bez ičeg spolja. */
+.prose-editor h1,
+.prose-editor h2 {
   font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  text-align: center;
-  margin: 0 0 2.5em;
+  line-height: 1.3;
+}
+
+.prose-editor h1 {
+  font-size: 1.6em;
+  margin: 1.4em 0 0.8em;
+}
+
+.prose-editor h2 {
+  font-size: 1.25em;
+  margin: 1.3em 0 0.6em;
+}
+
+.prose-editor > :is(h1, h2):first-child {
+  margin-top: 0;
 }
 
 .prose-editor blockquote {
-  border-left: 2px solid var(--ink-muted);
+  margin: 0 0 1em;
+  border-left: 2px solid color-mix(in srgb, var(--ink-muted) 45%, transparent);
   padding-left: 1em;
-  font-style: italic;
+  color: var(--ink-muted);
+}
+
+.prose-editor blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Obostrano poravnanje rastavlja reči (lang="sr-Latn" na editoru), ako je uključeno u ··· meniju. */
+.hyphenate .prose-editor [style*="text-align: justify"] {
+  hyphens: auto;
+  -webkit-hyphens: auto;
 }
 
 .prose-editor p.is-editor-empty:first-child::before {
@@ -168,7 +191,44 @@
   opacity: 0.35;
 }
 
-/* Tema u ··· meniju: kružić u boji papira. */
+/* Gornja traka: bledi dok autor kuca, vraća se na miš i fokus. */
+.toolbar {
+  transition: opacity 300ms ease;
+}
+
+.toolbar.is-faded {
+  opacity: 0;
+}
+
+.toolbar-button {
+  display: inline-flex;
+  min-width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem;
+}
+
+.toolbar-button[aria-pressed="true"],
+.toolbar-button[aria-expanded="true"] {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink-muted) 14%, transparent);
+}
+
+.toolbar-button:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.toolbar-status {
+  opacity: 0.75;
+}
+
+[role^="menuitem"][aria-checked="true"]:not(.theme-swatch) {
+  color: var(--ink);
+}
+
+/* Tema u traci: kružić u boji papira. */
 .theme-swatch {
   width: 1.5rem;
   height: 1.5rem;
@@ -176,7 +236,7 @@
   border: 1px solid var(--ink-muted);
 }
 
-.theme-swatch[aria-pressed="true"] {
+.theme-swatch[aria-checked="true"] {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
@@ -187,6 +247,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .toolbar,
   .focus-mode .prose-editor > * {
     transition: none;
   }

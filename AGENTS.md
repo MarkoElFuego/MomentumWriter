@@ -89,7 +89,8 @@ src/
 
 - Sivi tekst se pojavljuje sam posle pauze · `↑`/`↓` bira predlog · `Tab` prihvata · `Ctrl/Cmd+→` jednu reč · `Esc` sklanja. `/` je običan znak.
 - `Ctrl/Cmd+\` levi panel · `Ctrl+Shift+F` fusnota · `***` u praznom pasusu prelom scene · `Alt+Enter` ispravka provere jezika.
-- Planirano: `Ctrl/Cmd+B`/`I`, `Ctrl/Cmd+Alt+0/1/2` stil pasusa, `# ` `## ` `> ` na početku reda (U2) · `Ctrl+Shift+N` beleška za kasnije (Tiron T3).
+- `Ctrl/Cmd+B`/`I` · `Ctrl/Cmd+Alt+0/1/2` stil pasusa · `# ` `## ` `> ` na početku reda · `Alt+F10` fokus na traku.
+- Planirano: `Ctrl+Shift+N` beleška za kasnije (Tiron T3).
 
 ## 7b. Izbačeno (ne vraćati bez odluke autora proizvoda)
 

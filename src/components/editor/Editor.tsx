@@ -4,6 +4,7 @@ import { EditorContent, useEditor, type Editor as TiptapEditor, type JSONContent
 import Placeholder from "@tiptap/extension-placeholder";
 import { copy } from "@/lib/copy";
 import type { Language } from "@/lib/languages";
+import { blockStyleShortcut, setBlockStyle } from "./blockStyle";
 import { contentExtensions } from "./contentSchema";
 import { FocusMode } from "./focusMode";
 import { closeProofTr, dispatchIf, openProofAtCursorTr, openProofMark, ProofMarks } from "./proofMarks";
@@ -30,18 +31,16 @@ interface EditorProps {
   /** Book language — picks the scene-break symbol. */
   language: Language;
   onReady?: (editor: TiptapEditor) => void;
-  /** Where the cursor starts (already made safe by restorablePos); default: end of the text. */
-  initialCursor?: number;
 }
 
-export function Editor({ initialContent, language, onChange, onReady, initialCursor }: EditorProps) {
+export function Editor({ initialContent, language, onChange, onReady }: EditorProps) {
   // Same document schema as contentSchema.ts, in the original plugin order.
-  const [starterKit, footnotes, sceneBreak] = contentExtensions(language);
+  const [starterKit, textAlign, footnotes, sceneBreak] = contentExtensions(language);
   const editor = useEditor({
     // Next.js renders on the server first; TipTap must mount on the client only.
     immediatelyRender: false,
-    // A number also scrolls that spot into view.
-    autofocus: initialCursor ?? "end",
+    // A chapter always opens at its beginning (author's decision 2026-10-02).
+    autofocus: "start",
     content: initialContent,
     extensions: [
       starterKit,
@@ -56,9 +55,11 @@ export function Editor({ initialContent, language, onChange, onReady, initialCur
       ProofMarks,
       FocusMode,
       sceneBreak,
+      // Alignment lives in the toolbar only — no extra Ctrl+Shift+L/E/R/J shortcuts.
+      textAlign.extend({ addKeyboardShortcuts: () => ({}) }),
     ],
     editorProps: {
-      attributes: { class: "prose-editor", spellcheck: "true", lang: "sr" },
+      attributes: { class: "prose-editor", spellcheck: "true", lang: "sr-Latn" },
       handleKeyDown: (view, event) => {
         const mod = event.ctrlKey || event.metaKey;
         const plainTab = event.key === "Tab" && !event.shiftKey && !mod && !event.altKey;
@@ -86,6 +87,9 @@ export function Editor({ initialContent, language, onChange, onReady, initialCur
         if (event.altKey && !mod && !event.shiftKey && event.key === "Enter") {
           return dispatchIf(view, openProofAtCursorTr(view.state));
         }
+
+        const style = blockStyleShortcut(event);
+        if (style) return run(() => setBlockStyle(style)(view.state, view.dispatch));
 
         // Ctrl/Cmd+Shift+F — event.code too, for the Cyrillic layout.
         if (mod && event.shiftKey && !event.altKey && (event.key.toLowerCase() === "f" || event.code === "KeyF")) {

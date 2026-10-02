@@ -65,7 +65,7 @@ Pre svake faze: pročitaj `AGENTS.md`, `docs/PRODUCT.md`, ovaj fajl i `docs/PROG
 - Heading nivoi 1 i 2, Blockquote, Bold, Italic, TextAlign (`@tiptap/extension-text-align`, tipovi: paragraph, heading).
 - Prečice: `Ctrl/Cmd+B`, `Ctrl/Cmd+I`, `Ctrl/Cmd+Alt+1` (Naslov 1), `Ctrl/Cmd+Alt+2` (Naslov 2), `Ctrl/Cmd+Alt+0` (Tekst).
 - Markdown skraćenice na početku reda: `# ` → Naslov 1, `## ` → Naslov 2, `> ` → Citat.
-- **Ghost dopune i provera jezika ne rade u naslovima.**
+- **Ghost dopune ne rade u naslovima; provera jezika radi** (odluka 2026-09-30).
 - Stil naslova i citata iz aktivne teme (font, veličina, bleda vertikalna linija za citat) — bez boja van teme.
 
 ### Obostrano poravnanje

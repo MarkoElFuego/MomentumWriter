@@ -9,6 +9,7 @@ import { useAppearance } from "@/hooks/useAppearance";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useGhostText } from "@/hooks/useGhostText";
 import { useOpenProofMark, useProofread } from "@/hooks/useProofread";
+import { useToolbarFade } from "@/hooks/useToolbarFade";
 import { useTypewriterScroll } from "@/hooks/useTypewriterScroll";
 import { copy } from "@/lib/copy";
 import { chapterNumber, getPart, listParts, partHeading, savePart } from "@/lib/db/parts";
@@ -17,10 +18,9 @@ import { openPart, type OpenedPart } from "@/lib/db/session";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
 import { lastSentence } from "@/lib/text/lastSentence";
-import { docFromJSON, restorablePos } from "./contentSchema";
 import { Editor } from "./Editor";
 import { EditorFooter } from "./EditorFooter";
-import { EditorHeader } from "./EditorHeader";
+import { EditorToolbar } from "./EditorToolbar";
 import { mainTextEnd } from "./footnotes";
 import { ProofPopover, type PopoverAnchor } from "./ProofPopover";
 import { acceptDiacriticsTr, acceptProofTr, closeProofTr, dispatchIf, rejectProofTr } from "./proofMarks";
@@ -47,6 +47,7 @@ function writePanelOpen(open: boolean) {
 // Gray completions and language check on/off — per-browser UI preferences, not manuscript content.
 const GHOST_KEY = "momentum:ghost";
 const PROOF_KEY = "momentum:proofread";
+const HYPHENS_KEY = "momentum:hyphens";
 
 function readEnabled(key: string): boolean {
   try {
@@ -61,17 +62,6 @@ function writeEnabled(key: string, enabled: boolean) {
     localStorage.setItem(key, enabled ? "1" : "0");
   } catch {
     // UI preference only — safe to ignore.
-  }
-}
-
-// Back to where the author stopped, if this is the part last written in.
-function savedCursor({ part, book, resumeCursor }: OpenedPart): number | undefined {
-  if (resumeCursor === undefined) return undefined;
-  try {
-    return restorablePos(docFromJSON(part.content, book.language), resumeCursor);
-  } catch {
-    // Content the schema can't read — the editor will report it; start at the end.
-    return undefined;
   }
 }
 
@@ -96,10 +86,14 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const [editor, setEditor] = useState<TiptapEditor | null>(null);
   const [ghostEnabled, setGhostEnabled] = useState(true);
   const [proofEnabled, setProofEnabled] = useState(true);
+  const [hyphens, setHyphens] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const toolbarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setGhostEnabled(readEnabled(GHOST_KEY));
     setProofEnabled(readEnabled(PROOF_KEY));
+    setHyphens(readEnabled(HYPHENS_KEY));
   }, []);
 
   const toggleGhost = useCallback(() => {
@@ -116,9 +110,14 @@ export function WriteScreen({ partId }: { partId: ID }) {
     });
   }, []);
 
+  const toggleHyphens = useCallback(() => {
+    setHyphens((enabled) => {
+      writeEnabled(HYPHENS_KEY, !enabled);
+      return !enabled;
+    });
+  }, []);
+
   const ready = state.kind === "ready" ? state.data : null;
-  // Parsed once per open, not on every keystroke.
-  const initialCursor = useMemo(() => (ready ? savedCursor(ready) : undefined), [ready]);
   const titles = useMemo(
     () =>
       ready
@@ -136,6 +135,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
   useGhostText(editor, ghostEnabled, titles);
   useProofread(editor, proofEnabled, ready?.book.language ?? null);
   const proofMark = useOpenProofMark(editor);
+  const toolbarFaded = useToolbarFade(editor, toolbarRef, menuOpen);
 
   const closeProof = useCallback((refocus: boolean) => {
     const editor = editorRef.current;
@@ -285,25 +285,34 @@ export function WriteScreen({ partId }: { partId: ID }) {
         />
       )}
       <div className="relative flex min-w-0 flex-1 flex-col">
-        <EditorHeader
-          chapterTitle={heading}
+        <EditorToolbar
+          ref={toolbarRef}
+          editor={editor}
           saveStatus={status}
+          structureOpen={panel.open}
           onToggleStructure={togglePanel}
-          ghostEnabled={ghostEnabled}
-          onToggleGhost={toggleGhost}
-          proofEnabled={proofEnabled}
-          onToggleProof={toggleProof}
           appearance={appearance}
+          settings={{
+            ghostEnabled,
+            onToggleGhost: toggleGhost,
+            proofEnabled,
+            onToggleProof: toggleProof,
+            hyphens,
+            onToggleHyphens: toggleHyphens,
+          }}
+          faded={toolbarFaded}
+          onMenuOpenChange={setMenuOpen}
         />
         <main
           ref={scrollRef}
-          className={`flex-1 overflow-y-auto px-6${appearance.focusMode ? " focus-mode" : ""}`}
+          className={`flex-1 overflow-y-auto px-6${appearance.focusMode ? " focus-mode" : ""}${hyphens ? " hyphenate" : ""}`}
         >
           {/* Typewriter: room below the last line so it can reach the middle too. */}
-          <div className={`mx-auto max-w-[66ch] pt-16 ${appearance.typewriter ? "pb-[50vh]" : "pb-16"}`}>
+          <div className={`mx-auto max-w-[66ch] pt-10 ${appearance.typewriter ? "pb-[50vh]" : "pb-16"}`}>
+            {/* Until U3 ties the chapter title to the text, it sits quietly above it. */}
+            <p className="mb-10 text-center text-sm text-muted">{heading}</p>
             <Editor
               initialContent={data.part.content}
-              initialCursor={initialCursor}
               language={data.book.language}
               onChange={handleChange}
               onReady={(instance) => {

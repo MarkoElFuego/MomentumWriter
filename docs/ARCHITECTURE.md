@@ -97,7 +97,7 @@ Svaka promena šeme = nova `db.version(n)` sa `.upgrade()` — nikad ne menjaj p
 
 Pri otvaranju knjige (`bookEntry` u `lib/db/resume.ts`): knjiga bez ijedne reči → editor (prvo poglavlje); `resumeState.lastWrittenAt` stariji od **6 sati** (`RESUME_AFTER_MS`) → `/resume?book=…`; inače editor na `partId` (obrisan deo / nema stanja → prvo poglavlje).
 
-Editor vraća kursor na `cursorPos` samo za deo koji je poslednji pisan (`openPart` → `resumeCursor`). `restorablePos` (`components/editor/contentSchema.ts`) pomera poziciju iz zone fusnota na kraj glavnog teksta, a `0` znači „nepoznato” → kraj teksta. Resume ekran čita sačuvan sadržaj istom šemom (`docFromJSON`), pa su pozicije iste kao u editoru.
+Poglavlje se u editoru **uvek otvara od početka** (kursor na početku teksta, odluka autora 2026-10-02) — `cursorPos` se više ne vraća u editor; služi Resume ekranu za kontekst pitanja. `restorablePos` (`components/editor/contentSchema.ts`) pomera poziciju iz zone fusnota na kraj glavnog teksta, a `0` znači „nepoznato” → kraj teksta. Resume ekran čita sačuvan sadržaj istom šemom (`docFromJSON`), pa su pozicije iste kao u editoru.
 
 Resume ekran: „Knjiga te čeka.” · „Ovde je priča stala ranije danas / juče / pre N dana:” (kalendarski dani) · citat poslednje rečenice + linija (ne prikazuje se ako je rečenica prazna) · slot `ResumePrompt` („Otvoreno pitanje:”, mode `resume`, keš u `openQuestion`/`openQuestionFor` po ključu `partId:hash(konteksta)`; greška → slot se sakrije) · „Nastavi da pišeš” radi odmah. U T6 isti slot prikazuje „Prošli put / Za danas” umesto pitanja.
 
@@ -115,10 +115,16 @@ Resume ekran: „Knjiga te čeka.” · „Ovde je priča stala ranije danas / j
 | `F2` / dupli klik (u panelu) | Preimenuj deo |
 | `Alt + ↑/↓` (u panelu) | Pomeri deo unutar njegove grupe (isto kao prevlačenje) |
 | `***` u praznom pasusu | Prelom scene `✱ ✱ ✱` |
+| `Ctrl/Cmd + B` / `I` | Podebljano / kurziv |
+| `Ctrl/Cmd + Alt + 0` / `1` / `2` | Tekst / Naslov 1 / Naslov 2 (AltGr znak ima prednost — vidi ispod) |
+| `# ` `## ` `> ` na početku reda | Naslov 1 / Naslov 2 / Citat |
+| `Alt + F10` | Fokus na gornju traku (traka se vraća ako je izbledela) |
 
 `/` je običan znak. Na srpskom rasporedu `Ctrl+\` se hvata i po `event.code === "Backslash"` (taster „ž”).
 
-Planirano (ZADATAK_UI U2): `Ctrl/Cmd+B`/`I`, `Ctrl/Cmd+Alt+1`/`2`/`0` (Naslov 1 / Naslov 2 / Tekst), `# ` `## ` `> ` na početku reda. Tiron T3: `Ctrl+Shift+N` beleška za kasnije.
+`Ctrl+Alt+cifra` se ne hvata kad je `AltGraph` aktivan ili kad raspored otkuca znak (srpski: AltGr+1 = `~`, često kao mrtav taster) — Windows prijavljuje AltGr kao Ctrl+Alt. Na Mac-u (`Cmd+Option`) odlučuje `event.code`. Poravnanje nema prečice (samo traka).
+
+Planirano: Tiron T3: `Ctrl+Shift+N` beleška za kasnije.
 
 ## API: `POST /api/spark`
 

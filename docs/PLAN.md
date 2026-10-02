@@ -84,7 +84,7 @@ Faza 4 iz docs/PLAN.md. Implementiraj povratak u priču:
 - ResumeState po ARCHITECTURE.md: ažurira se pri autosave-u (sceneId, cursorPos, lastSentence, lastWrittenAt). lib/text/lastSentence.ts + testovi.
 - Otvaranje knjige: ako je lastWrittenAt stariji od 6h → /resume?book=..., inače direktno editor na poziciji kursora.
 - /resume: "Dobrodošao nazad." · "Juče si stao ovde:" (ili "Pre N dana…") · citat poslednje rečenice · linija · "Otvoreno pitanje:" (AI mode "resume", keširano po hash-u konteksta; skeleton dok se učitava; ako AI padne, sekcija se samo sakrije) · dugme [Nastavi da pišeš] koje radi odmah, bez čekanja AI-ja.
-- Klik → editor, kursor tačno na cursorPos, skrolovano do njega.
+- Klik → editor, poglavlje od početka (izmenjeno 2026-10-02: kursor se više ne vraća na cursorPos).
 ```
 **Gotovo kada:** zatvorim tab, promenim `lastWrittenAt` u DevTools-u na juče, otvorim → vidim Resume · „Nastavi” me vraća tačno na kursor · Resume radi i bez AI-ja.
 
