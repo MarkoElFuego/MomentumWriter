@@ -1,10 +1,11 @@
 import type { JSONContent } from "@tiptap/react";
 import { copy } from "@/lib/copy";
+import { bookLanguageScore } from "@/lib/text/languageScore";
 import { UNDO_DELETE_MS } from "@/lib/timing";
 import { ensureDailyStat } from "./dailyStats";
 import { EMPTY_DOC } from "./doc";
 import { newId } from "./id";
-import { db, ORDER_STEP, type ID, type Part, type PartKind } from "./schema";
+import { db, ORDER_STEP, type ID, type Part, type PartKind, type PartLanguageScore } from "./schema";
 
 const KIND_RANK: Record<PartKind, number> = { front: 0, chapter: 1, back: 2 };
 
@@ -166,6 +167,24 @@ export async function savePart(
       });
     }
     return newTotal;
+  });
+}
+
+/**
+ * The author left the part: keep its language score and refresh the book's,
+ * remembering the old book value so the panel can show ↑3 / ↓2.
+ */
+export async function saveLanguageScore(id: ID, score: PartLanguageScore): Promise<void> {
+  await db.transaction("rw", db.parts, db.books, async () => {
+    const part = await getPart(id);
+    if (!part) return;
+    await db.parts.update(id, { languageScore: score });
+    const value = bookLanguageScore(await listParts(part.bookId));
+    const book = await db.books.get(part.bookId);
+    if (!book || value === null) return;
+    const old = book.languageScore;
+    if (old?.value === value) return;
+    await db.books.update(book.id, { languageScore: { value, previous: old?.value } });
   });
 }
 

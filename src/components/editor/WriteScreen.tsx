@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Editor as TiptapEditor, JSONContent } from "@tiptap/react";
+import { useEditorState, type Editor as TiptapEditor, type JSONContent } from "@tiptap/react";
 import { StructurePanel } from "@/components/structure/StructurePanel";
 import { UndoToast } from "@/components/structure/UndoToast";
 import { TironPanel } from "@/components/tiron/TironPanel";
@@ -26,8 +26,11 @@ import {
   partHeading,
   renamePart,
   restorePart,
+  saveLanguageScore,
   savePart,
 } from "@/lib/db/parts";
+import { purgeProofCache } from "@/lib/db/proofCache";
+import { chapterLanguageScore } from "@/lib/text/languageScore";
 import type { ID, Part } from "@/lib/db/schema";
 import { openPart, type OpenedPart } from "@/lib/db/session";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
@@ -39,7 +42,15 @@ import { EditorFooter } from "./EditorFooter";
 import { EditorToolbar } from "./EditorToolbar";
 import { mainTextEnd } from "./footnotes";
 import { ProofPopover, type PopoverAnchor } from "./ProofPopover";
-import { acceptDiacriticsTr, acceptProofTr, closeProofTr, dispatchIf, rejectProofTr } from "./proofMarks";
+import {
+  acceptDiacriticsTr,
+  acceptProofTr,
+  closeProofTr,
+  dispatchIf,
+  nextProofMarkTr,
+  proofMarkCounts,
+  rejectProofTr,
+} from "./proofMarks";
 
 // Panels open/closed survive part switches (the page remounts on each one).
 const PANEL_KEY = "momentum:structureOpen";
@@ -158,7 +169,44 @@ export function WriteScreen({ partId }: { partId: ID }) {
   useTypewriterScroll(editor, scrollRef, appearance.typewriter);
   useGhostText(editor, ghostEnabled, titles);
   const stuck = useStuck(editor, titles);
-  useProofread(editor, proofEnabled, ready?.book.language ?? null);
+  const proofread = useProofread(editor, proofEnabled, ready?.book.language ?? null);
+  // Live count of open underlines in this chapter ("ovde: …" in the Jezik section).
+  const marksHere = useEditorState({
+    editor,
+    selector: ({ editor }) => (editor ? proofMarkCounts(editor.state) : null),
+  });
+
+  // Leaving the chapter: keep its language score (U7). Not while it is open —
+  // and not when less than half of it has been checked.
+  const saveLanguage = useCallback(() => {
+    let stats;
+    try {
+      stats = proofread.stats();
+    } catch {
+      return; // The editor is already gone.
+    }
+    if (!stats) return;
+    const score = chapterLanguageScore(stats.totalWords, stats.counts);
+    if (score === null) return;
+    saveLanguageScore(partId, { score, ...stats.counts }).catch((error) =>
+      console.error("Failed to save the language score", error),
+    );
+  }, [proofread, partId]);
+  const saveLanguageRef = useRef(saveLanguage);
+  useEffect(() => {
+    saveLanguageRef.current = saveLanguage;
+  }, [saveLanguage]);
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") saveLanguageRef.current();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      // Unmount = another part, the library or Resume.
+      saveLanguageRef.current();
+    };
+  }, []);
   const proofMark = useOpenProofMark(editor);
   const fullscreen = useFullscreen();
   const toolbarFaded = useToolbarFade(editor, toolbarRef, menuOpen, fullscreen.active);
@@ -212,6 +260,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
     if (readPanelOpen(PANEL_KEY)) setPanel({ open: true, autoFocus: false });
     setTironOpen(readPanelOpen(TIRON_KEY));
     purgeExpiredDeletes();
+    purgeProofCache().catch((error) => console.error("Failed to clean the language check cache", error));
     return () => {
       cancelled = true;
     };
@@ -489,6 +538,18 @@ export function WriteScreen({ partId }: { partId: ID }) {
         <div ref={rightPanelRef} className={overlay ? "panel-overlay panel-overlay-right" : "flex h-full shrink-0"}>
         <TironPanel
           stuck={stuck.state}
+          language={
+            data.book.languageScore
+              ? {
+                  ...data.book.languageScore,
+                  here: marksHere && marksHere.diacritics + marksHere.grammar > 0 ? marksHere : null,
+                }
+              : null
+          }
+          onNextMark={() => {
+            const editor = editorRef.current;
+            if (editor) dispatchIf(editor.view, nextProofMarkTr(editor.state));
+          }}
           onStuck={() => void stuck.ask()}
           onClose={() => setTironPanelOpen(false)}
           // ProseMirror keeps the selection while unfocused; focus() puts the cursor back there.

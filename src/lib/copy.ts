@@ -1,5 +1,14 @@
 import { toRoman } from "@/lib/text/toRoman";
 
+// 1, 21, 31… kvačica · 2–4, 22–24… kvačice · ostalo (i 11–14) kvačica
+function count(n: number, one: string, few: string, many: string): string {
+  const tens = n % 100;
+  const last = n % 10;
+  if (last === 1 && tens !== 11) return `${n} ${one}`;
+  if (last >= 2 && last <= 4 && (tens < 12 || tens > 14)) return `${n} ${few}`;
+  return `${n} ${many}`;
+}
+
 // Sav UI tekst na jednom mestu — ton se menja ovde, ne po komponentama.
 export const copy = {
   appName: "Momentum",
@@ -69,6 +78,19 @@ export const copy = {
     unavailable: "Tiron trenutno ne može da odgovori.",
     tooShort: "Napiši prvo par rečenica, pa ću imati šta da pitam.",
     close: "Zatvori",
+    // Sekcija „Jezik” — nikad „ocena pisanja” ni „kvalitet”.
+    language: "Jezik",
+    languageUp: (n: number) => `↑${n}`,
+    languageDown: (n: number) => `↓${n}`,
+    languageHere: (diacritics: number, grammar: number) =>
+      [
+        diacritics > 0 ? count(diacritics, "kvačica", "kvačice", "kvačica") : null,
+        grammar > 0 ? count(grammar, "gramatika", "gramatike", "gramatika") : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+        .replace(/^/, "ovde: "),
+    languageNext: "Sledeća podvlaka",
   },
   save: {
     saved: "Sačuvano",

@@ -15,8 +15,10 @@ import {
   renamePart,
   restorePart,
   reorderParts,
+  saveLanguageScore,
   savePart,
 } from "./parts";
+import { getProofResult, proofCacheKey, purgeProofCache, saveProofResult } from "./proofCache";
 import { bookEntry, bookEntryHref, getResumeState, saveOpenQuestion } from "./resume";
 import type { Part, ResumeState } from "./schema";
 import { getAppearance, saveAppearance } from "./settings";
@@ -446,7 +448,7 @@ describe("migrations", () => {
     const resume = await getResumeState("b1");
     expect(resume).toMatchObject({ partId: "c2", cursorPos: 0, lastSentence: "Peta." });
     expect(resume).not.toHaveProperty("sceneId");
-    expect(db.tables.map((t) => t.name).sort()).toEqual(["books", "dailyStats", "parts", "resumeState", "settings"]);
+    expect(db.tables.map((t) => t.name).sort()).toEqual(["books", "dailyStats", "parts", "proofCache", "resumeState", "settings"]);
   });
 
   it("v3 → v4: parts stay, settings start empty (defaults)", async () => {
@@ -469,7 +471,7 @@ describe("migrations", () => {
     v3.close();
     await db.open();
 
-    expect(db.verno).toBe(6);
+    expect(db.verno).toBe(7);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await db.settings.count()).toBe(0);
     expect(await getAppearance()).toEqual({ key: "appearance", focusMode: false, typewriter: false });
@@ -508,7 +510,7 @@ describe("migrations", () => {
     v4.close();
     await db.open();
 
-    expect(db.verno).toBe(6);
+    expect(db.verno).toBe(7);
     const blocks = async (id: string) => (await getPart(id))!.content.content;
     expect(await blocks("front")).toEqual([p("Mami.")]);
     expect((await getPart("front"))!.wordCount).toBe(1);
@@ -547,10 +549,36 @@ describe("migrations", () => {
     v5.close();
     await db.open();
 
-    expect(db.verno).toBe(6);
+    expect(db.verno).toBe(7);
     expect((await listParts("b1")).map((p) => p.id)).toEqual(["p1", "p2"]);
     expect((await getPart("p2"))?.content).toEqual(doc("Tekst p2."));
     expect(await bookWordTotal("b1")).toBe(4);
+  });
+
+  it("v6 → v7: parts stay, the language check cache starts empty", async () => {
+    db.close();
+    await Dexie.delete("momentum");
+    const v6 = new Dexie("momentum");
+    v6.version(6).stores({ ...V1_STORES, parts: "id, bookId", chapters: null, scenes: null, settings: "key" });
+    await v6.table("books").add({ id: "b1", title: "Knjiga", language: "sr-Latn", createdAt: 1, updatedAt: 1 });
+    await v6.table("parts").add({
+      id: "p1",
+      bookId: "b1",
+      kind: "chapter",
+      title: "",
+      order: 1000,
+      content: doc("Tekst ostaje."),
+      wordCount: 2,
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    v6.close();
+    await db.open();
+
+    expect(db.verno).toBe(7);
+    expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
+    expect((await getPart("p1"))?.languageScore).toBeUndefined();
+    expect(await db.proofCache.count()).toBe(0);
   });
 });
 
@@ -565,5 +593,65 @@ describe("appearance settings", () => {
     await saveAppearance({ theme: "masina" });
     await saveAppearance({ focusMode: true });
     expect(await getAppearance()).toEqual({ key: "appearance", theme: "masina", focusMode: true, typewriter: false });
+  });
+});
+
+describe("language check cache", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+
+  it("keys by version, language and text hash", () => {
+    expect(proofCacheKey("sr-Latn", "Tekst.")).toMatch(/^v1:sr-Latn:[0-9a-f]{8}$/);
+  });
+
+  it("returns a saved check for exactly the same text and refreshes usedAt", async () => {
+    await saveProofResult("sr-Latn", "Cuo je.", { corrected: "Čuo je.", rejected: [] }, 1_000);
+    expect(await getProofResult("sr-Latn", "Cuo je.", 5_000)).toEqual({ corrected: "Čuo je.", rejected: [] });
+    expect((await db.proofCache.get(proofCacheKey("sr-Latn", "Cuo je.")))!).toMatchObject({ createdAt: 1_000, usedAt: 5_000 });
+    expect(await getProofResult("sr-Latn", "Cuo je")).toBeUndefined();
+  });
+
+  it("treats a hash collision as a miss", async () => {
+    await db.proofCache.put({
+      key: proofCacheKey("sr-Latn", "Prvi."),
+      text: "Drugi.",
+      corrected: "Drugi.",
+      rejected: [],
+      createdAt: 1,
+      usedAt: 1,
+    });
+    expect(await getProofResult("sr-Latn", "Prvi.")).toBeUndefined();
+  });
+
+  it("removes entries unused for 90 days — by last use, not by creation", async () => {
+    const now = 200 * DAY;
+    await saveProofResult("sr-Latn", "Star, ali korišćen.", { corrected: "Star, ali korišćen.", rejected: [] }, 0);
+    await getProofResult("sr-Latn", "Star, ali korišćen.", now - 10 * DAY);
+    await saveProofResult("sr-Latn", "Zaboravljen.", { corrected: "Zaboravljen.", rejected: [] }, now - 91 * DAY);
+
+    expect(await purgeProofCache(now)).toBe(1);
+    expect(await getProofResult("sr-Latn", "Star, ali korišćen.", now)).toBeDefined();
+    expect(await getProofResult("sr-Latn", "Zaboravljen.", now)).toBeUndefined();
+  });
+});
+
+describe("language score in the database", () => {
+  it("saves a chapter score and the book score with its previous value", async () => {
+    const { book, part: a } = await createBook();
+    const b = await createPart(book.id, "chapter");
+
+    await saveLanguageScore(a.id, { score: 100, diacritics: 0, grammar: 0, words: 300 });
+    expect((await getBook(book.id))!.languageScore).toEqual({ value: 100, previous: undefined });
+
+    await saveLanguageScore(b.id, { score: 80, diacritics: 4, grammar: 0, words: 100 });
+    expect((await getPart(b.id))!.languageScore).toEqual({ score: 80, diacritics: 4, grammar: 0, words: 100 });
+    expect((await getBook(book.id))!.languageScore).toEqual({ value: 95, previous: 100 });
+  });
+
+  it("ignores a deleted part", async () => {
+    const { book } = await createBook();
+    const b = await createPart(book.id, "chapter");
+    await deletePart(b.id);
+    await saveLanguageScore(b.id, { score: 50, diacritics: 0, grammar: 5, words: 100 });
+    expect((await getBook(book.id))!.languageScore).toBeUndefined();
   });
 });

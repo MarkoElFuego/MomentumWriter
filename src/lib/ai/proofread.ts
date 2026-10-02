@@ -11,6 +11,11 @@ import type { Completer } from "./spark";
 /** Variant A from the 5a eval: 23/23 cases, no wrong changes, ~1.2 s. */
 export const PROOFREAD_EFFORT = "none";
 export const PROOFREAD_TEMPERATURE = 0.2;
+/**
+ * Part of every proofCache key ("v1:sr-Latn:<hash>"). Promeni kad menjaš
+ * prompt ili model za proveru — stari sačuvani rezultati se tada više ne koriste.
+ */
+export const PROOF_CACHE_VERSION = "v1";
 /** One paragraph; longer ones are not sent (the reply would take too long). */
 export const MAX_PROOFREAD_WORDS = 400;
 

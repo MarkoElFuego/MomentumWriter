@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { purgeExpiredDeletes } from "@/hooks/useUndoDelete";
 import { copy } from "@/lib/copy";
+import { purgeProofCache } from "@/lib/db/proofCache";
 import { createBook, listBooks } from "@/lib/db/books";
 import { bookEntryHref } from "@/lib/db/resume";
 import type { Book, ID } from "@/lib/db/schema";
@@ -16,6 +17,7 @@ export function BookList() {
 
   useEffect(() => {
     purgeExpiredDeletes();
+    purgeProofCache().catch((error) => console.error("Failed to clean the language check cache", error));
     listBooks()
       .then(setBooks)
       .catch((error) => {

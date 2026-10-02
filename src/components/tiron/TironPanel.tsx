@@ -3,8 +3,19 @@
 import type { StuckState } from "@/hooks/useStuck";
 import { copy } from "@/lib/copy";
 
+export interface LanguageRow {
+  /** Book score (chapters behind the author) and the value before its last change. */
+  value: number;
+  previous?: number;
+  /** Open underlines in the chapter being written; null → no second line, not clickable. */
+  here: { diacritics: number; grammar: number } | null;
+}
+
 interface TironPanelProps {
   stuck: StuckState;
+  /** null → no score yet, no section. */
+  language: LanguageRow | null;
+  onNextMark: () => void;
   onStuck: () => void;
   onClose: () => void;
   /** Esc from the panel: back to the text, where the cursor was. */
@@ -12,11 +23,11 @@ interface TironPanelProps {
 }
 
 /**
- * The right panel. For now only the Tiron section: „Zapeo sam” and its
- * question. Knjiga, Za kasnije and Jezik appear with the phases that give them
- * content — never as empty or "coming soon" sections.
+ * The right panel: Tiron („Zapeo sam” and its question) and Jezik once the
+ * book has a score. Knjiga and Za kasnije appear with the phases that give
+ * them content — never as empty or "coming soon" sections.
  */
-export function TironPanel({ stuck, onStuck, onClose, onBackToText }: TironPanelProps) {
+export function TironPanel({ stuck, language, onNextMark, onStuck, onClose, onBackToText }: TironPanelProps) {
   // A mouse click must not pull the cursor out of the text — the author keeps typing where they were.
   const keepEditorFocus = (event: React.MouseEvent) => event.preventDefault();
   const loading = stuck.kind === "loading";
@@ -74,6 +85,42 @@ export function TironPanel({ stuck, onStuck, onClose, onBackToText }: TironPanel
           {stuck.kind === "error" && <p className="text-muted">{copy.tiron.unavailable}</p>}
         </div>
       </section>
+
+      {language && <LanguageSection row={language} onNextMark={onNextMark} />}
     </aside>
+  );
+}
+
+function LanguageSection({ row, onNextMark }: { row: LanguageRow; onNextMark: () => void }) {
+  const change = row.previous === undefined ? 0 : row.value - row.previous;
+  const content = (
+    <>
+      <span className="flex items-baseline gap-3">
+        <span className="text-xs uppercase tracking-wider text-muted">{copy.tiron.language}</span>
+        <span className="tabular-nums text-ink">{row.value}</span>
+        {change !== 0 && (
+          <span className="tabular-nums text-xs text-muted">
+            {change > 0 ? copy.tiron.languageUp(change) : copy.tiron.languageDown(-change)}
+          </span>
+        )}
+      </span>
+      {row.here && <span className="mt-0.5 block text-xs text-muted">{copy.tiron.languageHere(row.here.diacritics, row.here.grammar)}</span>}
+    </>
+  );
+  return (
+    <section className="mt-8 border-t border-muted/20 pt-4">
+      {row.here ? (
+        <button
+          type="button"
+          title={copy.tiron.languageNext}
+          className="ui-button block w-full text-left"
+          onClick={onNextMark}
+        >
+          {content}
+        </button>
+      ) : (
+        <div>{content}</div>
+      )}
+    </section>
   );
 }

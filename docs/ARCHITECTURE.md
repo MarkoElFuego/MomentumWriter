@@ -82,7 +82,12 @@ db.version(4).stores({ settings: "key" });
 db.version(5).stores({}).upgrade(upgradeTitleHeadings);
 // v6: Part.deletedAt? — meko brisanje sa „Poništi”; opciono, bez indeksa i bez upgrade-a.
 db.version(6).stores({});
+// v7: proofCache (provera jezika po pasusu: key, text, corrected|null, rejected, createdAt, usedAt)
+//   + opciono Part.languageScore / Book.languageScore (U7). Nova tabela, bez upgrade-a.
+db.version(7).stores({ proofCache: "key, usedAt" });
 ```
+
+Ocena jezika (U7, `lib/text/languageScore.ts`): pri izlasku iz dela (unmount ekrana ili sakriven tab) `useProofread().stats()` daje reči **proverenih** pasusa i otvorene podvlake; ako je provereno ≥ 50% reči dela, `saveLanguageScore` upisuje `Part.languageScore` i preračunava `Book.languageScore` (prosek po rečima, čuva `previous` za ↑/↓). Deo otvoren u editoru se nikad ne računa. Prikaz: sekcija „Jezik” u Tiron panelu — `Jezik 94 ↑3`, ispod (samo ako ovde ima podvlaka) „ovde: 4 kvačice · 1 gramatika”; klik → sledeća podvlaka sa otvorenim popoverom. Bez ocene knjige sekcije nema.
 
 Brisanje dela: `deletePart` upisuje `deletedAt`; `listParts`, `getPart`, `openPart` i zbirovi reči ga od tog trenutka ne vide. „Poništi” (10 s, `UNDO_DELETE_MS`) briše `deletedAt` — deo je na istom mestu jer mu se `order` ne menja. `purgeDeletedParts` trajno briše delove obrisane pre ≥ 10 s (i `ResumeState` ako je pokazivao na njih); zove se kad istekne „Poništi” i pri svakom otvaranju liste knjiga ili editora. Ponuda „Poništi” je u modulu `hooks/useUndoDelete.ts` (ne u stanju komponente), jer brisanje otvorenog dela vodi na susedni i ekran se ponovo montira. Poslednje poglavlje knjige ne može da se obriše (`canDeletePart`); uvodni i završni delovi uvek mogu.
 

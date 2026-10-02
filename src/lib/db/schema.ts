@@ -13,6 +13,8 @@ export interface Book {
   language: Language;
   createdAt: number;
   updatedAt: number;
+  /** Book language score (U7) and the value before the last change, for ↑3 / ↓2. */
+  languageScore?: { value: number; previous?: number };
 }
 
 /** Front matter, a numbered chapter, or back matter — each is one document. */
@@ -32,6 +34,39 @@ export interface Part {
   updatedAt: number;
   /** Set while the deletion can still be undone; the part is gone for good after UNDO_DELETE_MS. */
   deletedAt?: number;
+  /** Saved when the author leaves the part; never for the part being written. */
+  languageScore?: PartLanguageScore;
+}
+
+export interface PartLanguageScore {
+  score: number;
+  /** Open (neither accepted nor rejected) corrections when it was saved. */
+  diacritics: number;
+  grammar: number;
+  /** Words of the paragraphs that were checked — the weight in the book score. */
+  words: number;
+}
+
+/** A correction the author rejected: same paragraph text → same place, so it stays rejected. */
+export interface RejectedEdit {
+  from: string;
+  to: string;
+  /** Offset in the paragraph text. */
+  start: number;
+}
+
+/** One paragraph's language check, kept until the paragraph changes (U7). */
+export interface ProofCacheEntry {
+  /** PROOF_CACHE_VERSION:language:hash(text) */
+  key: string;
+  /** Kept to rule out a hash collision. */
+  text: string;
+  /** The proofreader's paragraph; null = the server rejected it (don't ask again). */
+  corrected: string | null;
+  rejected: RejectedEdit[];
+  createdAt: number;
+  /** Every cache hit refreshes it; entries unused for 90 days are removed. */
+  usedAt: number;
 }
 
 export interface DailyStat {
@@ -71,6 +106,7 @@ export class MomentumDB extends Dexie {
   dailyStats!: Table<DailyStat, [string, ID]>;
   resumeState!: EntityTable<ResumeState, "bookId">;
   settings!: EntityTable<Appearance, "key">;
+  proofCache!: EntityTable<ProofCacheEntry, "key">;
 
   constructor() {
     super("momentum");
@@ -107,6 +143,9 @@ export class MomentumDB extends Dexie {
     // v6: Part.deletedAt (soft delete with undo). Optional, unset on every
     // existing part — nothing to upgrade, no index (filtered in memory).
     this.version(6).stores({});
+    // v7: proofCache (language check per paragraph, so reopening a chapter
+    // costs no API calls) + optional Part/Book.languageScore. New table only.
+    this.version(7).stores({ proofCache: "key, usedAt" });
   }
 }
 

@@ -1,9 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import type { EditorState, Transaction } from "@tiptap/pm/state";
+import {
+  forEachCheckable,
+  isCheckable,
+  knownProof,
+  languageStats,
+  proofChangeFor,
+  resolveProof,
+  visibleEdits,
+  type ProofSources,
+} from "@/components/editor/proofCheck";
 import {
   clearProofTr,
   hasProofMarks,
@@ -15,32 +25,14 @@ import {
 } from "@/components/editor/proofMarks";
 import { MAX_PROOFREAD_WORDS } from "@/lib/ai/proofread";
 import { requestProofread } from "@/lib/ai/sparkClient";
+import { getProofResult, saveProofResult, type ProofResult } from "@/lib/db/proofCache";
 import type { Language } from "@/lib/languages";
 import { countWords } from "@/lib/text/countWords";
-import { proofDiff, type DroppedChange } from "@/lib/text/proofDiff";
+import type { DroppedChange } from "@/lib/text/proofDiff";
 import { PROOFREAD_PAUSE_MS } from "@/lib/timing";
 
 // Enough to remember a long chapter's paragraphs without growing forever.
 const MAX_REMEMBERED = 500;
-
-/**
- * Text the author can proofread: any paragraph or heading — also inside a quote
- * or a list, which pasted text often lands in — but never a footnote (Faza 4).
- */
-function isCheckable(node: PMNode | null | undefined): node is PMNode {
-  return !!node && node.isTextblock && node.type.name !== "footnote";
-}
-
-function forEachCheckable(doc: PMNode, visit: (node: PMNode, pos: number) => void) {
-  doc.descendants((node, pos) => {
-    if (node.type.name === "footnotes") return false;
-    if (isCheckable(node)) {
-      visit(node, pos);
-      return false;
-    }
-    return true;
-  });
-}
 
 /** The block with exactly this text nearest to where it was sent from. */
 function findParagraph(doc: PMNode, text: string, near: number): { node: PMNode; pos: number } | null {
@@ -77,13 +69,23 @@ function cursorBlock(state: EditorState): number | null {
   return $from.depth >= 1 && $from.parent.isTextblock ? $from.before() : null;
 }
 
+export interface ProofreadHandle {
+  /** Words and open corrections for the language score; null while the check is off. */
+  stats: () => ReturnType<typeof languageStats> | null;
+}
+
 /**
  * Every paragraph is proofread once: all of them when the chapter opens, then
  * each new or changed one as soon as the cursor leaves it (Enter, arrows, a
- * click) or the author pauses typing in it. Answers come back as underlines
- * (proofMarks), never as changed text.
+ * click) or the author pauses typing in it. Results are saved per paragraph
+ * text (proofCache), so an unchanged paragraph never goes to the API again —
+ * reopening a chapter draws its underlines locally. Answers come back as
+ * underlines (proofMarks), never as changed text.
  */
-export function useProofread(editor: Editor | null, enabled: boolean, language: Language | null) {
+export function useProofread(editor: Editor | null, enabled: boolean, language: Language | null): ProofreadHandle {
+  // This session's results by paragraph text; outlives switching the check off and on.
+  const memory = useRef(new Map<string, ProofResult>());
+
   useEffect(() => {
     if (!editor) return;
     if (!enabled || !language) {
@@ -91,38 +93,54 @@ export function useProofread(editor: Editor | null, enabled: boolean, language: 
       return;
     }
 
-    // Paragraph texts already sent or queued — an unchanged paragraph is never sent twice.
+    const sources: ProofSources = {
+      memory: memory.current,
+      lookup: (text) =>
+        getProofResult(language, text).catch((error) => {
+          console.error("Failed to read the saved language check", error);
+          return undefined;
+        }),
+      save: (text, result) =>
+        saveProofResult(language, text, result).catch((error) =>
+          console.error("Failed to save the language check", error),
+        ),
+      request: (text, signal) => requestProofread({ mode: "proofread", text, language }, signal),
+    };
+
+    // Paragraph texts already handled or queued — an unchanged paragraph is never looked at twice.
     const checked = new Set<string>();
     const controllers = new Set<AbortController>();
     const queue: { text: string; near: number }[] = [];
     let running = 0;
 
+    // Underlines for a paragraph that still reads the same; false if it changed meanwhile.
+    const apply = (text: string, near: number, result: ProofResult): boolean => {
+      const found = findParagraph(editor.state.doc, text, near);
+      if (!found) return false;
+      const dropped: DroppedChange[] = [];
+      const edits = visibleEdits(text, result, dropped);
+      const marks = markRanges(found.node, found.pos, edits);
+      if (result.corrected !== null) logProofread(text, result.corrected, edits.length, marks.length, dropped);
+      editor.view.dispatch(setProofMarksTr(editor.state, found.pos, found.pos + found.node.nodeSize, marks));
+      return true;
+    };
+
     const check = async (text: string, near: number) => {
       const controller = new AbortController();
       controllers.add(controller);
-      const result = await requestProofread({ mode: "proofread", text, language }, controller.signal);
+      const outcome = await resolveProof(text, sources, controller.signal);
       controllers.delete(controller);
       if (controller.signal.aborted || editor.isDestroyed) return;
-      // Network/timeout → forget it so leaving the paragraph retries; a rejection stays remembered.
-      if (!result.ok) {
-        devLog(result.retry ? "nije uspelo, pokušaće ponovo:" : "server odbio:", text.slice(0, 60));
-        if (result.retry) checked.delete(text);
-        return;
-      }
-      const { corrected } = result;
-
-      // The author may have kept typing; only a paragraph that still reads the same gets marks.
-      const found = findParagraph(editor.state.doc, text, near);
-      if (!found) {
-        devLog("pasus se u međuvremenu promenio:", text.slice(0, 60));
+      // Network/timeout → forget it so leaving the paragraph retries; a rejection stays saved.
+      if ("retry" in outcome) {
+        devLog("nije uspelo, pokušaće ponovo:", text.slice(0, 60));
         return void checked.delete(text);
       }
-      const dropped: DroppedChange[] = [];
-      const edits = proofDiff(text, corrected, dropped);
-      const marks = markRanges(found.node, found.pos, edits);
-      logProofread(text, corrected, edits.length, marks.length, dropped);
-      const end = found.pos + found.node.nodeSize;
-      editor.view.dispatch(setProofMarksTr(editor.state, found.pos, end, marks));
+      if (outcome.result.corrected === null) devLog("server odbio:", text.slice(0, 60));
+      if (!apply(text, near, outcome.result)) {
+        devLog("pasus se u međuvremenu promenio:", text.slice(0, 60));
+        checked.delete(text);
+      }
     };
 
     const pump = () => {
@@ -143,9 +161,18 @@ export function useProofread(editor: Editor | null, enabled: boolean, language: 
       if (words > MAX_PROOFREAD_WORDS) devLog(`preskočen, ${words} reči (najviše ${MAX_PROOFREAD_WORDS}):`, text.slice(0, 60));
       if (words === 0 || words > MAX_PROOFREAD_WORDS || checked.has(text)) return;
       if (checked.size >= MAX_REMEMBERED) checked.clear();
+      if (memory.current.size >= MAX_REMEMBERED * 4) memory.current.clear();
       checked.add(text);
-      queue.push({ text, near: pos });
-      pump();
+      // Known (this session or saved) → underlines right away, no queue, no API call.
+      void knownProof(text, sources).then((known) => {
+        if (editor.isDestroyed) return;
+        if (known) {
+          if (!apply(text, pos, known)) checked.delete(text);
+          return;
+        }
+        queue.push({ text, near: pos });
+        pump();
+      });
     };
 
     // Opening the chapter: everything already written, top to bottom.
@@ -160,6 +187,14 @@ export function useProofread(editor: Editor | null, enabled: boolean, language: 
     };
 
     const onTransaction = ({ transaction }: { transaction: Transaction }) => {
+      // Prihvati / Odbaci: keep the saved result in step, so nothing is sent again.
+      const change = proofChangeFor(transaction, (text) => memory.current.get(text));
+      if (change) {
+        memory.current.set(change.text, change.result);
+        checked.add(change.text);
+        void sources.save(change.text, change.result);
+      }
+
       if (transaction.docChanged) {
         clearTimeout(pause);
         pause = setTimeout(checkCurrent, PROOFREAD_PAUSE_MS);
@@ -180,6 +215,14 @@ export function useProofread(editor: Editor | null, enabled: boolean, language: 
       for (const controller of controllers) controller.abort();
     };
   }, [editor, enabled, language]);
+
+  const stats = useCallback(() => {
+    if (!editor || !enabled) return null;
+    // Only paragraphs with a real answer count as checked (not a server rejection).
+    return languageStats(editor.state, (text) => (memory.current.get(text)?.corrected ?? null) !== null);
+  }, [editor, enabled]);
+
+  return { stats };
 }
 
 /** The underline whose popover is open, kept in sync with the editor. */

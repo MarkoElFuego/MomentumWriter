@@ -1,6 +1,6 @@
 import { Extension } from "@tiptap/react";
 import type { Node as PMNode } from "@tiptap/pm/model";
-import { Plugin, PluginKey, type EditorState, type Transaction } from "@tiptap/pm/state";
+import { Plugin, PluginKey, TextSelection, type EditorState, type Transaction } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import type { ProofEdit } from "@/lib/text/proofDiff";
 
@@ -33,6 +33,19 @@ type ProofMeta =
 
 const proofKey = new PluginKey<ProofState>("proofMarks");
 let nextId = 1;
+
+/**
+ * What the author did with a correction — useProofread keeps its saved check
+ * in step: a rejection is remembered, an acceptance carries the check over to
+ * the paragraph's new text (no new API call). `pos` is the mark's start in
+ * the document before the transaction.
+ */
+export type ProofEvent = { type: "accept"; pos: number } | { type: "reject"; pos: number; edit: ProofEdit };
+export const PROOF_EVENT = "proofEvent";
+
+export function proofEventOf(tr: Transaction): ProofEvent | undefined {
+  return tr.getMeta(PROOF_EVENT) as ProofEvent | undefined;
+}
 
 function specOf(decoration: Decoration): MarkSpec {
   return decoration.spec as MarkSpec;
@@ -137,6 +150,22 @@ export function hasProofMarks(state: EditorState): boolean {
   return (proofKey.getState(state)?.decorations.find().length ?? 0) > 0;
 }
 
+/** Open underlines in the document, by kind — for "ovde: 4 kvačice · 1 gramatika". */
+export function proofMarkCounts(state: EditorState): { diacritics: number; grammar: number } {
+  const marks = proofKey.getState(state)?.decorations.find() ?? [];
+  const diacritics = marks.filter((d) => specOf(d).edit.type === "diacritic").length;
+  return { diacritics, grammar: marks.length - diacritics };
+}
+
+/** The next underline after the cursor (from the top after the last one), with its popover open. */
+export function nextProofMarkTr(state: EditorState): Transaction | null {
+  const marks = [...(proofKey.getState(state)?.decorations.find() ?? [])].sort((a, b) => a.from - b.from);
+  const next = marks.find((d) => d.from > state.selection.from) ?? marks[0];
+  if (!next) return null;
+  const tr = state.tr.setSelection(TextSelection.create(state.doc, next.from)).scrollIntoView();
+  return meta(tr, { type: "open", id: specOf(next).id, focus: true });
+}
+
 const meta = (tr: Transaction, value: ProofMeta) => tr.setMeta(proofKey, value);
 
 /** Replaces the underlines of one paragraph (the range it covers now). */
@@ -166,11 +195,15 @@ export function clearProofTr(state: EditorState) {
 export function acceptProofTr(state: EditorState, id: number): Transaction | null {
   const mark = findMark(state, id);
   if (!mark) return null;
-  return meta(state.tr.insertText(specOf(mark).edit.to, mark.from, mark.to), { type: "close" });
+  const tr = meta(state.tr.insertText(specOf(mark).edit.to, mark.from, mark.to), { type: "close" });
+  return tr.setMeta(PROOF_EVENT, { type: "accept", pos: mark.from } satisfies ProofEvent);
 }
 
 export function rejectProofTr(state: EditorState, id: number) {
-  return meta(state.tr, { type: "remove", ids: [id] });
+  const tr = meta(state.tr, { type: "remove", ids: [id] });
+  const mark = findMark(state, id);
+  if (mark) tr.setMeta(PROOF_EVENT, { type: "reject", pos: mark.from, edit: specOf(mark).edit } satisfies ProofEvent);
+  return tr;
 }
 
 /** Every diacritic correction in the paragraph, in one undo step. */
@@ -182,7 +215,7 @@ export function acceptDiacriticsTr(state: EditorState, id: number): Transaction 
   for (const d of diacriticMarksIn(state, mark.from).sort((a, b) => b.from - a.from)) {
     tr.insertText(specOf(d).edit.to, d.from, d.to);
   }
-  return meta(tr, { type: "close" });
+  return meta(tr, { type: "close" }).setMeta(PROOF_EVENT, { type: "accept", pos: mark.from } satisfies ProofEvent);
 }
 
 export const proofMarksPlugin = new Plugin<ProofState>({
