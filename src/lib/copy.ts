@@ -59,6 +59,17 @@ export const copy = {
     hyphensOff: "Rastavljanje reči: isključeno",
     allBooks: "Sve knjige",
   },
+  tiron: {
+    panelLabel: "Tiron",
+    toggle: "Tiron",
+    shortcut: "Ctrl/Cmd+Shift+\\",
+    stuck: "Zapeo sam",
+    another: "Još jedno",
+    thinking: "Tiron razmišlja…",
+    unavailable: "Tiron trenutno ne može da odgovori.",
+    tooShort: "Napiši prvo par rečenica, pa ću imati šta da pitam.",
+    close: "Zatvori",
+  },
   save: {
     saved: "Sačuvano",
     saving: "Čuvam…",

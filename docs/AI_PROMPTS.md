@@ -80,6 +80,37 @@ User poruka: samo tekst pasusa (najviše 400 reči). Odgovor: ceo ispravljen pas
 - Server skida ```-ograde i navodnike oko celog odgovora (osim ako ih je autor napisao).
 - Log: `[proofread] 812ms in=486 cached=0 out=231`.
 
+## mode: `stuck` — „Zapeo sam” (U5, desni panel)
+
+Klik na „Zapeo sam” (ili „Još jedno”). Klijent (`hooks/useStuck.ts`) šalje ~400 reči glavnog teksta pre kursora (bez fusnota); ako ih ima **manje od 30 — nema poziva**, prikaže se „Napiši prvo par rečenica, pa ću imati šta da pitam.”. „Još jedno” šalje poslednjih **najviše 5** pitanja u polju `avoid`, a korisnička poruka dobija `---NE PONAVLJAJ---` sa njima. Memorija knjige i `heart.ending` se dodaju posle sistem prompta kad postoje (Tiron T1/T2).
+
+Sistem prompt **nema** urednički zajednički deo — to je Tiron: `tiron` + `stuck` iz `src/lib/languages/sr-Latn/prompts.ts`. Effort `AI_EFFORT_STUCK` (podrazumevano `low`), bez temperature, 2 pokušaja, timeout 15 s. Log: `[stuck] effort=low 1840ms in=… cached=… out=…`.
+
+```
+Ti si Tiron, tihi mentor pored pisca, kao Ciceronov sekretar: pamtiš njegovu knjigu i njegov proces,
+ali knjigu piše on.
+Pravila:
+- Najviše dve kratke rečenice. Savremeni srpski. Bez latinskih fraza.
+- Više pitaš nego što tvrdiš. Pohvaljuješ konkretno (šta tačno radi), nikad generički.
+- Ovo je prvi nacrt: nikad ne ocenjuješ kvalitet pisanja.
+- Nikad ne brojiš propuste, ne kažeš "trebalo bi", ne porediš sa drugim piscima.
+- Nikad ne pišeš rečenice priče umesto autora.
+- Koristi imena, mesta i otvorene niti iz konteksta — budi konkretan za OVU knjigu.
+- Ne ponavljaj ništa iz prethodnih šapata.
+Odgovaraš isključivo JSON-om po zadatom formatu.
+
+Autor je zapeo i pritisnuo „Zapeo sam”. U delu ---TEKST--- je ono što je napisao pre kursora. Postavi mu JEDNO pitanje koje otvara sledeći korak u sceni koju upravo piše.
+- Postavi pitanje o OVOJ sceni, ne opšti savet o pisanju.
+- Oslanjaj se na imena likova, mesta, predmete i ono što je nerešeno u tekstu.
+- Pitanje je kratko, najviše 200 znakova. Pitanje mora da se završi upitnikom.
+- Ne predlaži rečenice priče i ne odgovaraj umesto autora — pitanje ostavlja odluku njemu.
+- Ako postoji deo ---NE PONAVLJAJ---, pitaj nešto drugo od navedenih pitanja (drugi lik, drugi ugao, druga prepreka).
+- Piši istim jezikom i pismom kao autor; ako autor ne koristi dijakritike (č, ć, š, ž, đ), ne koristi ih ni ti.
+
+Format:
+{"question":"..."}
+```
+
 ## Zod šeme
 
 ```ts
@@ -87,6 +118,10 @@ export const ResumeSchema = z.object({
   summary: z.array(z.string().min(3).max(160)).length(3),
   openQuestion: z.string().min(3).max(220),
 });
+
+// stuck: pitanje se NIKAD ne odseca (odsečeno pitanje bez „?” izgleda kao greška) —
+// guardrail odbija duže od 200 znakova, pa ide jedan ponovni pokušaj.
+export const StuckSchema = z.object({ question: z.string().trim().min(3) });
 ```
 
 ## Guardrail (server, `src/lib/ai/guardrail.ts`)
@@ -96,7 +131,9 @@ export const ResumeSchema = z.object({
 - **kursor posle završene rečenice**: ima više od 5 reči, završava se sa `.` `!` `?` `…` ili sadrži novi red;
 - sadrži 8+ uzastopnih reči identičnih kontekstu.
 
-**Ostali modovi (resume, kasnije stuck i Tiron):** posle Zod validacije, odbaci ceo odgovor (→ jedan retry, pa greška) ako bilo koja stavka sadrži 8+ uzastopnih reči identičnih kontekstu (kopiranje teksta), ima više od 2 rečenice ili počinje navodnikom/crticom za dijalog (`„`, `"`, `—`, `–`).
+**stuck:** pre opštih pravila ispod — odbija se pitanje duže od 200 znakova (`stuck-too-long`) i odgovor koji se ne završava upitnikom (dozvoljen je zatvoren navodnik/zagrada posle `?`; `stuck-not-question`).
+
+**Ostali modovi (resume, stuck, kasnije Tiron):** posle Zod validacije, odbaci ceo odgovor (→ jedan retry, pa greška) ako bilo koja stavka sadrži 8+ uzastopnih reči identičnih kontekstu (kopiranje teksta), ima više od 2 rečenice ili počinje navodnikom/crticom za dijalog (`„`, `"`, `—`, `–`).
 
 Pre parsiranja: skini ```json ograde ako postoje.
 

@@ -10,6 +10,8 @@ export const SparkRequestSchema = z.object({
   chapterTitle: z.string().max(200),
   /** Book language; older clients omit it → DEFAULT_LANGUAGE. */
   language: z.enum(LANGUAGES).optional(),
+  /** Stuck: the last questions asked (at most 5), so "Još jedno" asks something new. */
+  avoid: z.array(z.string().max(300)).max(5).optional(),
 });
 export type SparkRequest = z.infer<typeof SparkRequestSchema>;
 
@@ -42,9 +44,16 @@ export const ResumeSchema = z.object({
   openQuestion: item(),
 });
 
+// Never clipped: a question cut short without its "?" reads like a bug.
+// The guardrail rejects one that is too long, and the call is tried once more.
+export const StuckSchema = z.object({
+  question: z.string().trim().min(3),
+});
+
 export const SCHEMAS = {
   resume: ResumeSchema,
   ghost: GhostSchema,
+  stuck: StuckSchema,
 } satisfies Record<SparkMode, z.ZodType>;
 
 export type SparkResponse<M extends SparkMode = SparkMode> = z.infer<(typeof SCHEMAS)[M]>;

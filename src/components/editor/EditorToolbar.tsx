@@ -18,6 +18,8 @@ interface EditorToolbarProps {
   saveStatus: SaveStatus;
   structureOpen: boolean;
   onToggleStructure: () => void;
+  tironOpen: boolean;
+  onToggleTiron: () => void;
   appearance: AppearanceControls;
   /** Settings left in ···. */
   settings: Omit<EditorMenuProps, "open" | "onOpenChange">;
@@ -97,7 +99,18 @@ function useFullscreen() {
 }
 
 export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(function EditorToolbar(
-  { editor, saveStatus, structureOpen, onToggleStructure, appearance, settings, faded, onMenuOpenChange },
+  {
+    editor,
+    saveStatus,
+    structureOpen,
+    onToggleStructure,
+    tironOpen,
+    onToggleTiron,
+    appearance,
+    settings,
+    faded,
+    onMenuOpenChange,
+  },
   ref,
 ) {
   const [openMenu, setOpenMenu] = useState<MenuName | null>(null);
@@ -259,6 +272,10 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
           onPress={fullscreen.toggle}
         >
           <span aria-hidden="true">⛶</span>
+        </Toggle>
+        {/* No dot yet: whispers come with Tiron T5. */}
+        <Toggle label={copy.tiron.toggle} shortcut={copy.tiron.shortcut} pressed={tironOpen} onPress={onToggleTiron}>
+          <span aria-hidden="true" className="font-serif">T</span>
         </Toggle>
         <EditorMenu {...settings} {...menuProps("more")} />
       </div>

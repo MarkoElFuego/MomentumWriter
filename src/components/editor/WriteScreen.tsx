@@ -6,12 +6,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor as TiptapEditor, JSONContent } from "@tiptap/react";
 import { StructurePanel } from "@/components/structure/StructurePanel";
 import { UndoToast } from "@/components/structure/UndoToast";
+import { TironPanel } from "@/components/tiron/TironPanel";
 import { useAppearance } from "@/hooks/useAppearance";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useGhostText } from "@/hooks/useGhostText";
 import { useOpenProofMark, useProofread } from "@/hooks/useProofread";
 import { useToolbarFade } from "@/hooks/useToolbarFade";
 import { offerUndo, purgeExpiredDeletes, takeUndo, useUndoDelete } from "@/hooks/useUndoDelete";
+import { useStuck } from "@/hooks/useStuck";
 import { useTypewriterScroll } from "@/hooks/useTypewriterScroll";
 import { copy } from "@/lib/copy";
 import {
@@ -37,20 +39,21 @@ import { mainTextEnd } from "./footnotes";
 import { ProofPopover, type PopoverAnchor } from "./ProofPopover";
 import { acceptDiacriticsTr, acceptProofTr, closeProofTr, dispatchIf, rejectProofTr } from "./proofMarks";
 
-// Panel open/closed survives part switches (the page remounts on each one).
+// Panels open/closed survive part switches (the page remounts on each one).
 const PANEL_KEY = "momentum:structureOpen";
+const TIRON_KEY = "momentum:tironOpen";
 
-function readPanelOpen(): boolean {
+function readPanelOpen(key: string): boolean {
   try {
-    return sessionStorage.getItem(PANEL_KEY) === "1";
+    return sessionStorage.getItem(key) === "1";
   } catch {
     return false;
   }
 }
 
-function writePanelOpen(open: boolean) {
+function writePanelOpen(key: string, open: boolean) {
   try {
-    sessionStorage.setItem(PANEL_KEY, open ? "1" : "0");
+    sessionStorage.setItem(key, open ? "1" : "0");
   } catch {
     // UI preference only — safe to ignore.
   }
@@ -107,6 +110,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const pendingDelete = useUndoDelete();
   // Bumped after an undo so the open panel shows the part again.
   const [partsVersion, setPartsVersion] = useState(0);
+  const [tironOpen, setTironOpen] = useState(false);
 
   useEffect(() => {
     setGhostEnabled(readEnabled(GHOST_KEY));
@@ -151,6 +155,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const scrollRef = useRef<HTMLElement>(null);
   useTypewriterScroll(editor, scrollRef, appearance.typewriter);
   useGhostText(editor, ghostEnabled, titles);
+  const stuck = useStuck(editor, titles);
   useProofread(editor, proofEnabled, ready?.book.language ?? null);
   const proofMark = useOpenProofMark(editor);
   const toolbarFaded = useToolbarFade(editor, toolbarRef, menuOpen);
@@ -198,7 +203,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
         console.error("Failed to open part", error);
         if (!cancelled) setState({ kind: "failed" });
       });
-    if (readPanelOpen()) setPanel({ open: true, autoFocus: false });
+    if (readPanelOpen(PANEL_KEY)) setPanel({ open: true, autoFocus: false });
+    setTironOpen(readPanelOpen(TIRON_KEY));
     purgeExpiredDeletes();
     return () => {
       cancelled = true;
@@ -248,7 +254,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
 
   const setPanelOpen = useCallback((open: boolean, autoFocus: boolean) => {
     setPanel({ open, autoFocus });
-    writePanelOpen(open);
+    writePanelOpen(PANEL_KEY, open);
     if (!open) editorRef.current?.commands.focus();
   }, []);
 
@@ -257,18 +263,28 @@ export function WriteScreen({ partId }: { partId: ID }) {
     [panel.open, setPanelOpen],
   );
 
+  // The Tiron panel never takes focus on opening — the author keeps writing.
+  const setTironPanelOpen = useCallback((open: boolean) => {
+    setTironOpen(open);
+    writePanelOpen(TIRON_KEY, open);
+  }, []);
+
+  const toggleTiron = useCallback(() => setTironPanelOpen(!tironOpen), [tironOpen, setTironPanelOpen]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey)) return;
       // event.code keeps the shortcut working where "\" needs AltGr (Serbian: "ž").
-      if (event.key === "\\" || event.code === "Backslash") {
+      // With Shift it is the Tiron panel on the right; without, the contents on the left.
+      if (event.key === "\\" || event.key === "|" || event.code === "Backslash") {
         event.preventDefault();
-        togglePanel();
+        if (event.shiftKey) toggleTiron();
+        else togglePanel();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [togglePanel]);
+  }, [togglePanel, toggleTiron]);
 
   const navigate = useCallback(
     async (targetId: ID) => {
@@ -357,6 +373,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
           saveStatus={status}
           structureOpen={panel.open}
           onToggleStructure={togglePanel}
+          tironOpen={tironOpen}
+          onToggleTiron={toggleTiron}
           appearance={appearance}
           settings={{
             ghostEnabled,
@@ -412,6 +430,15 @@ export function WriteScreen({ partId }: { partId: ID }) {
         <EditorFooter wordsToday={wordsToday} />
         <UndoToast pending={pendingDelete} onUndo={() => void undoDelete()} />
       </div>
+      {tironOpen && (
+        <TironPanel
+          stuck={stuck.state}
+          onStuck={() => void stuck.ask()}
+          onClose={() => setTironPanelOpen(false)}
+          // ProseMirror keeps the selection while unfocused; focus() puts the cursor back there.
+          onBackToText={() => editorRef.current?.commands.focus()}
+        />
+      )}
     </div>
   );
 }

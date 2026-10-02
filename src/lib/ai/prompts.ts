@@ -3,8 +3,9 @@ import { lastSentence } from "@/lib/text/lastSentence";
 import { endsMidSentence } from "@/lib/text/sentences";
 import { getLanguage, type Language, type LanguagePrompts } from "@/lib/languages";
 
-// "ghost" is the automatic gray completion while typing; "resume" the Resume screen's question.
-export const SPARK_MODES = ["resume", "ghost"] as const;
+// "ghost" is the automatic gray completion while typing; "resume" the Resume screen's question;
+// "stuck" Tiron's one question for the scene („Zapeo sam”).
+export const SPARK_MODES = ["resume", "ghost", "stuck"] as const;
 export type SparkMode = (typeof SPARK_MODES)[number];
 
 const basePrompt = (lang: LanguagePrompts) => `Ti si iskusan književni urednik koji sedi pored autora dok piše.
@@ -17,7 +18,7 @@ APSOLUTNA PRAVILA:
 - Koristi imena i detalje iz konteksta da budeš konkretan, ne generičan.
 - Odgovaraš ISKLJUČIVO validnim JSON-om, bez markdowna i bez teksta van JSON-a.`;
 
-const MODE_PROMPTS: Record<SparkMode, (lang: LanguagePrompts) => string> = {
+const MODE_PROMPTS: Record<Exclude<SparkMode, "stuck">, (lang: LanguagePrompts) => string> = {
   ghost: (lang) => `Autor upravo piše. Tvoj predlog se prikazuje sivo posle kursora i autor ga prihvata ili ignoriše. U delu ---KURSOR--- piše da li je kursor USRED rečenice ili POSLE završene rečenice.
 
 Ako je kursor USRED rečenice:
@@ -52,6 +53,8 @@ Format:
 
 export function buildSystemPrompt(mode: SparkMode, language?: Language): string {
   const lang = getLanguage(language).prompts;
+  // Tiron speaks in his own voice, not the editor's.
+  if (mode === "stuck") return `${lang.tiron}\n\n${lang.stuck}`;
   return `${basePrompt(lang)}\n\n${MODE_PROMPTS[mode](lang)}`;
 }
 
@@ -59,13 +62,19 @@ export interface SparkContext {
   bookTitle: string;
   chapterTitle: string;
   context: string;
+  /** Stuck: questions already asked — ask something else. */
+  avoid?: string[];
 }
 
 export function buildUserMessage(
   mode: SparkMode,
-  { bookTitle, chapterTitle, context }: SparkContext,
+  { bookTitle, chapterTitle, context, avoid }: SparkContext,
 ): string {
   const message = `Knjiga: ${bookTitle}\nPoglavlje: ${chapterTitle}\n\n---TEKST---\n${context}`;
+  if (mode === "stuck") {
+    if (!avoid?.length) return message;
+    return `${message}\n\n---NE PONAVLJAJ---\n${avoid.map((question) => `- ${question}`).join("\n")}`;
+  }
   if (mode !== "ghost") return message;
   // Spelled out so the model finishes the author's thought instead of guessing where it stands.
   const cursor = endsMidSentence(context)

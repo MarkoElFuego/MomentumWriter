@@ -312,6 +312,34 @@
   }
 }
 
+/* Tiron panel: tiho dugme, pitanje u fontu teksta, skeleton dok čeka. */
+.tiron-stuck {
+  border: 1px solid color-mix(in srgb, var(--ink-muted) 45%, transparent);
+  color: var(--ink);
+}
+
+.tiron-stuck:disabled {
+  opacity: 0.6;
+}
+
+.tiron-question {
+  font-family: var(--font-text);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.tiron-skeleton {
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--ink-muted) 22%, transparent);
+  animation: tiron-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes tiron-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
 /* Tema u traci: kružić u boji papira. */
 .theme-swatch {
   width: 1.5rem;
@@ -331,7 +359,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .part-label {
+  .part-label,
+  .tiron-skeleton {
     animation: none;
   }
 

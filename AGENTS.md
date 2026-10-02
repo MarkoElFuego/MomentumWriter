@@ -75,7 +75,7 @@ src/
 
 ## 7. AI pravila (tehnička)
 
-- Jedan endpoint: `POST /api/spark`. Modovi: `ghost` (sivi tekst), `proofread` (provera jezika), `resume` (Resume ekran); planirani `stuck` („Zapeo sam”, U5) i Tironovi modovi iz `docs/ZADATAK_Tiron.md`.
+- Jedan endpoint: `POST /api/spark`. Modovi: `ghost` (sivi tekst), `proofread` (provera jezika), `resume` (Resume ekran), `stuck` („Zapeo sam”, desni panel); planirani Tironovi modovi iz `docs/ZADATAK_Tiron.md`.
 - `ghost` (sivi tekst) radi po stanju kursora — usred rečenice dovršetak, posle završene rečenice početak sledeće, u praznom pasusu **nema API poziva** (ni podsetnika); koristi `AI_GHOST_CONTEXT_WORDS` (~150 reči), 1 pokušaj i timeout 6 s; zahtev se otkazuje čim autor nastavi da kuca. Pauze su u `src/lib/timing.ts`. Radi dobro — ne optimizuj bez odluke autora.
 - `proofread` (v0.2): model vraća ceo ispravljen pasus kao čist tekst, ali on se **nikad ne ubacuje** — služi samo za diff po rečima (`lib/text/proofDiff.ts`), a autor prihvata ispravke reč po reč. Guardrail protiv proze za ovaj mode ne važi; umesto njega važe pravila iz `proofDiff` (sličnost reči, razlika u broju reči).
 - Kontekst: poslednjih ~400 reči pre kursora (vidi `lib/text/extractContext.ts`). Ne šalji celu knjigu.
@@ -88,7 +88,7 @@ src/
 ## 7a. Prečice (važeća tabela: `docs/ARCHITECTURE.md` → „Prečice”)
 
 - Sivi tekst se pojavljuje sam posle pauze · `↑`/`↓` bira predlog · `Tab` prihvata · `Ctrl/Cmd+→` jednu reč · `Esc` sklanja. `/` je običan znak.
-- `Ctrl/Cmd+\` levi panel · `Ctrl+Shift+F` fusnota · `***` u praznom pasusu prelom scene · `Alt+Enter` ispravka provere jezika.
+- `Ctrl/Cmd+\` levi panel · `Ctrl/Cmd+Shift+\` desni panel (Tiron) · `Ctrl+Shift+F` fusnota · `***` u praznom pasusu prelom scene · `Alt+Enter` ispravka provere jezika.
 - `Ctrl/Cmd+B`/`I` · `Ctrl/Cmd+Alt+0/1/2` stil pasusa · `# ` `## ` `> ` na početku reda · `Alt+F10` fokus na traku.
 - Planirano: `Ctrl+Shift+N` beleška za kasnije (Tiron T3).
 

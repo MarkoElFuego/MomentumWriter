@@ -24,6 +24,8 @@ export function createCompleter(): Completer {
   // Ghost text must arrive while the writer is still paused; a few words don't
   // need deep reasoning. Configurable because not every model supports every level.
   const ghostEffort = (process.env.AI_GHOST_REASONING_EFFORT || "none") as ReasoningEffort;
+  // „Zapeo sam”: the author waits with hands on the keyboard — a little thought, quickly. Never "none" for Tiron.
+  const stuckEffort = (process.env.AI_EFFORT_STUCK || "low") as ReasoningEffort;
 
   return async ({ mode, system, user, signal }) => {
     const proofread = mode === "proofread";
@@ -45,16 +47,16 @@ export function createCompleter(): Completer {
               system,
               user,
               maxCompletionTokens: MAX_COMPLETION_TOKENS,
-              effort: mode === "ghost" ? ghostEffort : undefined,
+              effort: mode === "ghost" ? ghostEffort : mode === "stuck" ? stuckEffort : undefined,
             },
       ),
       { signal },
     );
-    if (proofread) {
+    if (proofread || mode === "stuck") {
       const { usage } = completion;
-      console.log(
-        `[proofread] ${Date.now() - started}ms in=${usage?.prompt_tokens ?? "?"} cached=${usage?.prompt_tokens_details?.cached_tokens ?? 0} out=${usage?.completion_tokens ?? "?"}`,
-      );
+      const tokens = `in=${usage?.prompt_tokens ?? "?"} cached=${usage?.prompt_tokens_details?.cached_tokens ?? 0} out=${usage?.completion_tokens ?? "?"}`;
+      const label = proofread ? "[proofread]" : `[stuck] effort=${stuckEffort}`;
+      console.log(`${label} ${Date.now() - started}ms ${tokens}`);
     }
     const choice = completion.choices[0];
     if (!choice?.message.content) {

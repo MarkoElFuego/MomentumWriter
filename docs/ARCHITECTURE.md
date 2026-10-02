@@ -124,6 +124,8 @@ Resume ekran: „Knjiga te čeka.” · „Ovde je priča stala ranije danas / j
 | `Alt + Enter` (na podvučenoj reči) | Popover provere jezika (Enter prihvata, Esc nazad u tekst) |
 | `Ctrl + Shift + F` | Ubaci fusnotu; `Esc`/`Enter` u fusnoti vraća iza broja |
 | `Ctrl/Cmd + \` | Prikaži/sakrij sadržaj knjige (uvodni delovi / poglavlja / završni delovi) |
+| `Ctrl/Cmd + Shift + \` | Prikaži/sakrij Tiron panel (desno); ne uzima fokus |
+| `Esc` (fokus u Tiron panelu) | Nazad u tekst, kursor tamo gde je bio |
 | `F2` / dupli klik (u panelu) | Preimenuj deo |
 | `***` u praznom pasusu | Prelom scene `✱ ✱ ✱` |
 | `Ctrl/Cmd + B` / `I` | Podebljano / kurziv |

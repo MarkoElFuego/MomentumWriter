@@ -12,6 +12,9 @@ const DIALOGUE_START = /^[„"—–]/;
 const COPY_RUN = 8;
 const MAX_STARTER_WORDS = 5;
 const MAX_FINISH_WORDS = 7;
+export const MAX_STUCK_CHARS = 200;
+// A question may close with a quote or bracket after its "?".
+const ENDS_WITH_QUESTION = /\?[”"»’')\]]*$/u;
 
 /** On success `data` holds only what may be shown — bad suggestions are dropped. */
 export type GuardrailResult = { ok: true; data: SparkResponse } | { ok: false; reason: string };
@@ -35,6 +38,11 @@ export function checkGuardrail(mode: SparkMode, data: SparkResponse, context: st
       return true;
     });
     return items.length > 0 ? { ok: true, data: { items } } : { ok: false, reason: firstReason ?? "empty" };
+  }
+
+  if (mode === "stuck" && "question" in data) {
+    if (data.question.length > MAX_STUCK_CHARS) return { ok: false, reason: "stuck-too-long" };
+    if (!ENDS_WITH_QUESTION.test(data.question)) return { ok: false, reason: "stuck-not-question" };
   }
 
   for (const raw of collectTexts(data)) {

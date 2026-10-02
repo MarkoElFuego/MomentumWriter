@@ -13,6 +13,10 @@ export interface LanguagePrompts {
   sameScript: string;
   /** Proofread system prompt — always identical, so the provider can cache it. */
   proofreader: string;
+  /** Tiron's voice and rules — the start of every Tiron prompt (stuck now, whispers in T5). */
+  tiron: string;
+  /** „Zapeo sam”: the task after the Tiron rules. */
+  stuck: string;
 }
 
 export interface Typography {
