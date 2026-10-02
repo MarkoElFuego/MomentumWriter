@@ -18,6 +18,15 @@ Detalji: `docs/PRODUCT.md` (izvor istine za raspored ekrana i listu funkcija) ·
 6. **Minimalizam.** Editor je tekst, kursor i tišina. Sve je nevidljivo dok ne zatreba. Nema novih dugmadi, panela ni funkcija van trenutne faze.
 7. **Ne diraj ono što radi.** Sivi tekst (dopune), provera jezika, Resume i autosave zadržavaju postojeće ponašanje osim ako faza kaže drugačije.
 
+## 2a. Tiron (iz `docs/ZADATAK_Tiron.md`)
+
+Kad nisi siguran da li nešto sme: **„Da li bi Tiron ovo uradio?”** Tiron zapisuje, pamti, pita, podseća, ohrabruje ✅ — ne piše tekst umesto autora, ne ocenjuje kvalitet nacrta, ne prekida dok autor kuca, ne prebacuje ❌.
+
+1. **Minimalizam:** Tiron živi samo u desnom panelu i na Resume ekranu. Desni panel ima **najviše 4 sekcije** — Tiron, Knjiga, Za kasnije, Jezik; nove sekcije se ne dodaju, sve što Tiron pamti ide u „Knjiga” kao podsekcija; prazna sekcija se ne prikazuje. U editoru se pojavljuje samo tačkica pored `T` u traci kad ima novi šapat. Nema iskačućih prozora, zvukova ni teksta preko rukopisa.
+2. **Nikad dok autor kuca.** Šapati se generišu i prikazuju samo u pauzama i na prelomnim trenucima (ulazak, kraj poglavlja, kraj sesije).
+3. **Najviše 2 šapata po sesiji** (ne računajući ulazak i kraj sesije).
+4. **Ton (obavezno u svakom promptu):** kratko (max 2 rečenice), toplo, više pita nego tvrdi, pohvaljuje konkretno, nikad ne broji propuste, nikad „trebalo bi”, nikad poređenje sa drugim piscima, nikad ocena kvaliteta nacrta. Savremeni srpski, bez latinskih fraza i bez „gospodaru”.
+
 ## 3. Stack
 
 - Next.js 15 (App Router) + TypeScript (strict)

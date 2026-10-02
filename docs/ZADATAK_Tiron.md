@@ -37,6 +37,25 @@ Kad nisi siguran da li nešto sme: **„Da li bi Tiron ovo uradio?"**
 - `AGENTS.md`: dodaj pravila 2–5 iz ovog fajla i pitanje „Da li bi Tiron ovo uradio?".
 - ~~`docs/PROGRESS.md`: dodaj faze T1–T7 kao checklist.~~ — već urađeno u ZADATAK_UI U0 (T0–T7).
 
+### Stanje posle T0 (2026-10-02, posle ZADATAK_UI U0–U7)
+
+| Stvar | Stanje | Napomena |
+|---|---|---|
+| Desni panel | delimično | postoji (U5): sekcije **Tiron** („Zapeo sam”) i **Jezik** (U7); Knjiga i Za kasnije ne postoje; skupljanje sekcija + pamćenje u Dexie nije napravljeno (dolazi sa prvom sekcijom koja se skuplja — Knjiga, T1) |
+| „Zapeo sam” | postoji | bez memorije i `heart.ending` — dodaju se u T1/T2 (samo kontekst; dugme se ne menja) |
+| Tironov sistem prompt | postoji | `tiron` u `src/lib/languages/sr-Latn/prompts.ts` (doslovno iz T5) — T5 ga koristi, ne pravi novi |
+| `Book.genre` / `heart` / `targetWords` | ne postoji | T1 |
+| `StoryMemory`, sažeci, `bestLines` | ne postoji | T2 |
+| Beleška za kasnije | ne postoji | T3 |
+| `Session` i signali | ne postoji | T4 (postoji samo `DailyStat` za „reči danas”) |
+| Šapati (`Whisper`, mode `tiron`, tačkica) | ne postoji | T5 |
+| Ocena jezika | postoji | U7 + keš provere jezika (Dexie v7) |
+| Resume | delimično | pravilo 6 h, poslednja rečenica, „Otvoreno pitanje” (mode `resume`); nema `lastWin`, šapata ulaska ni „Samo 10 minuta?” (T6); od 2026-10-02 editor uvek otvara poglavlje od početka (kursor se ne vraća) |
+| „Nacrt 1”, `draftFinishedAt` | ne postoji | T1 / T7 |
+| `AI_EFFORT_TIRON` / `_MEMORY` / `_SESSION_END` | ne postoji | u kodu i `.env.example` je samo `AI_EFFORT_STUCK`; svaka faza dodaje svoj |
+
+PRODUCT.md i ovaj fajl se slažu; u PRODUCT.md je dodata sekcija „Put pisca”, u AGENTS.md sekcija „2a. Tiron”.
+
 ---
 
 ## Faza T1 — Srce knjige i prvi korak
@@ -51,6 +70,8 @@ Kad nisi siguran da li nešto sme: **„Da li bi Tiron ovo uradio?"**
 - Srce knjige se vidi i menja u desnom panelu, u sekciji **Knjiga**, kao prva podsekcija „Srce knjige".
 - Prvo prazno poglavlje nove knjige ima placeholder: „Nacrt 1 · ovo niko ne čita. Napiši scenu koju već vidiš u glavi — može biti bilo koja."
 - Dok je knjiga u fazi nacrta (`draftFinishedAt` ne postoji), status čuvanja u gornjoj traci glasi „Nacrt 1 · Sačuvano" / „Nacrt 1 · Čuvam…", sa tooltipom „Nacrt 1 — ovo niko ne čita". Ništa se ne dodaje iznad naslova poglavlja.
+
+> *Napomena posle T0:* sekcija **Knjiga** je prva koja se skuplja — ovde se pravi i pamćenje skupljenih sekcija u Dexie (odloženo iz U5). `heart.ending` se odmah dodaje u kontekst postojećeg „Zapeo sam” (`hooks/useStuck.ts`, posle sistem prompta). Novi `Book` fajlovi = nova Dexie verzija + test.
 
 **Gotovo kada:** nova knjiga → 3 pitanja → editor sa novim placeholderom; odgovori su u panelu i mogu da se izmene.
 
@@ -67,6 +88,7 @@ Kad nisi siguran da li nešto sme: **„Da li bi Tiron ovo uradio?"**
 - Prikaz u sekciji **Knjiga**: podsekcije Likovi, Mesta, Otvorene niti — jedan red po stavci, klik = izmena, × = brisanje, „+ dodaj".
 - Kompaktna memorija (max ~300 tokena) se dodaje u „Zapeo sam" i Tiron pozive (šapati, kraj sesije) POSLE fiksnog sistem prompta (keš prompta i dalje radi). **Nikad u ghost pozive** — ghost se ne dira.
 - Ako odgovor ne prođe Zod — zadrži staru memoriju i loguj grešku.
+- *Napomena posle T0:* „Zapeo sam” već postoji (U5) — memorija se dodaje u njegov kontekst (`useStuck` → `/api/spark` mode `stuck`), dugme i prikaz se ne menjaju.
 
 ### Sažeci i najjače rečenice
 
@@ -142,6 +164,7 @@ Lek za perfekcionizam: umesto da popravljaš, zapišeš i ideš dalje.
 - Guardrail: odbaci ako šapat počinje dijaloškom crticom/navodnikom, ima >2 rečenice, ili sadrži reči ocene kvaliteta („loše", „slabo", „dosadno", „greška u pisanju").
 
 ### Sistem prompt (u `src/lib/languages/sr-Latn/prompts.ts`, deo „tiron")
+*Napomena posle T0:* već postoji (U5, koristi ga „Zapeo sam”) — T5 dodaje samo svoj zadatak posle njega.
 ```
 Ti si Tiron, tihi mentor pored pisca, kao Ciceronov sekretar: pamtiš njegovu knjigu i njegov proces,
 ali knjigu piše on.
@@ -188,6 +211,7 @@ Odgovaraš isključivo JSON-om po zadatom formatu.
   plus šapat ulaska ispod, ako postoji. **Šapat ulaska se generiše u pozadini na KRAJU prethodne sesije** (isti trenutak kao mala pobeda) i čuva kao `Whisper` sa `moment: "entry"`; Resume ga samo prikazuje, bez čekanja. Ako ne postoji, generiši ga pri otvaranju kao fallback. Posle pauze ≥4 dana dugme dobija tekst: „Samo 10 minuta?" (vodi u editor kao i obično).
 - **Resume ima jedno pitanje:** kad `ResumeState.lastWin` postoji, prikazuje se „Prošli put / Za danas" i AI poziv mode `"resume"` se **ne šalje**. Mode `"resume"` („Otvoreno pitanje") ostaje samo kao rezerva kad `lastWin` ne postoji.
 - Ako AI ne odgovori — Resume radi bez ovih redova, kao i sada.
+- *Napomena posle T0:* Resume ekran postoji (Faza 4); „Nastavi da pišeš” otvara poglavlje od početka (odluka 2026-10-02) — to se ne menja.
 
 **Gotovo kada:** završim sesiju, sutra na Resume vidim šta sam juče pomerio i pitanje za danas.
 

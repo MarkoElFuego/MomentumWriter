@@ -19,6 +19,19 @@ Jezik: srpski prvo (latinica, ekavica). Kasnije ijekavica i ćirilica (region), 
 
 Ljudi ne odustaju zbog manjka talenta, nego zbog: perfekcionizma na početku, izgubljenosti u sredini, nestalog oduševljenja, pauze iz koje se teško vraća i usamljenosti.
 
+## Put pisca
+
+Svaka faza ima svoju zamku — i svoju Tironovu pomoć:
+
+| Faza | Zamka | Tiron |
+|---|---|---|
+| **Početak** | prazna strana, „ne znam odakle” | Srce knjige (o čemu je, kako se završava, zašto je pišeš) i „Nacrt 1 · ovo niko ne čita” |
+| **Perfekcionizam** | ista scena po peti put | beleška za kasnije umesto popravke; ohrabrenje da ide napred |
+| **Sredina** | izgubljenost, nestalo oduševljenje | podseti na „zašto je pišeš” i pokaži autorovu najjaču rečenicu |
+| **Blokada** | ne zna šta dalje u sceni | „Zapeo sam” — jedno pitanje o ovoj sceni |
+| **Pauza** | teško se vraća posle više dana | Resume: šta se prošli put pomerilo u priči, pitanje za danas, „Samo 10 minuta?” |
+| **Kraj** | otvorene niti, umor pred ciljem | koliko je još do kraja, otvorene niti kao checklist, tih ekran kraja nacrta |
+
 ## Pet principa
 
 1. **Tekst i tišina.** Editor je prazan papir. Sve ostalo je nevidljivo dok ne zatreba.

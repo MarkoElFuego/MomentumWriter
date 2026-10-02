@@ -2,11 +2,13 @@
 
 Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen zadatak.
 
-**Trenutna faza:** ZADATAK_UI (`docs/ZADATAK_UI.md`). Izvor istine za raspored i funkcije: `docs/PRODUCT.md`.
+**Trenutna faza:** ZADATAK_Tiron (`docs/ZADATAK_Tiron.md`); ZADATAK_UI je završen. Izvor istine za raspored i funkcije: `docs/PRODUCT.md`.
 
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
-**Sledeće:** U7 — kod gotov, čeka ručnu proveru autora. Posle „radi”: čekirati U7, pa ZADATAK_Tiron T0.
+**Sledeće:** ZADATAK_Tiron T1 — Srce knjige i prvi korak (`docs/ZADATAK_Tiron.md`). Pre koda: plan i „ok” od autora.
+- Pre T1 proveriti otvoreno pitanje „nova knjiga otvara nov prozor” (T1 menja tok pravljenja nove knjige).
+- Stanje 2026-10-02: ZADATAK_UI završen (U0–U7); U7 autor ručno proverio („fenomenalno radi”).
 - Stanje 2026-10-02: U6 gotov, autor ručno proverio („radi odlično”).
 - Stanje 2026-10-02: U5 gotov, autor ručno proverio („radi vrhunski”).
 - Stanje 2026-10-02: U4 gotov, autor ručno proverio („sve ostalo radi”). `Alt+↑/↓` u panelu nije radio — **uklonjen** (odluka autora: niko ga ne koristi); redosled se menja samo prevlačenjem.
@@ -112,10 +114,10 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - [x] U4 — Levi panel: animirano prevlačenje (`@dnd-kit`) i brisanje sa „Poništi” (`Alt+↑/↓` uklonjen — odluka autora)
 - [x] U5 — Desni panel: 4 sekcije i „Zapeo sam” (mode `stuck`, `AI_EFFORT_STUCK=low`)
 - [x] U6 — Fokus, ceo ekran, footer, uski ekrani
-- [ ] U7 — Ocena jezika (`languageScore.ts`, bez novih AI poziva)
+- [x] U7 — Ocena jezika (`languageScore.ts`, bez novih AI poziva) + keš provere jezika u Dexie (v7)
 
 ## ZADATAK_Tiron (`docs/ZADATAK_Tiron.md`, posle U7)
-- [ ] T0 — Provera stanja i dokumentacija (postoji / delimično / ne postoji)
+- [x] T0 — Provera stanja i dokumentacija (postoji / delimično / ne postoji)
 - [ ] T1 — Srce knjige i prvi korak
 - [ ] T2 — Tiron pamti: StoryMemory, sažeci poglavlja i najjače rečenice
 - [ ] T3 — Beleška za kasnije (`Ctrl+Shift+N`)
@@ -198,6 +200,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - 2026-10-02: **U6:** Fokus i pisaća mašina su već bili gotovi (U2/Faza 7) — nedirnuti. **Ceo ekran:** `hooks/useFullscreen.ts` (izdvojen iz trake, stanje sada drži `WriteScreen`). Ulazak pamti koji su paneli bili otvoreni i zatvara oba (samo stanje — `sessionStorage` zadržava izbor od pre); izlazak (⛶ ili Esc preko `fullscreenchange`) ih vraća kako su bili, i kad su tokom celog ekrana otvarani prečicom. U celom ekranu traka se vidi samo dok je miš u gornjih 40 px **ili iznad same trake** (dugmad sežu ispod 40 px), dok je fokus u traci ili je meni otvoren. **Ispravka iz U2:** praćenje fokusa u traci se nije kačilo (efekat se pokretao pre nego što traka postoji) — sada zavisi i od `editor`. **Footer:** „reči danas” sitno (`text-xs`) dole levo, bledi zajedno sa trakom (zajednička klasa `.fades`). **Uski ekrani:** `hooks/usePanelsOverlay.ts` — 60 znakova u fontu teme (nevidljiva sonda van ekrana, `ResizeObserver` prati promenu teme/fonta) poredi sa širinom prozora minus otvoreni paneli (256 + 288 px) i padding kolone; ako ne staje, **oba otvorena panela** idu preko teksta (`.panel-overlay`, senka iz teme), klik van panela i trake ih zatvara. Na 1366 px oba panela staju pored teksta. Kolona teksta ostaje `max-w-[66ch]`, centrirana u slobodnom prostoru.
 - 2026-10-02: **Odluka autora: keš provere jezika u Dexie zamenjuje odluku od 2026-09-30** („keš ostaje u memoriji, ponovna provera nije problem”). Razlog: trošak, brzina otvaranja poglavlja i ocena jezika (posle ponovnog otvaranja svi stari pasusi su odmah „provereni”). Dexie **v7**: tabela `proofCache` (`key, usedAt`), ključ `PROOF_CACHE_VERSION:jezik:hash(teksta)` — `"v1"` u `lib/ai/proofread.ts` („promeni kad menjaš prompt ili model za proveru”); čuva se i sam tekst (sudar hash-a = promašaj), `corrected` (`null` = server odbio, ne šalje se ponovo), odbačene ispravke i `usedAt` (osvežava ga svaki pogodak; pri pokretanju se brišu zapisi neupotrebljeni 90 dana — po `usedAt`, ne `createdAt`). Logika van React-a u `components/editor/proofCheck.ts` (memorija → Dexie → API; pogoci iz keša ne čekaju u redu od 2 zahteva). **Odbačene ispravke se pamte po pasusu** (`from`, `to`, pozicija u tekstu) i ne vraćaju se dok se pasus ne promeni; ne broje se u ocenu. **Prihvati / „Prihvati sve kvačice” ne šalju pasus ponovo:** odmah se upisuje zapis za novi tekst sa istim `corrected`, a odbačene ispravke se pomeraju kroz `transaction.mapping` (test: prihvatim 1 od 3 → bez API poziva, ostaju 2 podvlake; prihvaćena kraća reč pomera odbačenu). Događaji idu preko meta `proofEvent` na transakcijama iz `proofMarks.ts`.
 - 2026-10-02: **U7 (odluke autora):** u ocenu ulaze samo reči pasusa za koje je provera stigla (odbijen od servera = nije proveren); ako je provereno < 50% reči poglavlja, ocena poglavlja se ne menja (ostaje prethodna ili ništa). Formula iz ZADATAK-a (kvačica 1, gramatika 3, `100 − round(na 100 reči × 5)`, 0–100). Ocena poglavlja se upisuje pri izlasku (unmount ekrana ili sakriven tab); obrisan deo se preskače. Knjiga = prosek po rečima, čuva `previous` (prikaz ↑/↓ samo kad se promenila). Prikaz u Tiron panelu: red 1 „Jezik 94 ↑3”, red 2 (sitnije, samo kad otvoreno poglavlje ima podvlake) „ovde: 4 kvačice · 1 gramatika”, pravilna množina (1 kvačica, 2–4 kvačice, 5+ / 11–14 kvačica, 21 kvačica); bez „u izradi”. Klik (samo kad postoji red 2) → sledeća podvlaka posle kursora (pa od vrha), sa otvorenim popoverom kao `Alt+Enter`. Dok knjiga nema ocenu, sekcije nema. Bez novih AI poziva.
+- 2026-10-02: **T0:** tabela stanja (postoji / delimično / ne postoji) upisana u `docs/ZADATAK_Tiron.md` → „Stanje posle T0”, sa napomenama u T1, T2, T5 i T6 da se ne pravi ponovo ono što postoji. PRODUCT.md dobio sekciju „Put pisca” (početak → perfekcionizam → sredina → blokada → pauza → kraj, uz Tironovu pomoć za svaku); AGENTS.md dobio „2a. Tiron” (pravila 2–5 iz ZADATAK_Tiron + „Da li bi Tiron ovo uradio?”). „Tačno 4 sekcije” u AGENTS je zapisano kao „najviše 4, prazna se ne prikazuje” — u skladu sa U5. Bez koda.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->
