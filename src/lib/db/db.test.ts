@@ -4,12 +4,16 @@ import { bookWordTotal, createBook, firstPartId, getBook, listBooks, renameBook 
 import { getDailyStat } from "./dailyStats";
 import { mergeScenes, type LegacyScene } from "./migrations";
 import {
+  canDeletePart,
   chapterNumber,
   createPart,
+  deletePart,
   getPart,
   listParts,
   partHeading,
+  purgeDeletedParts,
   renamePart,
+  restorePart,
   reorderParts,
   savePart,
 } from "./parts";
@@ -18,6 +22,7 @@ import type { Part, ResumeState } from "./schema";
 import { getAppearance, saveAppearance } from "./settings";
 import { db } from "./schema";
 import { openPart } from "./session";
+import { UNDO_DELETE_MS } from "@/lib/timing";
 
 const doc = (text: string) => ({
   type: "doc",
@@ -87,6 +92,80 @@ describe("parts", () => {
     const parts = await listParts(book.id);
     expect(parts.map((p) => p.id)).toEqual([c.id, a.id, b.id]);
     expect(chapterNumber(parts, a.id)).toBe(2);
+  });
+});
+
+describe("deleting parts", () => {
+  it("hides a deleted part at once, everywhere", async () => {
+    const { book, part: a } = await createBook();
+    const b = await createPart(book.id, "chapter", "Kofer");
+    await savePart(a.id, doc("Petar je zastao."), 3, "2026-10-02");
+    await savePart(b.id, doc("Kofer je bio težak."), 4, "2026-10-02");
+
+    await deletePart(b.id);
+    expect((await listParts(book.id)).map((p) => p.id)).toEqual([a.id]);
+    expect(await getPart(b.id)).toBeUndefined();
+    expect(await openPart(b.id, "2026-10-02")).toBeUndefined();
+    expect(await bookWordTotal(book.id)).toBe(3);
+    expect((await openPart(a.id, "2026-10-02"))!.otherPartsTotal).toBe(0);
+  });
+
+  it("undo brings it back in the same place with all its text", async () => {
+    const { book, part: a } = await createBook();
+    const b = await createPart(book.id, "chapter", "Kofer");
+    const c = await createPart(book.id, "chapter");
+    const text = {
+      type: "doc",
+      content: [
+        { type: "paragraph", content: [{ type: "text", text: "Kofer." }, { type: "footnoteRef", attrs: { id: "n1" } }] },
+        { type: "footnotes", content: [{ type: "footnote", attrs: { id: "n1" }, content: [{ type: "text", text: "Beleška." }] }] },
+      ],
+    };
+    await savePart(b.id, text, 1, "2026-10-02");
+
+    await deletePart(b.id);
+    await restorePart(b.id);
+
+    const parts = await listParts(book.id);
+    expect(parts.map((p) => p.id)).toEqual([a.id, b.id, c.id]);
+    expect(chapterNumber(parts, b.id)).toBe(2);
+    const restored = (await getPart(b.id))!;
+    expect(restored).toMatchObject({ title: "Kofer", wordCount: 1, content: text });
+    expect(restored).not.toHaveProperty("deletedAt");
+  });
+
+  it("keeps the last chapter; front and back matter can always go", async () => {
+    const { book, part } = await createBook();
+    const dedication = await createPart(book.id, "front", "Posveta");
+    const parts = await listParts(book.id);
+    expect(canDeletePart(parts, part)).toBe(false);
+    expect(canDeletePart(parts, dedication)).toBe(true);
+    await expect(deletePart(part.id)).rejects.toThrow();
+    expect(await getPart(part.id)).toBeDefined();
+  });
+
+  it("purges only after the undo time, and drops a resume point that pointed there", async () => {
+    const { book, part: a } = await createBook();
+    const b = await createPart(book.id, "chapter");
+    await savePart(b.id, doc("Tekst."), 1, "2026-10-02", { pos: 3, lastSentence: "Tekst." });
+
+    await deletePart(b.id, 50_000);
+    expect(await purgeDeletedParts(55_000)).toBe(0);
+    expect(await db.parts.get(b.id)).toBeDefined();
+
+    expect(await purgeDeletedParts(60_000)).toBe(1);
+    expect(await db.parts.get(b.id)).toBeUndefined();
+    expect(await getResumeState(book.id)).toBeUndefined();
+    expect((await listParts(book.id)).map((p) => p.id)).toEqual([a.id]);
+  });
+
+  it("keeps the resume point when another part is purged", async () => {
+    const { book, part: a } = await createBook();
+    const b = await createPart(book.id, "back", "Epilog");
+    await savePart(a.id, doc("Tekst."), 1, "2026-10-02", { pos: 3, lastSentence: "Tekst." });
+    await deletePart(b.id, 0);
+    await purgeDeletedParts(UNDO_DELETE_MS);
+    expect(await getResumeState(book.id)).toMatchObject({ partId: a.id });
   });
 });
 
@@ -390,7 +469,7 @@ describe("migrations", () => {
     v3.close();
     await db.open();
 
-    expect(db.verno).toBe(5);
+    expect(db.verno).toBe(6);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await db.settings.count()).toBe(0);
     expect(await getAppearance()).toEqual({ key: "appearance", focusMode: false, typewriter: false });
@@ -429,7 +508,7 @@ describe("migrations", () => {
     v4.close();
     await db.open();
 
-    expect(db.verno).toBe(5);
+    expect(db.verno).toBe(6);
     const blocks = async (id: string) => (await getPart(id))!.content.content;
     expect(await blocks("front")).toEqual([p("Mami.")]);
     expect((await getPart("front"))!.wordCount).toBe(1);
@@ -444,6 +523,34 @@ describe("migrations", () => {
     expect(await blocks("c4")).toEqual([h1("Druga noć"), p("Tekst.")]);
     expect(await blocks("c5")).toEqual([p("Uvod."), h1("Jutro")]);
     expect(await blocks("c6")).toEqual([h1(""), p("Bez naslova.")]);
+  });
+
+  it("v5 → v6: every part stays, none counts as deleted", async () => {
+    db.close();
+    await Dexie.delete("momentum");
+    const v5 = new Dexie("momentum");
+    v5.version(5).stores({ ...V1_STORES, parts: "id, bookId", chapters: null, scenes: null, settings: "key" });
+    await v5.table("books").add({ id: "b1", title: "Knjiga", language: "sr-Latn", createdAt: 1, updatedAt: 1 });
+    await v5.table("parts").bulkAdd(
+      ["p1", "p2"].map((id, i) => ({
+        id,
+        bookId: "b1",
+        kind: "chapter",
+        title: id,
+        order: (i + 1) * 1000,
+        content: doc(`Tekst ${id}.`),
+        wordCount: 2,
+        createdAt: 1,
+        updatedAt: 1,
+      })),
+    );
+    v5.close();
+    await db.open();
+
+    expect(db.verno).toBe(6);
+    expect((await listParts("b1")).map((p) => p.id)).toEqual(["p1", "p2"]);
+    expect((await getPart("p2"))?.content).toEqual(doc("Tekst p2."));
+    expect(await bookWordTotal("b1")).toBe(4);
   });
 });
 

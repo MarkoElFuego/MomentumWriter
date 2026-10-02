@@ -80,7 +80,11 @@ db.version(4).stores({ settings: "key" });
 //   se briše iz teksta ako je isti kao naziv iz sadržaja (i „Poglavlje II · Kofer” /
 //   „II · Kofer”, bez obzira na velika slova); wordCount se umanjuje. Bez novih indeksa.
 db.version(5).stores({}).upgrade(upgradeTitleHeadings);
+// v6: Part.deletedAt? — meko brisanje sa „Poništi”; opciono, bez indeksa i bez upgrade-a.
+db.version(6).stores({});
 ```
+
+Brisanje dela: `deletePart` upisuje `deletedAt`; `listParts`, `getPart`, `openPart` i zbirovi reči ga od tog trenutka ne vide. „Poništi” (10 s, `UNDO_DELETE_MS`) briše `deletedAt` — deo je na istom mestu jer mu se `order` ne menja. `purgeDeletedParts` trajno briše delove obrisane pre ≥ 10 s (i `ResumeState` ako je pokazivao na njih); zove se kad istekne „Poništi” i pri svakom otvaranju liste knjiga ili editora. Ponuda „Poništi” je u modulu `hooks/useUndoDelete.ts` (ne u stanju komponente), jer brisanje otvorenog dela vodi na susedni i ekran se ponovo montira. Poslednje poglavlje knjige ne može da se obriše (`canDeletePart`); uvodni i završni delovi uvek mogu.
 
 Naslov dela (`Part.title`) se uređuje u polju iznad editora (`components/editor/ChapterTitle.tsx`), ne u TipTap dokumentu; poglavlja imaju rimski broj sitno iznad. Svaki taster se odmah upisuje (`renamePart`), panel za otvoreni deo prikazuje vrednost iz editora uživo, a preimenovanje u panelu javlja `onChanged` pa editor ponovo čita naslov. `Enter`/`↓` u naslovu → početak teksta; `↑` u prvom redu teksta → naslov.
 Svaka promena šeme = nova `db.version(n)` sa `.upgrade()` — nikad ne menjaj postojeću verziju.

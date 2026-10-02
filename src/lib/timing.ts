@@ -18,5 +18,8 @@ export const TOOLBAR_FADE_AFTER_TYPING_MS = 1_500;
 /** …where a longer gap between keys starts the count again. */
 export const TOOLBAR_TYPING_GAP_MS = 2_000;
 
+/** A deleted part can be brought back this long; after that it is gone for good. */
+export const UNDO_DELETE_MS = 10_000;
+
 /** Typewriter: a click centers its line after this long — sooner would move the text under a double click. */
 export const TYPEWRITER_CLICK_DELAY_MS = 300;

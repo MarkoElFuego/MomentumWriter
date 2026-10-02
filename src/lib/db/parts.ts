@@ -1,5 +1,6 @@
 import type { JSONContent } from "@tiptap/react";
 import { copy } from "@/lib/copy";
+import { UNDO_DELETE_MS } from "@/lib/timing";
 import { ensureDailyStat } from "./dailyStats";
 import { EMPTY_DOC } from "./doc";
 import { newId } from "./id";
@@ -39,12 +40,59 @@ export function entryPart(parts: Part[]): Part | undefined {
   return sorted.find((p) => p.kind === "chapter") ?? sorted[0];
 }
 
-export function getPart(id: ID): Promise<Part | undefined> {
-  return db.parts.get(id);
+/** Deleted parts wait for a possible undo; everywhere else they no longer exist. */
+export const isAlive = (part: Part) => part.deletedAt === undefined;
+
+export async function getPart(id: ID): Promise<Part | undefined> {
+  const part = await db.parts.get(id);
+  return part && isAlive(part) ? part : undefined;
 }
 
 export async function listParts(bookId: ID): Promise<Part[]> {
-  return sortParts(await db.parts.where("bookId").equals(bookId).toArray());
+  return sortParts((await db.parts.where("bookId").equals(bookId).toArray()).filter(isAlive));
+}
+
+/** A book keeps at least one chapter; front and back matter can always go. */
+export function canDeletePart(parts: Part[], part: Part): boolean {
+  return part.kind !== "chapter" || parts.filter((p) => p.kind === "chapter" && isAlive(p)).length > 1;
+}
+
+/** Soft delete: the part disappears at once but can be restored for UNDO_DELETE_MS. */
+export async function deletePart(id: ID, now = Date.now()): Promise<void> {
+  await db.transaction("rw", db.parts, async () => {
+    const part = await getPart(id);
+    if (!part) return;
+    if (!canDeletePart(await listParts(part.bookId), part)) throw new Error("The last chapter can't be deleted");
+    await db.parts.update(id, { deletedAt: now });
+  });
+}
+
+/** Undo: back in the same place (its order never changed), with all its text and notes. */
+export async function restorePart(id: ID): Promise<void> {
+  await db.parts
+    .where("id")
+    .equals(id)
+    .modify((part) => {
+      delete part.deletedAt;
+    });
+}
+
+/**
+ * Removes parts whose undo time is over — and the resume point if it pointed
+ * at one of them (the book then opens at its first chapter).
+ */
+export async function purgeDeletedParts(now = Date.now()): Promise<number> {
+  return db.transaction("rw", db.parts, db.resumeState, async () => {
+    const expired = await db.parts
+      .filter((part) => part.deletedAt !== undefined && now - part.deletedAt >= UNDO_DELETE_MS)
+      .toArray();
+    for (const part of expired) {
+      const resume = await db.resumeState.get(part.bookId);
+      if (resume?.partId === part.id) await db.resumeState.delete(part.bookId);
+    }
+    await db.parts.bulkDelete(expired.map((part) => part.id));
+    return expired.length;
+  });
 }
 
 /** Appends a part at the end of its kind. */
@@ -93,9 +141,10 @@ export async function savePart(
 
     let previousTotal = 0;
     await db.parts.where("bookId").equals(part.bookId).each((p) => {
-      previousTotal += p.wordCount;
+      if (isAlive(p)) previousTotal += p.wordCount;
     });
-    const newTotal = previousTotal - part.wordCount + wordCount;
+    // A part waiting for undo is outside the total; a late save must not shift it.
+    const newTotal = isAlive(part) ? previousTotal - part.wordCount + wordCount : previousTotal;
     const now = Date.now();
 
     // If the day rolled over mid-session, today starts from the pre-save total.

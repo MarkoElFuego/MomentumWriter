@@ -5,15 +5,26 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor as TiptapEditor, JSONContent } from "@tiptap/react";
 import { StructurePanel } from "@/components/structure/StructurePanel";
+import { UndoToast } from "@/components/structure/UndoToast";
 import { useAppearance } from "@/hooks/useAppearance";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useGhostText } from "@/hooks/useGhostText";
 import { useOpenProofMark, useProofread } from "@/hooks/useProofread";
 import { useToolbarFade } from "@/hooks/useToolbarFade";
+import { offerUndo, purgeExpiredDeletes, takeUndo, useUndoDelete } from "@/hooks/useUndoDelete";
 import { useTypewriterScroll } from "@/hooks/useTypewriterScroll";
 import { copy } from "@/lib/copy";
-import { chapterNumber, getPart, listParts, partHeading, renamePart, savePart } from "@/lib/db/parts";
-import type { ID } from "@/lib/db/schema";
+import {
+  chapterNumber,
+  deletePart,
+  getPart,
+  listParts,
+  partHeading,
+  renamePart,
+  restorePart,
+  savePart,
+} from "@/lib/db/parts";
+import type { ID, Part } from "@/lib/db/schema";
 import { openPart, type OpenedPart } from "@/lib/db/session";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
@@ -93,6 +104,9 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const [hyphens, setHyphens] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const pendingDelete = useUndoDelete();
+  // Bumped after an undo so the open panel shows the part again.
+  const [partsVersion, setPartsVersion] = useState(0);
 
   useEffect(() => {
     setGhostEnabled(readEnabled(GHOST_KEY));
@@ -185,6 +199,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
         if (!cancelled) setState({ kind: "failed" });
       });
     if (readPanelOpen()) setPanel({ open: true, autoFocus: false });
+    purgeExpiredDeletes();
     return () => {
       cancelled = true;
     };
@@ -272,6 +287,38 @@ export function WriteScreen({ partId }: { partId: ID }) {
     setNumber(chapterNumber(parts, part.id));
   }, [state, partId]);
 
+  const bookId = state.kind === "ready" ? state.data.book.id : null;
+
+  const removePart = useCallback(
+    async (part: Part) => {
+      if (!bookId) return;
+      const parts = await listParts(bookId);
+      const index = parts.findIndex((p) => p.id === part.id);
+      // The previous part in the book, else the next one.
+      const neighbour = parts[index - 1] ?? parts[index + 1];
+      const wasOpen = part.id === partId;
+      // Save the open text first: it must come back whole with an undo.
+      if (wasOpen) await flush();
+      await deletePart(part.id);
+      offerUndo({ partId: part.id, kind: part.kind, wasOpen });
+      if (wasOpen && neighbour) router.push(`/write/${neighbour.id}`);
+      else void refreshTitles();
+    },
+    [bookId, partId, flush, router, refreshTitles],
+  );
+
+  const undoDelete = useCallback(async () => {
+    const pending = takeUndo();
+    if (!pending) return;
+    await restorePart(pending.partId);
+    if (pending.wasOpen) {
+      router.push(`/write/${pending.partId}`);
+    } else {
+      setPartsVersion((version) => version + 1);
+      void refreshTitles();
+    }
+  }, [router, refreshTitles]);
+
   if (state.kind === "loading") return <div className="h-dvh" />;
 
   if (state.kind !== "ready") {
@@ -299,6 +346,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
           onClose={() => setPanelOpen(false, false)}
           currentTitle={title}
           onChanged={() => void refreshTitles()}
+          onDelete={removePart}
+          reloadKey={partsVersion}
         />
       )}
       <div className="relative flex min-w-0 flex-1 flex-col">
@@ -361,6 +410,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
           />
         )}
         <EditorFooter wordsToday={wordsToday} />
+        <UndoToast pending={pendingDelete} onUndo={() => void undoDelete()} />
       </div>
     </div>
   );

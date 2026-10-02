@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { purgeExpiredDeletes } from "@/hooks/useUndoDelete";
 import { copy } from "@/lib/copy";
 import { createBook, listBooks } from "@/lib/db/books";
 import { bookEntryHref } from "@/lib/db/resume";
@@ -14,6 +15,7 @@ export function BookList() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    purgeExpiredDeletes();
     listBooks()
       .then(setBooks)
       .catch((error) => {

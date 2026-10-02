@@ -1,5 +1,5 @@
 import { ensureDailyStat } from "./dailyStats";
-import { chapterNumber } from "./parts";
+import { chapterNumber, isAlive } from "./parts";
 import { db, type Book, type ID, type Part } from "./schema";
 
 export interface OpenedPart {
@@ -16,11 +16,11 @@ export interface OpenedPart {
 export async function openPart(partId: ID, date: string): Promise<OpenedPart | undefined> {
   return db.transaction("rw", [db.books, db.parts, db.dailyStats], async () => {
     const part = await db.parts.get(partId);
-    if (!part) return undefined;
+    if (!part || !isAlive(part)) return undefined;
     const book = await db.books.get(part.bookId);
     if (!book) return undefined;
 
-    const parts = await db.parts.where("bookId").equals(book.id).toArray();
+    const parts = (await db.parts.where("bookId").equals(book.id).toArray()).filter(isAlive);
     const bookTotal = parts.reduce((sum, p) => sum + p.wordCount, 0);
     const stat = await ensureDailyStat(book.id, date, bookTotal);
 

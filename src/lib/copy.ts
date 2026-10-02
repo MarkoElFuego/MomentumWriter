@@ -91,6 +91,24 @@ export const copy = {
     },
     renameHint: "Dupli klik ili F2 za preimenovanje · prevuci ili Alt+↑/↓ za redosled",
     renameLabel: "Novi naziv",
+    partMenu: (name: string) => `Opcije: ${name}`,
+    rename: "Preimenuj",
+    delete: "Obriši",
+    cancel: "Odustani",
+    cantDeleteLast: "Poslednje poglavlje ne može da se obriše.",
+    // 1, 21, 31… reč; sve ostalo reči (11 je izuzetak); hiljade sa tačkom: 3.214
+    confirmDelete: (name: string, words: number) =>
+      `Obrisati ‚${name}’ (${new Intl.NumberFormat("sr-Latn").format(words)} ${
+        words % 10 === 1 && words % 100 !== 11 ? "reč" : "reči"
+      })?`,
+    chapterDeleted: "Poglavlje obrisano",
+    partDeleted: "Deo obrisan",
+    undo: "Poništi",
+    dragInstructions: "Prevuci mišem da promeniš redosled, ili fokusiraj deo i pritisni Alt+↑/↓.",
+    dragStart: (name: string) => `Podignuto: ${name}.`,
+    dragOver: (name: string, over: string) => `${name} je iznad: ${over}.`,
+    dragEnd: (name: string) => `Spušteno: ${name}.`,
+    dragCancel: (name: string) => `Vraćeno na mesto: ${name}.`,
     close: "Zatvori",
   },
   write: {

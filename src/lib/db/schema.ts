@@ -30,6 +30,8 @@ export interface Part {
   wordCount: number;
   createdAt: number;
   updatedAt: number;
+  /** Set while the deletion can still be undone; the part is gone for good after UNDO_DELETE_MS. */
+  deletedAt?: number;
 }
 
 export interface DailyStat {
@@ -102,6 +104,9 @@ export class MomentumDB extends Dexie {
     // v5: the chapter title has its own field above the text — an identical
     // Naslov 1 at the top of the text is removed. No index changes.
     this.version(5).stores({}).upgrade(upgradeTitleHeadings);
+    // v6: Part.deletedAt (soft delete with undo). Optional, unset on every
+    // existing part — nothing to upgrade, no index (filtered in memory).
+    this.version(6).stores({});
   }
 }
 

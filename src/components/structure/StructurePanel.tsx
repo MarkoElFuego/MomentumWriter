@@ -3,9 +3,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { copy } from "@/lib/copy";
 import { getBook, renameBook } from "@/lib/db/books";
-import { chapterNumber, createPart, listParts, partLabel, renamePart, reorderParts } from "@/lib/db/parts";
+import { ToolbarMenu } from "@/components/editor/ToolbarMenu";
+import {
+  canDeletePart,
+  chapterNumber,
+  createPart,
+  listParts,
+  partLabel,
+  renamePart,
+  reorderParts,
+} from "@/lib/db/parts";
 import type { Book, ID, Part, PartKind } from "@/lib/db/schema";
 import { InlineEdit } from "./InlineEdit";
+import { SortableParts } from "./SortableParts";
 
 interface StructurePanelProps {
   bookId: ID;
@@ -18,6 +28,10 @@ interface StructurePanelProps {
   onChanged: () => void;
   /** Move focus into the panel (when the user opened it, not when restored). */
   autoFocus: boolean;
+  /** Soft-deletes the part (the writing screen offers undo and moves on if it was open). */
+  onDelete: (part: Part) => Promise<void>;
+  /** Bumped when parts changed outside the panel (undo) — reload the list. */
+  reloadKey: number;
 }
 
 type Editing = { kind: "book" | "part"; id: ID } | null;
@@ -36,12 +50,15 @@ export function StructurePanel({
   onClose,
   onChanged,
   autoFocus,
+  onDelete,
+  reloadKey,
 }: StructurePanelProps) {
   const [book, setBook] = useState<Book>();
   const [parts, setParts] = useState<Part[]>([]);
   const [editing, setEditing] = useState<Editing>(null);
   const [addingPart, setAddingPart] = useState(false);
-  const dragged = useRef<Part | null>(null);
+  const [menuFor, setMenuFor] = useState<ID | null>(null);
+  const [confirming, setConfirming] = useState<ID | null>(null);
   const navRef = useRef<HTMLElement>(null);
   // Reordering moves the button in the DOM, which drops its focus; put it back.
   const [refocusId, setRefocusId] = useState<ID | null>(null);
@@ -56,7 +73,7 @@ export function StructurePanel({
 
   useEffect(() => {
     void reload();
-  }, [reload]);
+  }, [reload, reloadKey]);
 
   // Keyboard users land on the current part when the panel opens.
   useEffect(() => {
@@ -89,14 +106,35 @@ export function StructurePanel({
   // Parts only move within their own kind; chapters renumber themselves.
   const moveTo = async (part: Part, target: Part) => {
     if (part.id === target.id || part.kind !== target.kind) return;
-    const ids = parts.filter((p) => p.kind === part.kind).map((p) => p.id);
-    const to = ids.indexOf(target.id);
-    ids.splice(ids.indexOf(part.id), 1);
-    ids.splice(to, 0, part.id);
-    await reorderParts(ids);
+    const group = parts.filter((p) => p.kind === part.kind);
+    const to = group.indexOf(target);
+    group.splice(group.indexOf(part), 1);
+    group.splice(to, 0, part);
+    // Show the new order right away, so the dropped row doesn't jump back first.
+    let next = 0;
+    setParts(parts.map((p) => (p.kind === part.kind ? group[next++]! : p)));
+    await reorderParts(group.map((p) => p.id));
     await reload();
     setRefocusId(part.id);
     onChanged();
+  };
+
+  const remove = async (part: Part) => {
+    setConfirming(null);
+    // Focus lands on a neighbour in the list instead of getting lost.
+    const index = parts.indexOf(part);
+    const neighbour = parts[index - 1] ?? parts[index + 1];
+    await onDelete(part);
+    await reload();
+    if (neighbour) setRefocusId(neighbour.id);
+  };
+
+  const requestDelete = (part: Part) => {
+    setMenuFor(null);
+    if (!canDeletePart(parts, part)) return;
+    // Nothing written yet — nothing to lose, no question.
+    if (part.wordCount === 0) void remove(part);
+    else setConfirming(part.id);
   };
 
   const moveBy = (part: Part, delta: -1 | 1) => {
@@ -104,6 +142,9 @@ export function StructurePanel({
     const target = group[group.indexOf(part) + delta];
     if (target) void moveTo(part, target);
   };
+
+  const labelOf = (part: Part) =>
+    partLabel(part.id === currentPartId ? { ...part, title: currentTitle } : part, chapterNumber(parts, part.id));
 
   const isEditing = (kind: NonNullable<Editing>["kind"], id: ID) =>
     editing?.kind === kind && editing.id === id;
@@ -160,40 +201,28 @@ export function StructurePanel({
         return (
           <section key={kind} className="mb-4">
             <h2 className="px-1 pb-1 text-xs uppercase tracking-wider">{label}</h2>
-            <ol className="space-y-0.5">
-              {group.map((part) => {
+            <SortableParts
+              items={group}
+              disabled={editing !== null}
+              label={(part) => labelOf(part)}
+              onMove={(part, target) => void moveTo(part, target)}
+              renderItem={(part) => {
                 const isCurrent = part.id === currentPartId;
-                const editingThis = isEditing("part", part.id);
+                const name = labelOf(part);
+                const deletable = canDeletePart(parts, part);
+                if (isEditing("part", part.id)) {
+                  return (
+                    <InlineEdit
+                      value={isCurrent ? currentTitle : part.title}
+                      allowEmpty={kind === "chapter"}
+                      onSave={(title) => void rename(renamePart, part.id, title)}
+                      onCancel={() => setEditing(null)}
+                    />
+                  );
+                }
                 return (
-                  <li
-                    key={part.id}
-                    draggable={!editingThis}
-                    onDragStart={(event) => {
-                      dragged.current = part;
-                      event.dataTransfer.effectAllowed = "move";
-                      // Firefox starts a drag only when some data is set.
-                      event.dataTransfer.setData("text/plain", part.id);
-                    }}
-                    onDragOver={(event) => {
-                      if (dragged.current?.kind === kind) event.preventDefault();
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      if (dragged.current) void moveTo(dragged.current, part);
-                      dragged.current = null;
-                    }}
-                    onDragEnd={() => {
-                      dragged.current = null;
-                    }}
-                  >
-                    {editingThis ? (
-                      <InlineEdit
-                        value={isCurrent ? currentTitle : part.title}
-                        allowEmpty={kind === "chapter"}
-                        onSave={(title) => void rename(renamePart, part.id, title)}
-                        onCancel={() => setEditing(null)}
-                      />
-                    ) : (
+                  <>
+                    <div className="flex items-center gap-1">
                       <button
                         ref={isCurrent ? currentRef : undefined}
                         type="button"
@@ -201,7 +230,9 @@ export function StructurePanel({
                         title={copy.structure.renameHint}
                         aria-current={isCurrent ? "page" : undefined}
                         aria-keyshortcuts="F2 Alt+ArrowUp Alt+ArrowDown"
-                        className={`ui-button w-full truncate px-1 py-1 text-left ${isCurrent ? "text-ink" : ""}`}
+                        className={`ui-button min-w-0 flex-1 truncate px-1 py-1 text-left ${
+                          isCurrent ? "font-semibold text-ink" : ""
+                        }`}
                         onClick={() => {
                           if (!isCurrent) onNavigate(part.id);
                         }}
@@ -216,13 +247,85 @@ export function StructurePanel({
                           }
                         }}
                       >
-                        {partLabel(isCurrent ? { ...part, title: currentTitle } : part, chapterNumber(parts, part.id))}
+                        {/* Keyed by the number: a new one fades in instead of jumping (typing a title doesn't). */}
+                        <span key={chapterNumber(parts, part.id) ?? "none"} className="part-label">
+                          {name}
+                        </span>
                       </button>
+                      <div className="part-menu">
+                        <ToolbarMenu
+                          label={copy.structure.partMenu(name)}
+                          title={copy.structure.partMenu(name)}
+                          align="right"
+                          button={<span aria-hidden="true">⋮</span>}
+                          open={menuFor === part.id}
+                          onOpenChange={(open) =>
+                            setMenuFor((current) => (open ? part.id : current === part.id ? null : current))
+                          }
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="ui-button block w-full px-3 py-2 text-left"
+                            onClick={() => {
+                              setMenuFor(null);
+                              setEditing({ kind: "part", id: part.id });
+                            }}
+                          >
+                            {copy.structure.rename}
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            // aria-disabled, not disabled: the tooltip has to explain why.
+                            aria-disabled={!deletable}
+                            title={deletable ? undefined : copy.structure.cantDeleteLast}
+                            className={`ui-button block w-full px-3 py-2 text-left${deletable ? "" : " opacity-50"}`}
+                            onClick={() => requestDelete(part)}
+                          >
+                            {copy.structure.delete}
+                          </button>
+                        </ToolbarMenu>
+                      </div>
+                    </div>
+                    {confirming === part.id && (
+                      <div
+                        role="alertdialog"
+                        aria-label={copy.structure.confirmDelete(name, part.wordCount)}
+                        className="mx-1 mb-1 mt-0.5 rounded-md border border-muted/30 p-2 text-xs"
+                        // A click or drag here is not a drag of the row.
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => {
+                          if (event.key === "Escape") {
+                            event.stopPropagation();
+                            setConfirming(null);
+                            setRefocusId(part.id);
+                          }
+                        }}
+                      >
+                        <p className="mb-2 text-ink">{copy.structure.confirmDelete(name, part.wordCount)}</p>
+                        <div className="flex gap-2">
+                          <button type="button" className="ui-button px-2 py-1 text-ink underline" onClick={() => void remove(part)}>
+                            {copy.structure.delete}
+                          </button>
+                          <button
+                            type="button"
+                            autoFocus
+                            className="ui-button px-2 py-1"
+                            onClick={() => {
+                              setConfirming(null);
+                              setRefocusId(part.id);
+                            }}
+                          >
+                            {copy.structure.cancel}
+                          </button>
+                        </div>
+                      </div>
                     )}
-                  </li>
+                  </>
                 );
-              })}
-            </ol>
+              }}
+            />
             {kind === "chapter" && (
               <button
                 type="button"

@@ -1,7 +1,7 @@
 import { copy } from "@/lib/copy";
 import { DEFAULT_LANGUAGE } from "@/lib/languages";
 import { newId } from "./id";
-import { entryPart, listParts, newPart } from "./parts";
+import { entryPart, isAlive, listParts, newPart } from "./parts";
 import { db, ORDER_STEP, type Book, type ID, type Part } from "./schema";
 
 /** A new book opens straight into its first chapter. */
@@ -38,7 +38,7 @@ export async function firstPartId(bookId: ID): Promise<ID | undefined> {
 export async function bookWordTotal(bookId: ID): Promise<number> {
   let total = 0;
   await db.parts.where("bookId").equals(bookId).each((part) => {
-    total += part.wordCount;
+    if (isAlive(part)) total += part.wordCount;
   });
   return total;
 }
