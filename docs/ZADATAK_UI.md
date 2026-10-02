@@ -97,7 +97,7 @@ Pre svake faze: pročitaj `AGENTS.md`, `docs/PRODUCT.md`, ovaj fajl i `docs/PROG
 - Tokom prevlačenja ostala poglavlja se glatko razmiču (~200 ms ease), tanka linija pokazuje mesto spuštanja, prevučeni red je blago podignut (senka/opacity iz teme).
 - Rimski brojevi se ažuriraju posle spuštanja, sa kratkim prelazom.
 - Poglavlja se mogu premeštati samo unutar svoje grupe (uvodni / poglavlja / završni).
-- Tastatura: fokus na poglavlje + `Alt+↑/↓` pomera ga.
+- ~~Tastatura: fokus na poglavlje + `Alt+↑/↓` pomera ga.~~ Uklonjeno (odluka autora 2026-10-02).
 - Redosled se čuva odmah (Dexie).
 
 ### Brisanje

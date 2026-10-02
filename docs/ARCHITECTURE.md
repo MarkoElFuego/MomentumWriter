@@ -125,7 +125,6 @@ Resume ekran: „Knjiga te čeka.” · „Ovde je priča stala ranije danas / j
 | `Ctrl + Shift + F` | Ubaci fusnotu; `Esc`/`Enter` u fusnoti vraća iza broja |
 | `Ctrl/Cmd + \` | Prikaži/sakrij sadržaj knjige (uvodni delovi / poglavlja / završni delovi) |
 | `F2` / dupli klik (u panelu) | Preimenuj deo |
-| `Alt + ↑/↓` (u panelu) | Pomeri deo unutar njegove grupe (isto kao prevlačenje) |
 | `***` u praznom pasusu | Prelom scene `✱ ✱ ✱` |
 | `Ctrl/Cmd + B` / `I` | Podebljano / kurziv |
 | `Ctrl/Cmd + Alt + 0` / `1` / `2` | Tekst / Naslov 1 / Naslov 2 (AltGr znak ima prednost — vidi ispod) |

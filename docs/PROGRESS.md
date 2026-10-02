@@ -7,7 +7,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
 **Sledeće:** U5 — desni panel: 4 sekcije i „Zapeo sam” (`docs/ZADATAK_UI.md`). Pre koda: plan i „ok” od autora.
-- Stanje 2026-10-02: U4 gotov, autor ručno proverio („sve ostalo radi”). **Poznata greška:** `Alt+↑/↓` u panelu ne pomera deo — autor kaže da nije bitno (niko ga ne koristi); ne popravljati bez odluke autora.
+- Stanje 2026-10-02: U4 gotov, autor ručno proverio („sve ostalo radi”). `Alt+↑/↓` u panelu nije radio — **uklonjen** (odluka autora: niko ga ne koristi); redosled se menja samo prevlačenjem.
 - Stanje 2026-10-02: U3 gotov, autor ručno proverio („radi”).
 - Stanje 2026-10-02: U2 gotov i commitovan, autor ručno proverio i `Ctrl+Alt+0/1/2` na srpskom rasporedu („proverio, može dalje”).
 - Stanje 2026-10-02: commitovano sve do `746f389` (Resume). Autor je ručno proverio Resume: stara knjiga → Resume sa pitanjem, nova (0 reči) → editor.
@@ -107,7 +107,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 ## ZADATAK_UI — nastavak (posle Resume)
 - [x] U2 — Gornja traka i formatiranje (stilovi pasusa, B/I, poravnanje + rastavljanje reči, traka bledi)
 - [x] U3 — Naslov poglavlja povezan sa sadržajem (+ migracija starog H1)
-- [x] U4 — Levi panel: animirano prevlačenje (`@dnd-kit`) i brisanje sa „Poništi” (`Alt+↑/↓` ne radi — autor: nije bitno)
+- [x] U4 — Levi panel: animirano prevlačenje (`@dnd-kit`) i brisanje sa „Poništi” (`Alt+↑/↓` uklonjen — odluka autora)
 - [ ] U5 — Desni panel: 4 sekcije i „Zapeo sam” (mode `stuck`, `AI_EFFORT_STUCK=low`)
 - [ ] U6 — Fokus, ceo ekran, footer, uski ekrani
 - [ ] U7 — Ocena jezika (`languageScore.ts`, bez novih AI poziva)

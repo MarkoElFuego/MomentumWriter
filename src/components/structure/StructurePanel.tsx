@@ -137,12 +137,6 @@ export function StructurePanel({
     else setConfirming(part.id);
   };
 
-  const moveBy = (part: Part, delta: -1 | 1) => {
-    const group = parts.filter((p) => p.kind === part.kind);
-    const target = group[group.indexOf(part) + delta];
-    if (target) void moveTo(part, target);
-  };
-
   const labelOf = (part: Part) =>
     partLabel(part.id === currentPartId ? { ...part, title: currentTitle } : part, chapterNumber(parts, part.id));
 
@@ -229,7 +223,7 @@ export function StructurePanel({
                         data-part-id={part.id}
                         title={copy.structure.renameHint}
                         aria-current={isCurrent ? "page" : undefined}
-                        aria-keyshortcuts="F2 Alt+ArrowUp Alt+ArrowDown"
+                        aria-keyshortcuts="F2"
                         className={`ui-button min-w-0 flex-1 truncate px-1 py-1 text-left ${
                           isCurrent ? "font-semibold text-ink" : ""
                         }`}
@@ -241,9 +235,6 @@ export function StructurePanel({
                           if (event.key === "F2") {
                             event.preventDefault();
                             setEditing({ kind: "part", id: part.id });
-                          } else if (event.altKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
-                            event.preventDefault();
-                            moveBy(part, event.key === "ArrowUp" ? -1 : 1);
                           }
                         }}
                       >
