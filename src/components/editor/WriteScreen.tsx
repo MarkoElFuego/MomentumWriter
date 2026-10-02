@@ -9,7 +9,9 @@ import { UndoToast } from "@/components/structure/UndoToast";
 import { TironPanel } from "@/components/tiron/TironPanel";
 import { useAppearance } from "@/hooks/useAppearance";
 import { useAutosave } from "@/hooks/useAutosave";
+import { useFullscreen } from "@/hooks/useFullscreen";
 import { useGhostText } from "@/hooks/useGhostText";
+import { usePanelsOverlay } from "@/hooks/usePanelsOverlay";
 import { useOpenProofMark, useProofread } from "@/hooks/useProofread";
 import { useToolbarFade } from "@/hooks/useToolbarFade";
 import { offerUndo, purgeExpiredDeletes, takeUndo, useUndoDelete } from "@/hooks/useUndoDelete";
@@ -158,7 +160,11 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const stuck = useStuck(editor, titles);
   useProofread(editor, proofEnabled, ready?.book.language ?? null);
   const proofMark = useOpenProofMark(editor);
-  const toolbarFaded = useToolbarFade(editor, toolbarRef, menuOpen);
+  const fullscreen = useFullscreen();
+  const toolbarFaded = useToolbarFade(editor, toolbarRef, menuOpen, fullscreen.active);
+  const probeRef = useRef<HTMLSpanElement>(null);
+  const leftPanelRef = useRef<HTMLDivElement>(null);
+  const rightPanelRef = useRef<HTMLDivElement>(null);
 
   const closeProof = useCallback((refocus: boolean) => {
     const editor = editorRef.current;
@@ -271,6 +277,48 @@ export function WriteScreen({ partId }: { partId: ID }) {
 
   const toggleTiron = useCallback(() => setTironPanelOpen(!tironOpen), [tironOpen, setTironPanelOpen]);
 
+  const overlay = usePanelsOverlay(probeRef, panel.open, tironOpen, state.kind === "ready");
+
+  // Over the text, a panel closes on a click anywhere else (the toolbar has its own toggles).
+  useEffect(() => {
+    if (!overlay || !(panel.open || tironOpen)) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      const inside = [leftPanelRef, rightPanelRef, toolbarRef].some((ref) => ref.current?.contains(target));
+      if (inside) return;
+      if (panel.open) setPanelOpen(false, false);
+      if (tironOpen) setTironPanelOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [overlay, panel.open, tironOpen, setPanelOpen, setTironPanelOpen]);
+
+  // Fullscreen is just the text: both panels close, and come back as they were
+  // on leaving (⛶ or Esc). Refs, so the effect runs only when fullscreen changes.
+  const openPanels = useRef({ left: false, right: false });
+  useEffect(() => {
+    openPanels.current = { left: panel.open, right: tironOpen };
+  }, [panel.open, tironOpen]);
+  const beforeFullscreen = useRef<{ left: boolean; right: boolean } | null>(null);
+  const panelSetters = useRef({ setPanelOpen, setTironPanelOpen });
+  useEffect(() => {
+    panelSetters.current = { setPanelOpen, setTironPanelOpen };
+  }, [setPanelOpen, setTironPanelOpen]);
+  useEffect(() => {
+    const setters = panelSetters.current;
+    if (fullscreen.active && !beforeFullscreen.current) {
+      beforeFullscreen.current = { ...openPanels.current };
+      // State only: the remembered (sessionStorage) choice stays what it was before.
+      setPanel({ open: false, autoFocus: false });
+      setTironOpen(false);
+    } else if (!fullscreen.active && beforeFullscreen.current) {
+      const { left, right } = beforeFullscreen.current;
+      beforeFullscreen.current = null;
+      setters.setPanelOpen(left, false);
+      setters.setTironPanelOpen(right);
+    }
+  }, [fullscreen.active]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey)) return;
@@ -354,6 +402,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
   return (
     <div className="flex h-dvh">
       {panel.open && (
+        <div ref={leftPanelRef} className={overlay ? "panel-overlay panel-overlay-left" : "flex h-full shrink-0"}>
         <StructurePanel
           bookId={data.book.id}
           currentPartId={partId}
@@ -365,6 +414,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
           onDelete={removePart}
           reloadKey={partsVersion}
         />
+        </div>
       )}
       <div className="relative flex min-w-0 flex-1 flex-col">
         <EditorToolbar
@@ -375,6 +425,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
           onToggleStructure={togglePanel}
           tironOpen={tironOpen}
           onToggleTiron={toggleTiron}
+          fullscreen={fullscreen}
           appearance={appearance}
           settings={{
             ghostEnabled,
@@ -391,6 +442,10 @@ export function WriteScreen({ partId }: { partId: ID }) {
           ref={scrollRef}
           className={`flex-1 overflow-y-auto px-6${appearance.focusMode ? " focus-mode" : ""}${hyphens ? " hyphenate" : ""}`}
         >
+          {/* 60 characters in the text font: when the panels leave less room than this, they go over the text. */}
+          <span ref={probeRef} aria-hidden="true" className="ch-probe">
+            {"0".repeat(60)}
+          </span>
           {/* Typewriter: room below the last line so it can reach the middle too. */}
           <div className={`mx-auto max-w-[66ch] pt-10 ${appearance.typewriter ? "pb-[50vh]" : "pb-16"}`}>
             <ChapterTitle
@@ -427,10 +482,11 @@ export function WriteScreen({ partId }: { partId: ID }) {
             onClose={closeProof}
           />
         )}
-        <EditorFooter wordsToday={wordsToday} />
+        <EditorFooter wordsToday={wordsToday} faded={toolbarFaded} />
         <UndoToast pending={pendingDelete} onUndo={() => void undoDelete()} />
       </div>
       {tironOpen && (
+        <div ref={rightPanelRef} className={overlay ? "panel-overlay panel-overlay-right" : "flex h-full shrink-0"}>
         <TironPanel
           stuck={stuck.state}
           onStuck={() => void stuck.ask()}
@@ -438,6 +494,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
           // ProseMirror keeps the selection while unfocused; focus() puts the cursor back there.
           onBackToText={() => editorRef.current?.commands.focus()}
         />
+        </div>
       )}
     </div>
   );

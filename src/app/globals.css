@@ -223,13 +223,45 @@
   opacity: 0.35;
 }
 
-/* Gornja traka: bledi dok autor kuca, vraća se na miš i fokus. */
-.toolbar {
+/* Gornja traka i footer: blede dok autor kuca, vraćaju se na miš i fokus. */
+.fades {
   transition: opacity 300ms ease;
 }
 
-.toolbar.is-faded {
+.fades.is-faded {
   opacity: 0;
+}
+
+/* Uski ekran: paneli idu preko teksta, sa blagom senkom. */
+.panel-overlay {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  background: var(--paper);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--ink) 16%, transparent);
+}
+
+.panel-overlay-left {
+  left: 0;
+}
+
+.panel-overlay-right {
+  right: 0;
+}
+
+/* Meri 60 znakova u fontu teksta (usePanelsOverlay) — nevidljivo, ne zauzima mesto. */
+.ch-probe {
+  /* Off-screen to the left: never widens the page on a narrow screen. */
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: pre;
+  font-family: var(--font-text);
+  font-size: 1.1875rem;
 }
 
 .toolbar-button {
@@ -364,7 +396,7 @@
     animation: none;
   }
 
-  .toolbar,
+  .fades,
   .part-menu,
   .focus-mode .prose-editor > * {
     transition: none;

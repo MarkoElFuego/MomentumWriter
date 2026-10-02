@@ -1,8 +1,9 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useState, type ReactNode } from "react";
+import { forwardRef, useEffect, useState, type ReactNode } from "react";
 import { useEditorState, type Editor } from "@tiptap/react";
 import type { AppearanceControls } from "@/hooks/useAppearance";
+import type { FullscreenControls } from "@/hooks/useFullscreen";
 import type { SaveStatus } from "@/hooks/useAutosave";
 import { copy } from "@/lib/copy";
 import { THEME_PAPER, THEMES } from "@/lib/themes";
@@ -20,6 +21,7 @@ interface EditorToolbarProps {
   onToggleStructure: () => void;
   tironOpen: boolean;
   onToggleTiron: () => void;
+  fullscreen: FullscreenControls;
   appearance: AppearanceControls;
   /** Settings left in ···. */
   settings: Omit<EditorMenuProps, "open" | "onOpenChange">;
@@ -79,25 +81,6 @@ function Toggle({
   );
 }
 
-function useFullscreen() {
-  const [supported, setSupported] = useState(false);
-  const [active, setActive] = useState(false);
-  useEffect(() => {
-    setSupported(document.fullscreenEnabled);
-    const onChange = () => setActive(document.fullscreenElement !== null);
-    onChange();
-    document.addEventListener("fullscreenchange", onChange);
-    return () => document.removeEventListener("fullscreenchange", onChange);
-  }, []);
-  const toggle = useCallback(() => {
-    const request = document.fullscreenElement
-      ? document.exitFullscreen()
-      : document.documentElement.requestFullscreen();
-    request.catch((error) => console.error("Fullscreen failed", error));
-  }, []);
-  return { supported, active, toggle };
-}
-
 export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(function EditorToolbar(
   {
     editor,
@@ -106,6 +89,7 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
     onToggleStructure,
     tironOpen,
     onToggleTiron,
+    fullscreen,
     appearance,
     settings,
     faded,
@@ -114,7 +98,6 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
   ref,
 ) {
   const [openMenu, setOpenMenu] = useState<MenuName | null>(null);
-  const fullscreen = useFullscreen();
 
   useEffect(() => onMenuOpenChange(openMenu !== null), [openMenu, onMenuOpenChange]);
 
@@ -156,7 +139,7 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
       ref={ref}
       role="toolbar"
       aria-label={t.label}
-      className={`toolbar grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 py-3 text-sm text-muted${faded ? " is-faded" : ""}`}
+      className={`toolbar fades grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 py-3 text-sm text-muted${faded ? " is-faded" : ""}`}
     >
       <div className="flex items-center gap-1">
         <Toggle
