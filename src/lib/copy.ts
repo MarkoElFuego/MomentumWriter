@@ -78,6 +78,8 @@ export const copy = {
       title ? `Poglavlje ${toRoman(n)} · ${title}` : `Poglavlje ${toRoman(n)}`,
     chapterLabel: (n: number, title: string) => (title ? `${toRoman(n)} · ${title}` : toRoman(n)),
     untitledPart: "Bez naslova",
+    titlePlaceholder: "Naslov poglavlja",
+    chapterTitleLabel: (n: number) => `Naslov poglavlja ${toRoman(n)}`,
     frontMatter: "Uvodni delovi",
     chapters: "Poglavlja",
     backMatter: "Završni delovi",

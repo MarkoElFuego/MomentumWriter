@@ -1,5 +1,6 @@
 import type { JSONContent } from "@tiptap/react";
 import type { Transaction } from "dexie";
+import { copy } from "@/lib/copy";
 import { countWords } from "@/lib/text/countWords";
 import { EMPTY_DOC } from "./doc";
 import type { ID, Part, ResumeState } from "./schema";
@@ -85,4 +86,58 @@ export async function upgradeToParts(tx: Transaction): Promise<void> {
       delete state.sceneId;
       state.cursorPos = 0;
     });
+}
+
+function blockText(node: JSONContent): string {
+  if (typeof node.text === "string") return node.text;
+  return (node.content ?? []).map(blockText).join("");
+}
+
+const normalize = (text: string) => text.trim().replace(/\s+/gu, " ").toLocaleLowerCase("sr");
+
+/**
+ * A chapter title typed as a Naslov 1 at the top of the text — now that the
+ * title has its own field, the copy in the text goes. Only when it says
+ * exactly what the table of contents says (also "Poglavlje II · Kofer" or
+ * "II · Kofer"); anything else is the author's text and stays.
+ */
+export function stripTitleHeading(
+  part: Pick<Part, "kind" | "title" | "content" | "wordCount">,
+  chapterNumber: number | undefined,
+): { content: JSONContent; wordCount: number } | null {
+  const [first, ...rest] = part.content.content ?? [];
+  if (first?.type !== "heading" || (first.attrs?.level ?? 1) !== 1) return null;
+
+  const names = [part.title];
+  if (part.kind === "chapter" && chapterNumber) {
+    names.push(
+      copy.structure.chapterHeading(chapterNumber, part.title),
+      copy.structure.chapterLabel(chapterNumber, part.title),
+    );
+  }
+  const text = blockText(first);
+  if (!normalize(text) || !names.some((name) => normalize(name) === normalize(text))) return null;
+
+  return {
+    content: { ...part.content, content: rest.length > 0 ? rest : EMPTY_DOC.content },
+    wordCount: Math.max(0, part.wordCount - countWords(text)),
+  };
+}
+
+export async function upgradeTitleHeadings(tx: Transaction): Promise<void> {
+  const parts: Part[] = await tx.table("parts").toArray();
+  // Chapter numbers per book, the same way the table of contents counts them.
+  const numbers = new Map<ID, number>();
+  const byBook = new Map<ID, Part[]>();
+  for (const part of parts) {
+    if (part.kind === "chapter") byBook.set(part.bookId, [...(byBook.get(part.bookId) ?? []), part]);
+  }
+  for (const chapters of byBook.values()) {
+    chapters.sort((a, b) => a.order - b.order).forEach((part, i) => numbers.set(part.id, i + 1));
+  }
+
+  for (const part of parts) {
+    const stripped = stripTitleHeading(part, numbers.get(part.id));
+    if (stripped) await tx.table("parts").update(part.id, stripped);
+  }
 }

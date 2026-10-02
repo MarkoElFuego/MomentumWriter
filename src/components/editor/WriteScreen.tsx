@@ -12,12 +12,13 @@ import { useOpenProofMark, useProofread } from "@/hooks/useProofread";
 import { useToolbarFade } from "@/hooks/useToolbarFade";
 import { useTypewriterScroll } from "@/hooks/useTypewriterScroll";
 import { copy } from "@/lib/copy";
-import { chapterNumber, getPart, listParts, partHeading, savePart } from "@/lib/db/parts";
+import { chapterNumber, getPart, listParts, partHeading, renamePart, savePart } from "@/lib/db/parts";
 import type { ID } from "@/lib/db/schema";
 import { openPart, type OpenedPart } from "@/lib/db/session";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
 import { lastSentence } from "@/lib/text/lastSentence";
+import { ChapterTitle } from "./ChapterTitle";
 import { Editor } from "./Editor";
 import { EditorFooter } from "./EditorFooter";
 import { EditorToolbar } from "./EditorToolbar";
@@ -74,7 +75,10 @@ type LoadState =
 export function WriteScreen({ partId }: { partId: ID }) {
   const router = useRouter();
   const [state, setState] = useState<LoadState>({ kind: "loading" });
-  const [heading, setHeading] = useState("");
+  // Part.title as typed above the text, and the chapter number (none for front/back matter).
+  const [title, setTitle] = useState("");
+  const [number, setNumber] = useState<number | undefined>(undefined);
+  const titleRef = useRef<HTMLInputElement>(null);
   const [wordCount, setWordCount] = useState(0);
   const [panel, setPanel] = useState<{ open: boolean; autoFocus: boolean }>({
     open: false,
@@ -124,10 +128,10 @@ export function WriteScreen({ partId }: { partId: ID }) {
         ? {
             bookTitle: ready.book.title,
             language: ready.book.language,
-            chapterTitle: heading,
+            chapterTitle: partHeading({ ...ready.part, title }, number),
           }
         : null,
-    [ready, heading],
+    [ready, title, number],
   );
   const appearance = useAppearance();
   const scrollRef = useRef<HTMLElement>(null);
@@ -172,7 +176,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
         if (cancelled) return;
         if (!data) return setState({ kind: "missing" });
         setState({ kind: "ready", data });
-        setHeading(partHeading(data.part, data.chapterNumber));
+        setTitle(data.part.title);
+        setNumber(data.chapterNumber);
         setWordCount(data.part.wordCount);
       })
       .catch((error) => {
@@ -217,6 +222,15 @@ export function WriteScreen({ partId }: { partId: ID }) {
     [schedule],
   );
 
+  // Saved on every keystroke: the table of contents shows it at once, and nothing waits for a debounce.
+  const changeTitle = useCallback(
+    (next: string) => {
+      setTitle(next);
+      renamePart(partId, next).catch((error) => console.error("Failed to save the title", error));
+    },
+    [partId],
+  );
+
   const setPanelOpen = useCallback((open: boolean, autoFocus: boolean) => {
     setPanel({ open, autoFocus });
     writePanelOpen(open);
@@ -251,9 +265,11 @@ export function WriteScreen({ partId }: { partId: ID }) {
 
   const refreshTitles = useCallback(async () => {
     if (state.kind !== "ready") return;
-    // Renames and reordering can both change the heading ("Poglavlje III" → "II").
+    // Renames and reordering can both change the title or the number ("III" → "II").
     const [part, parts] = await Promise.all([getPart(partId), listParts(state.data.book.id)]);
-    if (part) setHeading(partHeading(part, chapterNumber(parts, part.id)));
+    if (!part) return;
+    setTitle(part.title);
+    setNumber(chapterNumber(parts, part.id));
   }, [state, partId]);
 
   if (state.kind === "loading") return <div className="h-dvh" />;
@@ -281,6 +297,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
           autoFocus={panel.autoFocus}
           onNavigate={(id) => void navigate(id)}
           onClose={() => setPanelOpen(false, false)}
+          currentTitle={title}
           onChanged={() => void refreshTitles()}
         />
       )}
@@ -309,12 +326,23 @@ export function WriteScreen({ partId }: { partId: ID }) {
         >
           {/* Typewriter: room below the last line so it can reach the middle too. */}
           <div className={`mx-auto max-w-[66ch] pt-10 ${appearance.typewriter ? "pb-[50vh]" : "pb-16"}`}>
-            {/* Until U3 ties the chapter title to the text, it sits quietly above it. */}
-            <p className="mb-10 text-center text-sm text-muted">{heading}</p>
+            <ChapterTitle
+              ref={titleRef}
+              title={title}
+              number={number}
+              onChange={changeTitle}
+              onLeave={() => editorRef.current?.commands.focus("start")}
+            />
             <Editor
               initialContent={data.part.content}
               language={data.book.language}
               onChange={handleChange}
+              onExitTop={() => {
+                const input = titleRef.current;
+                if (!input) return;
+                input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
+              }}
               onReady={(instance) => {
                 editorRef.current = instance;
                 setEditor(instance);

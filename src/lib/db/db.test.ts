@@ -390,10 +390,60 @@ describe("migrations", () => {
     v3.close();
     await db.open();
 
-    expect(db.verno).toBe(4);
+    expect(db.verno).toBe(5);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await db.settings.count()).toBe(0);
     expect(await getAppearance()).toEqual({ key: "appearance", focusMode: false, typewriter: false });
+  });
+
+  it("v4 → v5: a Naslov 1 identical to the chapter name leaves the text, anything else stays", async () => {
+    const h1 = (text: string) => ({ type: "heading", attrs: { level: 1 }, content: [{ type: "text", text }] });
+    const p = (text: string) => ({ type: "paragraph", content: [{ type: "text", text }] });
+    const part = (id: string, kind: string, title: string, order: number, blocks: object[], wordCount: number) => ({
+      id,
+      bookId: "b1",
+      kind,
+      title,
+      order,
+      content: { type: "doc", content: blocks },
+      wordCount,
+      createdAt: 1,
+      updatedAt: 1,
+    });
+
+    db.close();
+    await Dexie.delete("momentum");
+    const v4 = new Dexie("momentum");
+    v4.version(4).stores({ ...V1_STORES, parts: "id, bookId", chapters: null, scenes: null, settings: "key" });
+    await v4.table("books").add({ id: "b1", title: "Knjiga", language: "sr-Latn", createdAt: 1, updatedAt: 1 });
+    await v4.table("parts").bulkAdd([
+      part("front", "front", "Posveta", 1000, [h1("Posveta"), p("Mami.")], 2),
+      part("c1", "chapter", "Vrata", 1000, [h1("vrata "), p("Petar je zastao.")], 4),
+      // Second chapter: the heading may carry the number, as the header showed it.
+      part("c2", "chapter", "Kofer", 2000, [h1("Poglavlje II · Kofer"), p("Kofer je bio težak.")], 7),
+      part("c3", "chapter", "Treće", 3000, [h1("III · Treće")], 2),
+      part("c4", "chapter", "Noć", 4000, [h1("Druga noć"), p("Tekst.")], 3),
+      part("c5", "chapter", "Jutro", 5000, [p("Uvod."), h1("Jutro")], 2),
+      part("c6", "chapter", "", 6000, [h1(""), p("Bez naslova.")], 2),
+    ]);
+    v4.close();
+    await db.open();
+
+    expect(db.verno).toBe(5);
+    const blocks = async (id: string) => (await getPart(id))!.content.content;
+    expect(await blocks("front")).toEqual([p("Mami.")]);
+    expect((await getPart("front"))!.wordCount).toBe(1);
+    expect(await blocks("c1")).toEqual([p("Petar je zastao.")]);
+    expect((await getPart("c1"))!).toMatchObject({ title: "Vrata", wordCount: 3 });
+    expect(await blocks("c2")).toEqual([p("Kofer je bio težak.")]);
+    expect((await getPart("c2"))!.wordCount).toBe(4);
+    // Only the title: an empty paragraph is left to write in.
+    expect(await blocks("c3")).toEqual([{ type: "paragraph" }]);
+    expect((await getPart("c3"))!.wordCount).toBe(0);
+    // Different text, not the first block, or an empty heading: the author's text stays.
+    expect(await blocks("c4")).toEqual([h1("Druga noć"), p("Tekst.")]);
+    expect(await blocks("c5")).toEqual([p("Uvod."), h1("Jutro")]);
+    expect(await blocks("c6")).toEqual([h1(""), p("Bez naslova.")]);
   });
 });
 

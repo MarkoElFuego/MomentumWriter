@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { Selection } from "@tiptap/pm/state";
 import { EditorContent, useEditor, type Editor as TiptapEditor, type JSONContent } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
 import { copy } from "@/lib/copy";
@@ -31,9 +33,16 @@ interface EditorProps {
   /** Book language — picks the scene-break symbol. */
   language: Language;
   onReady?: (editor: TiptapEditor) => void;
+  /** ↑ on the first line of the text — back to the chapter title. */
+  onExitTop?: () => void;
 }
 
-export function Editor({ initialContent, language, onChange, onReady }: EditorProps) {
+export function Editor({ initialContent, language, onChange, onReady, onExitTop }: EditorProps) {
+  // The key handler is created once; the ref keeps the latest callback.
+  const onExitTopRef = useRef(onExitTop);
+  useEffect(() => {
+    onExitTopRef.current = onExitTop;
+  });
   // Same document schema as contentSchema.ts, in the original plugin order.
   const [starterKit, textAlign, footnotes, sceneBreak] = contentExtensions(language);
   const editor = useEditor({
@@ -76,6 +85,20 @@ export function Editor({ initialContent, language, onChange, onReady }: EditorPr
             if (event.key === "ArrowUp") return run(() => stepGhost(view, -1));
           }
           if (event.key === "Escape") return run(() => clearGhost(view));
+        }
+
+        // ↑ on the first line of the first block goes up into the title.
+        const exitTop = onExitTopRef.current;
+        if (
+          exitTop &&
+          event.key === "ArrowUp" &&
+          !mod && !event.altKey && !event.shiftKey &&
+          view.state.selection.empty &&
+          // The first text block, also when it sits inside a quote.
+          view.state.selection.$from.start() === Selection.atStart(view.state.doc).$from.start() &&
+          view.endOfTextblock("up")
+        ) {
+          return run(exitTop);
         }
 
         // A popover opened by a click leaves the cursor here; Esc closes it.

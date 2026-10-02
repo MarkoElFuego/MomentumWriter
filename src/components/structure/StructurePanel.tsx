@@ -10,6 +10,8 @@ import { InlineEdit } from "./InlineEdit";
 interface StructurePanelProps {
   bookId: ID;
   currentPartId: ID;
+  /** The open part's title as it is being typed above the text — shown without waiting for a reload. */
+  currentTitle: string;
   onNavigate: (partId: ID) => void;
   onClose: () => void;
   /** Titles or order changed — the editor header may need to refresh. */
@@ -29,6 +31,7 @@ const SECTIONS: { kind: PartKind; label: string }[] = [
 export function StructurePanel({
   bookId,
   currentPartId,
+  currentTitle,
   onNavigate,
   onClose,
   onChanged,
@@ -185,7 +188,7 @@ export function StructurePanel({
                   >
                     {editingThis ? (
                       <InlineEdit
-                        value={part.title}
+                        value={isCurrent ? currentTitle : part.title}
                         allowEmpty={kind === "chapter"}
                         onSave={(title) => void rename(renamePart, part.id, title)}
                         onCancel={() => setEditing(null)}
@@ -213,7 +216,7 @@ export function StructurePanel({
                           }
                         }}
                       >
-                        {partLabel(part, chapterNumber(parts, part.id))}
+                        {partLabel(isCurrent ? { ...part, title: currentTitle } : part, chapterNumber(parts, part.id))}
                       </button>
                     )}
                   </li>

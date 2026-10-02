@@ -54,6 +54,38 @@
   margin-bottom: 0;
 }
 
+/* Naslov poglavlja iznad teksta: isti font kao tekst, kao Naslov 1, bez okvira. */
+.chapter-number {
+  font-family: var(--font-text);
+  font-size: 0.875rem;
+  letter-spacing: 0.2em;
+  margin-bottom: 0.5rem;
+}
+
+.chapter-title-input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: 1.9rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  outline: none;
+}
+
+.chapter-title-input::placeholder {
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+
+.chapter-title-input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ink-muted) 40%, transparent);
+  outline-offset: 6px;
+  border-radius: 0.25rem;
+}
+
 /* Obostrano poravnanje rastavlja reči (lang="sr-Latn" na editoru), ako je uključeno u ··· meniju. */
 .hyphenate .prose-editor [style*="text-align: justify"] {
   hyphens: auto;

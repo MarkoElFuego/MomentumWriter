@@ -2,7 +2,7 @@ import Dexie, { type EntityTable, type Table } from "dexie";
 import type { JSONContent } from "@tiptap/react";
 import { DEFAULT_LANGUAGE, type Language } from "@/lib/languages";
 import type { ThemeName } from "@/lib/themes";
-import { upgradeToParts } from "./migrations";
+import { upgradeTitleHeadings, upgradeToParts } from "./migrations";
 
 export type ID = string;
 
@@ -99,6 +99,9 @@ export class MomentumDB extends Dexie {
     // v4: settings (visual theme, focus mode, typewriter scroll). New table only —
     // nothing to copy; an empty table means defaults.
     this.version(4).stores({ settings: "key" });
+    // v5: the chapter title has its own field above the text — an identical
+    // Naslov 1 at the top of the text is removed. No index changes.
+    this.version(5).stores({}).upgrade(upgradeTitleHeadings);
   }
 }
 

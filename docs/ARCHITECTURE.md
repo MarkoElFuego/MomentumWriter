@@ -74,7 +74,15 @@ db.version(2).stores({}).upgrade(/* … */);
 //   automatski naslovi („Scena N”, „Poglavlje IV”) otpadaju; resumeState.sceneId → partId
 //   (cursorPos = 0). Tabele chapters i scenes se brišu posle upgrade-a.
 db.version(3).stores({ parts: "id, bookId", chapters: null, scenes: null }).upgrade(upgradeToParts);
+// v4: tabela settings (izgled: tema, fokus, pisaća mašina)
+db.version(4).stores({ settings: "key" });
+// v5: naslov poglavlja ima svoje polje iznad teksta — Naslov 1 na samom početku dela
+//   se briše iz teksta ako je isti kao naziv iz sadržaja (i „Poglavlje II · Kofer” /
+//   „II · Kofer”, bez obzira na velika slova); wordCount se umanjuje. Bez novih indeksa.
+db.version(5).stores({}).upgrade(upgradeTitleHeadings);
 ```
+
+Naslov dela (`Part.title`) se uređuje u polju iznad editora (`components/editor/ChapterTitle.tsx`), ne u TipTap dokumentu; poglavlja imaju rimski broj sitno iznad. Svaki taster se odmah upisuje (`renamePart`), panel za otvoreni deo prikazuje vrednost iz editora uživo, a preimenovanje u panelu javlja `onChanged` pa editor ponovo čita naslov. `Enter`/`↓` u naslovu → početak teksta; `↑` u prvom redu teksta → naslov.
 Svaka promena šeme = nova `db.version(n)` sa `.upgrade()` — nikad ne menjaj postojeću verziju.
 
 ## Ključne funkcije
