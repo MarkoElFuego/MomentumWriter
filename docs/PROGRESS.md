@@ -8,6 +8,8 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 
 **Sledeće:** ZADATAK_Tiron T1 — Srce knjige i prvi korak (`docs/ZADATAK_Tiron.md`). Pre koda: plan i „ok” od autora.
 - Pre T1 proveriti otvoreno pitanje „nova knjiga otvara nov prozor” (T1 menja tok pravljenja nove knjige).
+- Predlog plana T1 (2026-10-02, čeka „ok”): Dexie v8 (`Book.heart?` / `targetWords?` / `genre?` + `settings` zapis `panels` za skupljene sekcije); ruta `/start?book=…` sa 3 pitanja + žanr + dužina („Počni da pišeš” / „Preskoči”); placeholder „Nacrt 1 · …” u prvom poglavlju knjige bez reči; traka „Nacrt 1 · Sačuvano/Čuvam…” + tooltip; sekcija „Knjiga ›” (skupljena, između Tirona i Jezika) sa „Srce knjige” (klik = izmena, žanr i dužina kao izbor); `heart.ending` u kontekst „Zapeo sam” (`---KAKO SE KNJIGA ZAVRŠAVA---` + pravilo u `stuck` promptu: vodi ka kraju, ne prepričava ga).
+- Pitanja za autora: (a) Knjiga + Srce knjige vidljivi i kad su prazni (bleda pitanja za popunjavanje)? (b) bez naslova knjige na ekranu sa pitanjima? (c) kad čuvanje ne uspe — samo poruka greške, bez „Nacrt 1 ·”? (d) stare knjige bez ekrana sa pitanjima, Srce knjige iz panela?
 - Stanje 2026-10-02: ZADATAK_UI završen (U0–U7); U7 autor ručno proverio („fenomenalno radi”).
 - Stanje 2026-10-02: U6 gotov, autor ručno proverio („radi odlično”).
 - Stanje 2026-10-02: U5 gotov, autor ručno proverio („radi vrhunski”).
