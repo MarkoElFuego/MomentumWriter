@@ -6,7 +6,8 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
-**Sledeće:** ZADATAK_Tiron T4 — Signali procesa (lokalno, bez AI-ja) (`docs/ZADATAK_Tiron.md`). Pre koda: plan i „ok” od autora.
+**Sledeće:** ZADATAK_Tiron T5 — Tiron šapuće (`docs/ZADATAK_Tiron.md`). Pre koda: plan i „ok” od autora.
+- Stanje 2026-10-06: T4 gotov, autor proverio u dev konzoli (koraci 1–3; `bookPosition` pokrivaju testovi).
 - Stanje 2026-10-06: T3 gotov, autor ručno proverio („sve radi sjajno”).
 - Stanje 2026-10-06: T2 gotov, autor ručno proverio („radi sve”).
 - Stanje 2026-10-06: brisanje knjiga u biblioteci (zahtev autora, van faze) gotovo, autor ručno proverio („sve radi”).
@@ -126,7 +127,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - [x] T1 — Srce knjige i prvi korak
 - [x] T2 — Tiron pamti: StoryMemory, sažeci poglavlja i najjače rečenice
 - [x] T3 — Beleška za kasnije (`Ctrl+Shift+L`)
-- [ ] T4 — Signali procesa (lokalno, bez AI-ja)
+- [x] T4 — Signali procesa (lokalno, bez AI-ja)
 - [ ] T5 — Tiron šapuće
 - [ ] T6 — Mala pobeda i Resume
 - [ ] T7 — Put do kraja (kraj nacrta)
@@ -212,6 +213,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - 2026-10-06: **Brisanje knjiga (zahtev autora, van trenutne faze):** isti obrazac kao brisanje delova (U4) — `⋮` na hover/fokus reda u biblioteci → „Obriši” → potvrda „Obrisati knjigu ‚Kiša’ (3.214 reči)?” (fokus na „Odustani”, Esc odustaje; 0 reči → bez potvrde) → traka „Knjiga obrisana · Poništi” 10 s. Sme da se obriše i poslednja knjiga. **Dexie v10** (`Book.deletedAt?`, bez upgrade-a) + test v9→v10. Posle 10 s (ili pri sledećem otvaranju, ako je tab zatvoren) trajno se brišu knjiga, delovi, `dailyStats`, `resumeState`, `storyMemory`; `proofCache` ostaje (po tekstu, ističe za 90 dana). Link ka delu obrisane knjige → „Ovo poglavlje ne postoji.”.
 - 2026-10-06: **Dugme ¶ „Sredi tekst" (zahtev autora, van faze; novo dugme u traci posle poravnanja — zlatno pravilo 2 uz eksplicitno odobrenje):** autor izabrao sve četiri stvari — razmaci i uvlačenje (i meke crtice U+00AD; tvrdi razmak ostaje), prazni redovi (svi prazni pasusi; ✱ ✱ ✱ ostaje), iscepani pasusi (`Shift+Enter` → razmak; PDF redovi se spajaju samo kad prethodni ne završava rečenicu a sledeći počinje malim slovom — dijalog, veliko slovo i naslovi nikad; „rastav-" + „ljeno" → jedna reč), strano formatiranje (liste → pasusi, precrtano/podvučeno otpada; bold, kurziv, naslovi, citat, poravnanje ostaju). Opseg: selekcija (proširena na cele blokove), bez nje celo poglavlje; fusnote se ne diraju. Bez AI-ja, jedan `Ctrl+Z`. Poznato: reč sa crticom koja je slučajno pala na kraj PDF reda („crno-" + „beli") spojiće se u „crnobeli" — `Ctrl+Z` vraća.
 - 2026-10-06: **T3 (odluke autora):** (a) prečica **`Ctrl/Cmd+Shift+L`** — Chrome i Edge ne puštaju `Ctrl+Shift+N` stranici (otvaraju incognito prozor); `Ctrl+Shift+N` se sluša dodatno, gde browser dozvoli; (b) kvačica = beleška **nestaje** (oznaka se skida, nema je u listi), `Ctrl+Z` vraća — zato oznaka nema `done` (odstupanje od modela u ZADATAK-u: `{ id, note, createdAt }`); (c) bez selekcije beleška ide na **reč kod kursora** (ili reč neposredno pre njega), u praznom redu i fusnoti se ne dodaje. Tehnički: oznaka `laterNote` u JSON-u dela (bez Dexie verzije), ušla u `contentExtensions` (inače bi Resume i čitanje poglavlja za memoriju pali na delu sa beleškom). `Ctrl+Shift+L` kad je kursor u belešci → menja njen tekst. Beleška ≤ 200 znakova. Prikaz: tiha pozadina (`--ink` 9%), tooltip na hover. Sekcija „Za kasnije (N) ›” između Knjiga i Jezik, skupljiva i zapamćena (`settings.panels` sada i `"later"`), samo kad postoji beleška. Klik vodi kursor na početak beleške (ne selekciju — kucanje ne sme da zameni tekst). Kvačica u **drugom** poglavlju skida oznaku iz sačuvanog JSON-a — tu nema `Ctrl+Z`. „Sredi tekst” (¶) sada čuva beleške.
+- 2026-10-06: **T4:** **Dexie v11** (tabela `sessions`) + test v10→v11. Sesija se beleži u `savePart` (ista transakcija): reči dodate/obrisane iz razlike broja reči dela između dva čuvanja (prepravka unutar istih ~800 ms se ne vidi — aproksimacija iz ZADATAK-a). **Tumačenje pravila sesije:** nova sesija počinje tek posle ≥ 30 min bez čuvanja u toj knjizi; „kraj sesije” (20 min bez čuvanja / tab skriven > 10 min / zatvaranje) je trenutak koji T5 koristi za šapat (`isSessionOver`, u T4 je niko ne zove) — povratak između 20. i 30. minuta nastavlja istu sesiju, pa se pravila iz ZADATAK-a ne sudaraju. Deo koji čeka „Poništi” se ne beleži. `restartsOfCurrentPart` gleda neto napredak cele sesije (sesija ne pamti reči po delu). `bookPosition` je `null` kad je dužina „Ne znam”; `trend` je `null` dok nema 6 sesija; `daysSinceLastSession` broji kalendarske dane. Signali se vide samo u dev konzoli (`[signals]`), ništa u UI-ju, ništa ne ide na server.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

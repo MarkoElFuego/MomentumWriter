@@ -95,7 +95,12 @@ db.version(8).stores({});
 db.version(9).stores({ storyMemory: "bookId" });
 // v10: Book.deletedAt? — meko brisanje knjige sa „Poništi” (kao delovi u v6); bez indeksa i bez upgrade-a.
 db.version(10).stores({});
+// v11: tabela sessions (Tiron T4): { id, bookId, partIds[], startedAt, endedAt, wordsAdded,
+//   wordsDeleted, hour } — kako autor piše, nikad šta. Nova tabela, bez upgrade-a.
+db.version(11).stores({ sessions: "id, bookId" });
 ```
+
+Sesije i signali (T4): `savePart` u istoj transakciji zove `recordActivity` (`lib/db/sessions.ts`): razlika broja reči dela prema prethodnom čuvanju ide u `wordsAdded` / `wordsDeleted`; čuvanje < 30 min (`SESSION_GAP_MS`) posle poslednjeg u toj knjizi produžava sesiju (`endedAt`, `partIds`), inače počinje nova (`hour` = lokalni sat). „Kraj sesije” (20 min bez čuvanja, tab skriven 10 min, zatvaranje — `isSessionOver`) je trenutak za šapat u T5; sesija se tada ne zatvara zapisom, pa povratak pre 30 min nastavlja istu. `lib/process/signals.ts` (čiste funkcije): `daysSinceLastSession` (kalendarski dani), `sessionsLast7Days`, `rewriteRatio` (poslednje 3), `restartsOfCurrentPart` (neto < 150 reči), `bookPosition` (< 25% / ≤ 80% / više, null bez `targetWords`), `typicalHour`, `trend` (null ispod 6 sesija). `getSignals(bookId, partId)`; u dev režimu editor pri otvaranju dela ispiše `[signals] {…}` u konzolu. Ništa od ovoga se ne prikazuje u UI-ju i ne šalje na server. `purgeDeletedBooks` briše i sesije.
 
 Brisanje knjige (odluka autora 2026-10-06): u biblioteci `⋮` → „Obriši” → potvrda sa brojem reči (prazna knjiga bez potvrde) → `deleteBook` upisuje `deletedAt`; `listBooks`, `getBook` i `openPart` je od tog trenutka ne vide. Traka „Knjiga obrisana · Poništi” 10 s (isti modul `hooks/useUndoDelete.ts`, `PendingDelete` ima i `kind: "book"`). `purgeDeletedBooks` (uz `purgeDeletedParts`, kad istekne „Poništi” i pri otvaranju biblioteke/editora) trajno briše knjigu, njene delove, `dailyStats`, `resumeState` i `storyMemory`; `proofCache` je po tekstu i ističe sam.
 

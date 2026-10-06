@@ -40,6 +40,7 @@ import { purgeProofCache } from "@/lib/db/proofCache";
 import { chapterLanguageScore } from "@/lib/text/languageScore";
 import type { ID, Part } from "@/lib/db/schema";
 import { openPart, type OpenedPart } from "@/lib/db/session";
+import { getSignals } from "@/lib/db/sessions";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
 import { lastSentence } from "@/lib/text/lastSentence";
@@ -261,6 +262,12 @@ export function WriteScreen({ partId }: { partId: ID }) {
         setNumber(data.chapterNumber);
         setWordCount(data.part.wordCount);
         setBookDetails({ heart: data.book.heart ?? {}, genre: data.book.genre, targetWords: data.book.targetWords });
+        // T4: the process signals Tiron will read in T5 — visible in the dev console only.
+        if (process.env.NODE_ENV === "development") {
+          getSignals(data.book.id, data.part.id)
+            .then((signals) => console.info("[signals]", signals))
+            .catch((error) => console.error("Failed to compute the signals", error));
+        }
       })
       .catch((error) => {
         console.error("Failed to open part", error);

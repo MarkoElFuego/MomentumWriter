@@ -132,6 +132,21 @@ export interface ProofCacheEntry {
   usedAt: number;
 }
 
+/** A stretch of writing (T4): saves less than SESSION_GAP_MS apart. Words are counted from save to save. */
+export interface Session {
+  id: ID;
+  bookId: ID;
+  /** Every part written in it, in the order they were first saved. */
+  partIds: ID[];
+  startedAt: number;
+  /** The last save — moves forward with every save. */
+  endedAt: number;
+  wordsAdded: number;
+  wordsDeleted: number;
+  /** Local hour (0–23) the session started. */
+  hour: number;
+}
+
 export interface DailyStat {
   date: string;
   bookId: ID;
@@ -181,6 +196,7 @@ export class MomentumDB extends Dexie {
   settings!: EntityTable<Setting, "key">;
   proofCache!: EntityTable<ProofCacheEntry, "key">;
   storyMemory!: EntityTable<StoryMemory, "bookId">;
+  sessions!: EntityTable<Session, "id">;
 
   constructor() {
     super("momentum");
@@ -229,6 +245,8 @@ export class MomentumDB extends Dexie {
     // v10: Book.deletedAt (soft delete with undo, like parts in v6). Optional,
     // unset on every existing book — nothing to upgrade, no index.
     this.version(10).stores({});
+    // v11: sessions (Tiron T4) — how the author writes, never what. New table only.
+    this.version(11).stores({ sessions: "id, bookId" });
   }
 }
 

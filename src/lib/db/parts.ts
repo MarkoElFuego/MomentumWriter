@@ -6,6 +6,7 @@ import { UNDO_DELETE_MS } from "@/lib/timing";
 import { ensureDailyStat } from "./dailyStats";
 import { EMPTY_DOC } from "./doc";
 import { newId } from "./id";
+import { recordActivity } from "./sessions";
 import { db, ORDER_STEP, type ID, type Part, type PartKind, type PartLanguageScore } from "./schema";
 
 const KIND_RANK: Record<PartKind, number> = { front: 0, chapter: 1, back: 2 };
@@ -137,7 +138,7 @@ export async function savePart(
   date: string,
   cursor?: CursorSnapshot,
 ): Promise<number> {
-  return db.transaction("rw", [db.parts, db.books, db.dailyStats, db.resumeState], async () => {
+  return db.transaction("rw", [db.parts, db.books, db.dailyStats, db.resumeState, db.sessions], async () => {
     const part = await db.parts.get(id);
     if (!part) throw new Error(`Part ${id} not found`);
 
@@ -154,6 +155,8 @@ export async function savePart(
     await db.parts.update(id, { content, wordCount, updatedAt: now });
     await db.dailyStats.update([date, part.bookId], { endWordTotal: newTotal });
     await db.books.update(part.bookId, { updatedAt: now });
+    // How the author writes (T4) — not for a part waiting for "Poništi".
+    if (isAlive(part)) await recordActivity(part.bookId, id, wordCount - part.wordCount, now);
 
     if (cursor) {
       // Keep the cached open question; Resume checks it against the context hash.

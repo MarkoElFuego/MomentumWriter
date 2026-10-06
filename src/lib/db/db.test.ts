@@ -51,6 +51,7 @@ import type { Part, ResumeState } from "./schema";
 import { getAppearance, getOpenSections, saveAppearance, setSectionOpen } from "./settings";
 import { db } from "./schema";
 import { openPart } from "./session";
+import { getSignals, listSessions } from "./sessions";
 import { UNDO_DELETE_MS } from "@/lib/timing";
 
 const doc = (text: string) => ({
@@ -475,7 +476,7 @@ describe("migrations", () => {
     const resume = await getResumeState("b1");
     expect(resume).toMatchObject({ partId: "c2", cursorPos: 0, lastSentence: "Peta." });
     expect(resume).not.toHaveProperty("sceneId");
-    expect(db.tables.map((t) => t.name).sort()).toEqual(["books", "dailyStats", "parts", "proofCache", "resumeState", "settings", "storyMemory"]);
+    expect(db.tables.map((t) => t.name).sort()).toEqual(["books", "dailyStats", "parts", "proofCache", "resumeState", "sessions", "settings", "storyMemory"]);
   });
 
   it("v3 → v4: parts stay, settings start empty (defaults)", async () => {
@@ -498,7 +499,7 @@ describe("migrations", () => {
     v3.close();
     await db.open();
 
-    expect(db.verno).toBe(10);
+    expect(db.verno).toBe(11);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await db.settings.count()).toBe(0);
     expect(await getAppearance()).toEqual({ key: "appearance", focusMode: false, typewriter: false });
@@ -537,7 +538,7 @@ describe("migrations", () => {
     v4.close();
     await db.open();
 
-    expect(db.verno).toBe(10);
+    expect(db.verno).toBe(11);
     const blocks = async (id: string) => (await getPart(id))!.content.content;
     expect(await blocks("front")).toEqual([p("Mami.")]);
     expect((await getPart("front"))!.wordCount).toBe(1);
@@ -576,7 +577,7 @@ describe("migrations", () => {
     v5.close();
     await db.open();
 
-    expect(db.verno).toBe(10);
+    expect(db.verno).toBe(11);
     expect((await listParts("b1")).map((p) => p.id)).toEqual(["p1", "p2"]);
     expect((await getPart("p2"))?.content).toEqual(doc("Tekst p2."));
     expect(await bookWordTotal("b1")).toBe(4);
@@ -602,7 +603,7 @@ describe("migrations", () => {
     v6.close();
     await db.open();
 
-    expect(db.verno).toBe(10);
+    expect(db.verno).toBe(11);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect((await getPart("p1"))?.languageScore).toBeUndefined();
     expect(await db.proofCache.count()).toBe(0);
@@ -636,7 +637,7 @@ describe("migrations", () => {
     v7.close();
     await db.open();
 
-    expect(db.verno).toBe(10);
+    expect(db.verno).toBe(11);
     const book = await getBook("b1");
     expect(book).toMatchObject({ title: "Knjiga", language: "sr-Latn" });
     expect(book?.heart).toBeUndefined();
@@ -682,7 +683,7 @@ describe("migrations", () => {
     v8.close();
     await db.open();
 
-    expect(db.verno).toBe(10);
+    expect(db.verno).toBe(11);
     const book = await getBook("b1");
     expect(book).toMatchObject({ title: "Knjiga", heart: { about: "O kiši." }, genre: "misterija" });
     expect(book?.bestLines).toBeUndefined();
@@ -711,9 +712,42 @@ describe("migrations", () => {
     v9.close();
     await db.open();
 
-    expect(db.verno).toBe(10);
+    expect(db.verno).toBe(11);
     expect((await listBooks()).map((book) => book.title)).toEqual(["Sneg", "Kiša"]);
     expect((await getBook("b1"))?.deletedAt).toBeUndefined();
+  });
+
+  it("v10 → v11: books and parts stay, no sessions yet", async () => {
+    db.close();
+    await Dexie.delete("momentum");
+    const v10 = new Dexie("momentum");
+    v10.version(10).stores({
+      ...V1_STORES,
+      parts: "id, bookId",
+      chapters: null,
+      scenes: null,
+      settings: "key",
+      proofCache: "key, usedAt",
+      storyMemory: "bookId",
+    });
+    await v10.table("books").add({ id: "b1", title: "Kiša", language: "sr-Latn", createdAt: 1, updatedAt: 1 });
+    await v10.table("parts").add({
+      id: "p1",
+      bookId: "b1",
+      kind: "chapter",
+      title: "",
+      order: 1000,
+      content: doc("Tekst ostaje."),
+      wordCount: 2,
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    v10.close();
+    await db.open();
+
+    expect(db.verno).toBe(11);
+    expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
+    expect(await listSessions("b1")).toEqual([]);
   });
 });
 
@@ -1047,5 +1081,77 @@ describe("notes for later in saved parts", () => {
       ],
     });
     expect(saved?.wordCount).toBe(2);
+  });
+});
+
+describe("writing sessions", () => {
+  const MIN = 60_000;
+  const at = (time: number) => vi.spyOn(Date, "now").mockReturnValue(time);
+  const T0 = new Date(2026, 9, 6, 21, 15).getTime();
+
+  it("saves less than 30 minutes apart are one session, across parts; words added and deleted", async () => {
+    at(T0);
+    const { book, part } = await createBook("Kiša");
+    const second = await createPart(book.id, "chapter");
+
+    at(T0 + MIN);
+    await savePart(part.id, doc("a ".repeat(100)), 100, "2026-10-06");
+    at(T0 + 20 * MIN);
+    await savePart(part.id, doc("a ".repeat(70)), 70, "2026-10-06");
+    at(T0 + 49 * MIN);
+    await savePart(second.id, doc("b ".repeat(50)), 50, "2026-10-06");
+
+    const sessions = await listSessions(book.id);
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0]).toMatchObject({
+      partIds: [part.id, second.id],
+      startedAt: T0 + MIN,
+      endedAt: T0 + 49 * MIN,
+      wordsAdded: 150,
+      wordsDeleted: 30,
+      hour: 21,
+    });
+  });
+
+  it("a gap of 30 minutes or more starts a new session; books keep their own", async () => {
+    at(T0);
+    const { book, part } = await createBook("Kiša");
+    const other = await createBook("Sneg");
+
+    at(T0 + MIN);
+    await savePart(part.id, doc("a ".repeat(10)), 10, "2026-10-06");
+    at(T0 + 31 * MIN);
+    await savePart(part.id, doc("a ".repeat(20)), 20, "2026-10-06");
+    // Writing in another book doesn't continue this one's session.
+    at(T0 + 32 * MIN);
+    await savePart(other.part.id, doc("b"), 1, "2026-10-06");
+
+    expect((await listSessions(book.id)).map((s) => [s.wordsAdded, s.startedAt])).toEqual([
+      [10, T0 + MIN],
+      [10, T0 + 31 * MIN],
+    ]);
+    expect(await listSessions(other.book.id)).toHaveLength(1);
+  });
+
+  it("gives the signals for the open book and part; a purged book takes its sessions along", async () => {
+    at(T0);
+    const { book, part } = await createBook("Kiša");
+    await updateBook(book.id, { targetWords: 40_000 });
+    at(T0 + MIN);
+    await savePart(part.id, doc("a ".repeat(100)), 100, "2026-10-06");
+
+    expect(await getSignals(book.id, part.id, T0 + 2 * MIN)).toMatchObject({
+      daysSinceLastSession: 0,
+      sessionsLast7Days: 1,
+      rewriteRatio: 0,
+      restartsOfCurrentPart: 1,
+      bookPosition: "početak",
+      typicalHour: 21,
+      trend: null,
+    });
+
+    await deleteBook(book.id, T0 + 3 * MIN);
+    await purgeDeletedBooks(T0 + 3 * MIN + UNDO_DELETE_MS);
+    expect(await listSessions(book.id)).toEqual([]);
   });
 });

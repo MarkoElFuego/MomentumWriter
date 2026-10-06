@@ -23,3 +23,12 @@ export const UNDO_DELETE_MS = 10_000;
 
 /** Typewriter: a click centers its line after this long — sooner would move the text under a double click. */
 export const TYPEWRITER_CLICK_DELAY_MS = 300;
+
+/** Writing sessions (T4): a gap this long between saves starts a new session… */
+export const SESSION_GAP_MS = 30 * 60 * 1_000;
+
+/** …while the end of a session — the moment Tiron may speak (T5) — comes after this long without a save… */
+export const SESSION_IDLE_END_MS = 20 * 60 * 1_000;
+
+/** …or once the tab has been hidden this long. */
+export const SESSION_HIDDEN_END_MS = 10 * 60 * 1_000;
