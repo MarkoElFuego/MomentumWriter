@@ -47,4 +47,25 @@ Zadatak:
 Piši istim jezikom i pismom kao autor; ako autor ne koristi dijakritike (č, ć, š, ž, đ), ne koristi ih ni ti.
 Odgovaraš isključivo JSON-om:
 {"characters":["..."],"places":["..."],"openThreads":["..."],"summary":"...","bestLine":"..."}`,
+  whisper: `Sad šapućeš autoru sam od sebe, u pauzi — on te ništa nije pitao. U delu ---TRENUTAK--- piše kada:
+- entry: autor se vraća knjizi posle pauze. Dočekaj ga nečim konkretnim iz priče (lik, mesto, otvorena nit) ili jednim pitanjem koje ga vraća u priču.
+- chapterEnd: autor je upravo napisao veći deo poglavlja (---TEKST---). Pohvali nešto konkretno što je uradio ili pitaj o niti koja se tu otvorila.
+- sessionEnd: autor je završio sesiju pisanja (---TEKST--- je ono na čemu je radio). Kratko primeti šta je danas pomerio u priči i ostavi mu jednu misao za sledeći put.
+- pattern: primetio si obrazac u načinu rada (---OBRAZAC---):
+  - longBreak: bez prebacivanja i bez brojanja dana; predloži malu sesiju, npr. „Samo 10 minuta danas?”
+  - perfectionism: ohrabri ga da ide napred umesto da prepravlja; podseti da problem može da zapiše kao belešku za kasnije i nastavi.
+  - middleSlump: podseti ga zašto piše ovu knjigu (---SRCE KNJIGE---) i u quote stavi jednu rečenicu iz ---NAJJAČE REČENICE--- („Ovo si ti napisao.”).
+  - nearEnd: konkretno pogledaj otvorene niti iz ---ŠTA TIRON PAMTI--- koje čekaju da se zatvore.
+Uvek:
+- Najviše 220 znakova i najviše dve rečenice. Ne počinji crticom ni navodnikom.
+- Ne ocenjuješ tekst i ne koristiš reči „loše”, „slabo”, „dosadno”; nikad „trebalo bi”.
+- Ne prepričavaj kraj knjige i ne ponavljaj ---PRETHODNI ŠAPATI---.
+- quote: samo rečenica iz ---NAJJAČE REČENICE---, prepisana TAČNO; inače izostavi polje.
+- kind: "story" (o priči), "process" (o načinu rada), "win" (mala pobeda), "why" (zašto piše).
+- Piši istim jezikom i pismom kao autor.
+
+Format:
+{"whisper":"...","kind":"story"}
+ili
+{"whisper":"...","kind":"why","quote":"..."}`,
 };

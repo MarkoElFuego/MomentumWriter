@@ -2,6 +2,7 @@ import Dexie, { type EntityTable, type Table } from "dexie";
 import type { JSONContent } from "@tiptap/react";
 import { DEFAULT_LANGUAGE, type Language } from "@/lib/languages";
 import type { ThemeName } from "@/lib/themes";
+import type { WHISPER_KINDS, WHISPER_MOMENTS } from "@/lib/ai/tiron";
 import { upgradeTitleHeadings, upgradeToParts } from "./migrations";
 
 export type ID = string;
@@ -147,6 +148,28 @@ export interface Session {
   hour: number;
 }
 
+export type WhisperMoment = (typeof WHISPER_MOMENTS)[number];
+export type WhisperKind = (typeof WHISPER_KINDS)[number];
+
+/** What Tiron said on his own (T5) — never while the author types. */
+export interface Whisper {
+  id: ID;
+  bookId: ID;
+  moment: WhisperMoment;
+  kind: WhisperKind;
+  text: string;
+  /** One of Book.bestLines, word for word, and the part it is from. */
+  quote?: string;
+  quotePartId?: ID;
+  /** The session it closes (sessionEnd) or was said in — for "once per session" and "2 per session". */
+  sessionId?: ID;
+  createdAt: number;
+  /** × took it off the top; it stays in the history. */
+  dismissed: boolean;
+  /** The author has opened the panel since it came — no dot on T. */
+  seen: boolean;
+}
+
 export interface DailyStat {
   date: string;
   bookId: ID;
@@ -197,6 +220,7 @@ export class MomentumDB extends Dexie {
   proofCache!: EntityTable<ProofCacheEntry, "key">;
   storyMemory!: EntityTable<StoryMemory, "bookId">;
   sessions!: EntityTable<Session, "id">;
+  whispers!: EntityTable<Whisper, "id">;
 
   constructor() {
     super("momentum");
@@ -247,6 +271,8 @@ export class MomentumDB extends Dexie {
     this.version(10).stores({});
     // v11: sessions (Tiron T4) — how the author writes, never what. New table only.
     this.version(11).stores({ sessions: "id, bookId" });
+    // v12: whispers (Tiron T5). New table only.
+    this.version(12).stores({ whispers: "id, bookId" });
   }
 }
 

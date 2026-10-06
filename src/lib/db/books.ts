@@ -49,7 +49,7 @@ export async function restoreBook(id: ID): Promise<void> {
 
 /** Books deleted ≥ UNDO_DELETE_MS ago go for good, with everything that belongs to them. */
 export async function purgeDeletedBooks(now = Date.now()): Promise<number> {
-  return db.transaction("rw", [db.books, db.parts, db.dailyStats, db.resumeState, db.storyMemory, db.sessions], async () => {
+  return db.transaction("rw", [db.books, db.parts, db.dailyStats, db.resumeState, db.storyMemory, db.sessions, db.whispers], async () => {
     const expired = (await db.books.filter((book) => book.deletedAt !== undefined && now - book.deletedAt >= UNDO_DELETE_MS).toArray()).map(
       (book) => book.id,
     );
@@ -59,6 +59,7 @@ export async function purgeDeletedBooks(now = Date.now()): Promise<number> {
       await db.resumeState.delete(bookId);
       await db.storyMemory.delete(bookId);
       await db.sessions.where("bookId").equals(bookId).delete();
+      await db.whispers.where("bookId").equals(bookId).delete();
     }
     await db.books.bulkDelete(expired);
     return expired.length;

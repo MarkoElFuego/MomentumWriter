@@ -98,7 +98,12 @@ db.version(10).stores({});
 // v11: tabela sessions (Tiron T4): { id, bookId, partIds[], startedAt, endedAt, wordsAdded,
 //   wordsDeleted, hour } — kako autor piše, nikad šta. Nova tabela, bez upgrade-a.
 db.version(11).stores({ sessions: "id, bookId" });
+// v12: tabela whispers (Tiron T5): { id, bookId, moment, kind, text, quote?, quotePartId?,
+//   sessionId?, createdAt, dismissed, seen }. Nova tabela, bez upgrade-a.
+db.version(12).stores({ whispers: "id, bookId" });
 ```
+
+Šapati (T5): okidači i kontekst su u `docs/AI_PROMPTS.md` → mode `tiron`; logika u `components/tiron/whisper.ts` (`requestWhisper`, `whisperSessionEndIfDue`; jedan zahtev po trenutku u isto vreme). Okidači: `ResumeScreen` (zaostali kraj sesije, pa ulazak/obrazac), izlazak iz dela u `WriteScreen` (posle `updateStoryMemory === "updated"` → `chapterEnd`), `hooks/useSessionEnd.ts` (provera svakog minuta + `visibilitychange`). Prikaz: `hooks/useWhispers.ts` (Dexie `liveQuery`) → sekcija Tiron u panelu (`components/tiron/Whispers.tsx`): najnoviji nesklonjen šapat gore (serif, citat u kurzivu sa „— II · Kofer”, `×` = `dismissed`), dugme „Zapeo sam”, ispod „Ranije” (10, pa „Prikaži sve”). Tačkica pored `T` dok postoji neviđen šapat i panel je zatvoren; otvaranje panela ih označava viđenim (`seen`). Tačkica je u traci koja bledi dok autor kuca. Režim u `···` (`lib/tironMode.ts`, `localStorage`): prisutan / tih / isključen — isključen gasi samo šapate (memorija i „Zapeo sam” rade). `purgeDeletedBooks` briše i šapate.
 
 Sesije i signali (T4): `savePart` u istoj transakciji zove `recordActivity` (`lib/db/sessions.ts`): razlika broja reči dela prema prethodnom čuvanju ide u `wordsAdded` / `wordsDeleted`; čuvanje < 30 min (`SESSION_GAP_MS`) posle poslednjeg u toj knjizi produžava sesiju (`endedAt`, `partIds`), inače počinje nova (`hour` = lokalni sat). „Kraj sesije” (20 min bez čuvanja, tab skriven 10 min, zatvaranje — `isSessionOver`) je trenutak za šapat u T5; sesija se tada ne zatvara zapisom, pa povratak pre 30 min nastavlja istu. `lib/process/signals.ts` (čiste funkcije): `daysSinceLastSession` (kalendarski dani), `sessionsLast7Days`, `rewriteRatio` (poslednje 3), `restartsOfCurrentPart` (neto < 150 reči), `bookPosition` (< 25% / ≤ 80% / više, null bez `targetWords`), `typicalHour`, `trend` (null ispod 6 sesija). `getSignals(bookId, partId)`; u dev režimu editor pri otvaranju dela ispiše `[signals] {…}` u konzolu. Ništa od ovoga se ne prikazuje u UI-ju i ne šalje na server. `purgeDeletedBooks` briše i sesije.
 

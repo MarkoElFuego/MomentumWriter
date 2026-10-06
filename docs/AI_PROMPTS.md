@@ -123,6 +123,23 @@ Izlaz: `{"characters":[…],"places":[…],"openThreads":[…],"summary":"…","
 
 Spajanje (`applyMemoryResult`, jedna transakcija): AI stavke se zamenjuju novim, **zakucane (`pinned`) ostaju iste i prve**, AI stavka jednaka zakucanoj otpada, max 12; `Part.summary` / `summaryForHash` / `memoryWords`; `Book.bestLines` — jedna po delu, nova zamenjuje staru (bez nove ostaje stara). Effort `AI_EFFORT_MEMORY` (podrazumevano `medium`), bez temperature, `max_completion_tokens` 4000, timeout 45 s. Log: `[memory] effort=medium … ms in=… cached=… out=…`.
 
+## mode: `tiron` — Tironovi šapati (T5)
+
+Pozadinski poziv, nikad dok autor kuca. Klijent (`components/tiron/whisper.ts`) proverava režim iz `···` (`localStorage` `momentum:tiron`: `present` sve, `quiet` bez `chapterEnd`, `off` ni poziv) i granice, sastavlja kontekst iz Dexie i upisuje šapat u tabelu `whispers`.
+
+| Trenutak | Okidač | Šalje se |
+|---|---|---|
+| `entry` | Resume ekran; ne dvaput u sat vremena | srce, memorija, sažeci, signali, poslednjih 5 šapata |
+| `pattern` | umesto `entry` kad `pickPattern` (`lib/process/patterns.ts`) nađe obrazac; najviše 1 dnevno | srce, signali, najjače rečenice (živih delova), obrazac, poslednjih 5 |
+| `chapterEnd` | posle uspešnog T2 čitanja pri izlasku iz dela; najviše 2 po sesiji | srce, memorija, sažeci, ~1500 reči kraja dela, poslednjih 5 |
+| `sessionEnd` | `isSessionOver` (20 min bez čuvanja / tab skriven 10 min), provera svakog minuta u editoru; zatvoren tab → pri sledećem otvaranju editora ili Resume-a; samo sesija sa ≥ 100 dodatih reči, jednom po sesiji | memorija, sažeci, ~1500 reči poslednjeg dela iz sesije, signali, poslednjih 5 |
+
+Obrasci (redom): `longBreak` (≥ 4 dana) · `perfectionism` (`rewriteRatio > 0.5` i ≥ 3 ponovna početka) · `middleSlump` (sredina + pad) · `nearEnd` (kraj).
+
+Svoja šema iza istog `/api/spark` (kao `memory`): `{ mode: "tiron", moment, pattern?, bookTitle, language?, heart?, memory?, summaries?, signals?, text?, bestLines?, previous? }`. Sistem prompt: `tiron` + `whisper` iz `src/lib/languages/sr-Latn/prompts.ts` (isti početak kao „Zapeo sam”). Korisnička poruka ima samo delove koji postoje: `---TRENUTAK---`, `---OBRAZAC---`, `---SRCE KNJIGE---`, `---ŠTA TIRON PAMTI---`, `---SAŽECI---`, `---SIGNALI---` (rečima, npr. „Udeo obrisanih reči u poslednje 3 sesije: 25%”), `---TEKST---`, `---NAJJAČE REČENICE---`, `---PRETHODNI ŠAPATI---`.
+
+Izlaz: `{"whisper":"…","kind":"story|process|win|why","quote"?:"…"}`. Guardrail (`whisperProblem`) odbija: > 220 znakova, početak crticom ili navodnikom, > 2 rečenice, cele reči ocene (`loš…`, `slab…`, `dosad…`, „greška u pisanju”) i „trebalo bi” → jedan ponovni pokušaj. `quote` ostaje samo ako je jedna od poslatih najjačih rečenica (bez obzira na razmake); inače otpada, šapat ostaje. Effort `AI_EFFORT_TIRON` (`medium`), za `sessionEnd` `AI_EFFORT_SESSION_END` (`low`), bez temperature, timeout 30 s. Log: `[tiron] moment=entry effort=medium … ms in=… cached=… out=…`.
+
 ## Zod šeme
 
 ```ts

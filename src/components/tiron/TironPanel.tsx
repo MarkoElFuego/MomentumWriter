@@ -4,10 +4,12 @@ import type { BookDetailsValue } from "@/components/book/BookDetailsFields";
 import type { BookLaterNote } from "@/hooks/useLaterNotes";
 import type { PartSummary, RefreshState } from "@/hooks/useStoryMemory";
 import type { StuckState } from "@/hooks/useStuck";
+import type { WhisperList } from "@/hooks/useWhispers";
 import { copy } from "@/lib/copy";
 import type { ID, StoryMemory } from "@/lib/db/schema";
 import { BookSection } from "./BookSection";
 import { LaterSection } from "./LaterSection";
+import { TopWhisper, WhisperHistory } from "./Whispers";
 
 export interface LanguageRow {
   /** Book score (chapters behind the author) and the value before its last change. */
@@ -18,6 +20,9 @@ export interface LanguageRow {
 }
 
 interface TironPanelProps {
+  /** Tiron's whispers (T5): the newest on top, the rest as history. */
+  whispers: WhisperList;
+  onDismissWhisper: (id: ID) => void;
   stuck: StuckState;
   /** Srce knjige, genre and length — the Knjiga section. */
   book: BookDetailsValue;
@@ -47,6 +52,8 @@ interface TironPanelProps {
  * while the book has notes (T3) and Jezik once the book has a score.
  */
 export function TironPanel({
+  whispers,
+  onDismissWhisper,
   stuck,
   book,
   onBookChange,
@@ -87,6 +94,7 @@ export function TironPanel({
       </div>
 
       <section>
+        {whispers.top && <TopWhisper whisper={whispers.top} onDismiss={() => onDismissWhisper(whispers.top!.id)} />}
         <button
           type="button"
           className="tiron-stuck ui-button w-full px-3 py-2"
@@ -120,6 +128,7 @@ export function TironPanel({
           {stuck.kind === "tooShort" && <p className="text-muted">{copy.tiron.tooShort}</p>}
           {stuck.kind === "error" && <p className="text-muted">{copy.tiron.unavailable}</p>}
         </div>
+        <WhisperHistory history={whispers.history} />
       </section>
 
       <BookSection

@@ -71,12 +71,29 @@ export const copy = {
     // Samo za obostrano poravnat tekst.
     hyphensOn: "Rastavljanje reči: uključeno",
     hyphensOff: "Rastavljanje reči: isključeno",
+    // Tiron T5: tri režima šapata.
+    tironModes: {
+      present: "Tiron: prisutan",
+      quiet: "Tiron: tih",
+      off: "Tiron: isključen",
+    },
+    tironModeHints: {
+      present: "Šapće na ulasku, posle poglavlja i na kraju sesije",
+      quiet: "Šapće samo na ulasku i na kraju sesije",
+      off: "Ne šapće (pamćenje knjige i „Zapeo sam” rade)",
+    },
     allBooks: "Sve knjige",
   },
   tiron: {
     panelLabel: "Tiron",
     toggle: "Tiron",
+    toggleNew: "Tiron — novi šapat",
     shortcut: "Ctrl/Cmd+Shift+\\",
+    // Šapati (T5).
+    dismiss: "Skloni šapat",
+    quoteFrom: (label: string) => `— ${label}`,
+    history: "Ranije",
+    showAll: (n: number) => `Prikaži sve (${n})`,
     stuck: "Zapeo sam",
     another: "Još jedno",
     thinking: "Tiron razmišlja…",

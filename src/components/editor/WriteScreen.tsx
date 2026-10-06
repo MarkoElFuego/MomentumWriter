@@ -11,6 +11,9 @@ import { TironPanel } from "@/components/tiron/TironPanel";
 import { addLaterNoteTr, laterNoteAtCursor, laterNoteRangeAt, updateLaterNoteTr, type TextRange } from "./laterNote";
 import { LaterNotePopover } from "./LaterNotePopover";
 import { updateStoryMemory } from "@/components/tiron/updateMemory";
+import { requestWhisper } from "@/components/tiron/whisper";
+import { dismissWhisper, markWhispersSeen } from "@/lib/db/whispers";
+import { readTironMode, writeTironMode, type TironMode } from "@/lib/tironMode";
 import { useAppearance } from "@/hooks/useAppearance";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useFullscreen } from "@/hooks/useFullscreen";
@@ -20,6 +23,8 @@ import { useOpenProofMark, useProofread } from "@/hooks/useProofread";
 import { useToolbarFade } from "@/hooks/useToolbarFade";
 import { offerUndo, purgeExpiredDeletes, takeUndo, useUndoDelete } from "@/hooks/useUndoDelete";
 import { useLaterNotes } from "@/hooks/useLaterNotes";
+import { useSessionEnd } from "@/hooks/useSessionEnd";
+import { useWhispers } from "@/hooks/useWhispers";
 import { useStoryMemory } from "@/hooks/useStoryMemory";
 import { useStuck } from "@/hooks/useStuck";
 import { useTypewriterScroll } from "@/hooks/useTypewriterScroll";
@@ -308,6 +313,20 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const storyMemory = useStoryMemory(bookId, partId, flush);
   const stuck = useStuck(editor, titles, knownEnding(bookDetails.heart), storyMemory.compact);
   const laterNotes = useLaterNotes(editor, bookId, partId, flush);
+  const whispers = useWhispers(bookId);
+  useSessionEnd(bookId);
+  const [tironMode, setTironMode] = useState<TironMode>("present");
+  useEffect(() => setTironMode(readTironMode()), []);
+  const changeTironMode = useCallback((mode: TironMode) => {
+    writeTironMode(mode);
+    setTironMode(mode);
+  }, []);
+  // An open panel has shown its whispers — no dot on T.
+  useEffect(() => {
+    if (tironOpen && bookId && whispers.unseen > 0) {
+      markWhispersSeen(bookId).catch((error) => console.error("Failed to mark whispers seen", error));
+    }
+  }, [tironOpen, bookId, whispers.unseen]);
   // Ctrl/Cmd+Shift+L: „Šta ovde kasnije?” under the word — a new note, or the one the cursor is in.
   const [laterDraft, setLaterDraft] = useState<
     { anchor: PopoverAnchor; initial: string; target: { range: TextRange } | { id: string } } | null
@@ -351,7 +370,10 @@ export function WriteScreen({ partId }: { partId: ID }) {
   // background if it has enough new words — after the last save is in.
   useEffect(
     () => () => {
-      void flush().then(() => updateStoryMemory(partId));
+      // Tiron read it → his chapter-end whisper (T5), still in the background.
+      void flush()
+        .then(() => updateStoryMemory(partId))
+        .then((read) => (read === "updated" ? requestWhisper({ moment: "chapterEnd", partId }) : null));
     },
     [partId, flush],
   );
@@ -553,6 +575,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
           onToggleStructure={togglePanel}
           tironOpen={tironOpen}
           onToggleTiron={toggleTiron}
+          tironDot={!tironOpen && whispers.unseen > 0}
           fullscreen={fullscreen}
           appearance={appearance}
           settings={{
@@ -562,6 +585,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
             onToggleProof: toggleProof,
             hyphens,
             onToggleHyphens: toggleHyphens,
+            tironMode,
+            onTironMode: changeTironMode,
           }}
           faded={toolbarFaded}
           onMenuOpenChange={setMenuOpen}
@@ -627,6 +652,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
       {tironOpen && (
         <div ref={rightPanelRef} className={overlay ? "panel-overlay panel-overlay-right" : "flex h-full shrink-0"}>
         <TironPanel
+          whispers={whispers}
+          onDismissWhisper={(id) => void dismissWhisper(id).catch((error) => console.error("Failed to dismiss the whisper", error))}
           stuck={stuck.state}
           book={bookDetails}
           onBookChange={changeBookDetails}

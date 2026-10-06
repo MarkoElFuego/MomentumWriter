@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { docFromJSON, restorablePos } from "@/components/editor/contentSchema";
+import { requestWhisper, whisperSessionEndIfDue } from "@/components/tiron/whisper";
 import { useOpenQuestion, type OpenQuestionInput } from "@/hooks/useOpenQuestion";
 import { copy } from "@/lib/copy";
 import { firstPartId, getBook } from "@/lib/db/books";
@@ -78,6 +79,14 @@ export function ResumeScreen({ bookId }: { bookId: ID }) {
     };
   }, [ready]);
   const prompt = useOpenQuestion(questionInput);
+
+  // Tiron (T5): a session left behind by a closed tab gets its closing whisper,
+  // then the greeting (or a process pattern) — both wait in the panel.
+  const readyBookId = ready?.book.id ?? null;
+  useEffect(() => {
+    if (!readyBookId) return;
+    void whisperSessionEndIfDue(readyBookId).then(() => requestWhisper({ moment: "entry", bookId: readyBookId }));
+  }, [readyBookId]);
 
   if (state.kind === "loading") return <div className="h-dvh" />;
 

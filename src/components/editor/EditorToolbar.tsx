@@ -24,6 +24,8 @@ interface EditorToolbarProps {
   onToggleStructure: () => void;
   tironOpen: boolean;
   onToggleTiron: () => void;
+  /** A whisper came while the panel was closed (T5): a small dot by T. */
+  tironDot: boolean;
   fullscreen: FullscreenControls;
   appearance: AppearanceControls;
   /** Settings left in ···. */
@@ -93,6 +95,7 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
     onToggleStructure,
     tironOpen,
     onToggleTiron,
+    tironDot,
     fullscreen,
     appearance,
     settings,
@@ -285,8 +288,15 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
           <span aria-hidden="true">⛶</span>
         </Toggle>
         {/* No dot yet: whispers come with Tiron T5. */}
-        <Toggle label={copy.tiron.toggle} shortcut={copy.tiron.shortcut} pressed={tironOpen} onPress={onToggleTiron}>
-          <span aria-hidden="true" className="font-serif">T</span>
+        <Toggle
+          label={tironDot ? copy.tiron.toggleNew : copy.tiron.toggle}
+          shortcut={copy.tiron.shortcut}
+          pressed={tironOpen}
+          onPress={onToggleTiron}
+        >
+          <span aria-hidden="true" className="relative font-serif">
+            T{tironDot && <span className="tiron-dot" />}
+          </span>
         </Toggle>
         <EditorMenu {...settings} {...menuProps("more")} />
       </div>

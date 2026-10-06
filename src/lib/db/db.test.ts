@@ -52,6 +52,7 @@ import { getAppearance, getOpenSections, saveAppearance, setSectionOpen } from "
 import { db } from "./schema";
 import { openPart } from "./session";
 import { getSignals, listSessions } from "./sessions";
+import { addWhisper, chapterEndsInSession, dismissWhisper, listWhispers, markWhispersSeen, patternToday, sessionEndSaid } from "./whispers";
 import { UNDO_DELETE_MS } from "@/lib/timing";
 
 const doc = (text: string) => ({
@@ -476,7 +477,7 @@ describe("migrations", () => {
     const resume = await getResumeState("b1");
     expect(resume).toMatchObject({ partId: "c2", cursorPos: 0, lastSentence: "Peta." });
     expect(resume).not.toHaveProperty("sceneId");
-    expect(db.tables.map((t) => t.name).sort()).toEqual(["books", "dailyStats", "parts", "proofCache", "resumeState", "sessions", "settings", "storyMemory"]);
+    expect(db.tables.map((t) => t.name).sort()).toEqual(["books", "dailyStats", "parts", "proofCache", "resumeState", "sessions", "settings", "storyMemory", "whispers"]);
   });
 
   it("v3 → v4: parts stay, settings start empty (defaults)", async () => {
@@ -499,7 +500,7 @@ describe("migrations", () => {
     v3.close();
     await db.open();
 
-    expect(db.verno).toBe(11);
+    expect(db.verno).toBe(12);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await db.settings.count()).toBe(0);
     expect(await getAppearance()).toEqual({ key: "appearance", focusMode: false, typewriter: false });
@@ -538,7 +539,7 @@ describe("migrations", () => {
     v4.close();
     await db.open();
 
-    expect(db.verno).toBe(11);
+    expect(db.verno).toBe(12);
     const blocks = async (id: string) => (await getPart(id))!.content.content;
     expect(await blocks("front")).toEqual([p("Mami.")]);
     expect((await getPart("front"))!.wordCount).toBe(1);
@@ -577,7 +578,7 @@ describe("migrations", () => {
     v5.close();
     await db.open();
 
-    expect(db.verno).toBe(11);
+    expect(db.verno).toBe(12);
     expect((await listParts("b1")).map((p) => p.id)).toEqual(["p1", "p2"]);
     expect((await getPart("p2"))?.content).toEqual(doc("Tekst p2."));
     expect(await bookWordTotal("b1")).toBe(4);
@@ -603,7 +604,7 @@ describe("migrations", () => {
     v6.close();
     await db.open();
 
-    expect(db.verno).toBe(11);
+    expect(db.verno).toBe(12);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect((await getPart("p1"))?.languageScore).toBeUndefined();
     expect(await db.proofCache.count()).toBe(0);
@@ -637,7 +638,7 @@ describe("migrations", () => {
     v7.close();
     await db.open();
 
-    expect(db.verno).toBe(11);
+    expect(db.verno).toBe(12);
     const book = await getBook("b1");
     expect(book).toMatchObject({ title: "Knjiga", language: "sr-Latn" });
     expect(book?.heart).toBeUndefined();
@@ -683,7 +684,7 @@ describe("migrations", () => {
     v8.close();
     await db.open();
 
-    expect(db.verno).toBe(11);
+    expect(db.verno).toBe(12);
     const book = await getBook("b1");
     expect(book).toMatchObject({ title: "Knjiga", heart: { about: "O kiši." }, genre: "misterija" });
     expect(book?.bestLines).toBeUndefined();
@@ -712,7 +713,7 @@ describe("migrations", () => {
     v9.close();
     await db.open();
 
-    expect(db.verno).toBe(11);
+    expect(db.verno).toBe(12);
     expect((await listBooks()).map((book) => book.title)).toEqual(["Sneg", "Kiša"]);
     expect((await getBook("b1"))?.deletedAt).toBeUndefined();
   });
@@ -745,9 +746,34 @@ describe("migrations", () => {
     v10.close();
     await db.open();
 
-    expect(db.verno).toBe(11);
+    expect(db.verno).toBe(12);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await listSessions("b1")).toEqual([]);
+  });
+
+  it("v11 → v12: books stay, Tiron hasn't whispered yet", async () => {
+    db.close();
+    await Dexie.delete("momentum");
+    const v11 = new Dexie("momentum");
+    v11.version(11).stores({
+      ...V1_STORES,
+      parts: "id, bookId",
+      chapters: null,
+      scenes: null,
+      settings: "key",
+      proofCache: "key, usedAt",
+      storyMemory: "bookId",
+      sessions: "id, bookId",
+    });
+    await v11.table("books").add({ id: "b1", title: "Kiša", language: "sr-Latn", createdAt: 1, updatedAt: 1 });
+    await v11.table("sessions").add({ id: "s1", bookId: "b1", partIds: ["p1"], startedAt: 1, endedAt: 2, wordsAdded: 5, wordsDeleted: 0, hour: 9 });
+    v11.close();
+    await db.open();
+
+    expect(db.verno).toBe(12);
+    expect(await getBook("b1")).toMatchObject({ title: "Kiša" });
+    expect(await listSessions("b1")).toHaveLength(1);
+    expect(await listWhispers("b1")).toEqual([]);
   });
 });
 
@@ -1153,5 +1179,48 @@ describe("writing sessions", () => {
     await deleteBook(book.id, T0 + 3 * MIN);
     await purgeDeletedBooks(T0 + 3 * MIN + UNDO_DELETE_MS);
     expect(await listSessions(book.id)).toEqual([]);
+  });
+});
+
+describe("whispers in the database", () => {
+  const base = { kind: "story" as const, text: "Mara čeka." };
+
+  it("newest first; × keeps it in the history; opening the panel marks them seen", async () => {
+    const { book } = await createBook("Kiša");
+    const first = await addWhisper({ ...base, bookId: book.id, moment: "entry", createdAt: 1 });
+    await addWhisper({ ...base, bookId: book.id, moment: "chapterEnd", createdAt: 2 });
+    expect((await listWhispers(book.id)).map((w) => w.createdAt)).toEqual([2, 1]);
+    expect((await listWhispers(book.id)).every((w) => !w.seen && !w.dismissed)).toBe(true);
+
+    await dismissWhisper(first.id);
+    await markWhispersSeen(book.id);
+    const after = await listWhispers(book.id);
+    expect(after).toHaveLength(2);
+    expect(after.find((w) => w.id === first.id)?.dismissed).toBe(true);
+    expect(after.every((w) => w.seen)).toBe(true);
+  });
+
+  it("counts what the limits need: chapter ends per session, a pattern today, a session's closing whisper", async () => {
+    const { book } = await createBook("Kiša");
+    const noon = new Date(2026, 9, 6, 12).getTime();
+    await addWhisper({ ...base, bookId: book.id, moment: "chapterEnd", sessionId: "s1", createdAt: noon });
+    await addWhisper({ ...base, bookId: book.id, moment: "chapterEnd", sessionId: "s2", createdAt: noon });
+    await addWhisper({ ...base, bookId: book.id, moment: "pattern", createdAt: noon - 24 * 60 * 60 * 1_000 });
+    await addWhisper({ ...base, bookId: book.id, moment: "sessionEnd", sessionId: "s1", createdAt: noon });
+
+    expect(await chapterEndsInSession(book.id, "s1")).toBe(1);
+    expect(await patternToday(book.id, noon)).toBe(false);
+    await addWhisper({ ...base, bookId: book.id, moment: "pattern", createdAt: noon - 60_000 });
+    expect(await patternToday(book.id, noon)).toBe(true);
+    expect(await sessionEndSaid(book.id, "s1")).toBe(true);
+    expect(await sessionEndSaid(book.id, "s2")).toBe(false);
+  });
+
+  it("a purged book takes its whispers along", async () => {
+    const { book } = await createBook("Kiša");
+    await addWhisper({ ...base, bookId: book.id, moment: "entry", createdAt: 1 });
+    await deleteBook(book.id, 5_000);
+    await purgeDeletedBooks(5_000 + UNDO_DELETE_MS);
+    expect(await listWhispers(book.id)).toEqual([]);
   });
 });

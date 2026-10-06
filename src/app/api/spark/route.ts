@@ -2,6 +2,7 @@ import { MemoryRequestSchema, runMemory } from "@/lib/ai/memory";
 import { createCompleter, MissingAiConfigError } from "@/lib/ai/openai";
 import { ProofreadRequestSchema, runProofread } from "@/lib/ai/proofread";
 import { SparkRequestSchema } from "@/lib/ai/schemas";
+import { runTiron, TironRequestSchema } from "@/lib/ai/tiron";
 import { runSpark } from "@/lib/ai/spark";
 
 // One deadline for both attempts — the writer waits at most this long.
@@ -12,14 +13,18 @@ const GHOST_TIMEOUT_MS = 6_000;
 const PROOFREAD_TIMEOUT_MS = 10_000;
 // Memory reads a whole chapter with medium reasoning, in the background — nobody waits on it.
 const MEMORY_TIMEOUT_MS = 45_000;
+// A whisper waits for a pause anyway — medium reasoning may take a while.
+const TIRON_TIMEOUT_MS = 30_000;
 
-// Proofread (one paragraph, plain-text reply) and memory (a whole chapter) have
-// their own shapes behind the same endpoint.
+// Proofread (one paragraph, plain-text reply), memory (a whole chapter) and
+// tiron (a whisper) have their own shapes behind the same endpoint.
 function parseBody(body: unknown) {
   const proofread = ProofreadRequestSchema.safeParse(body);
   if (proofread.success) return { kind: "proofread", data: proofread.data } as const;
   const memory = MemoryRequestSchema.safeParse(body);
   if (memory.success) return { kind: "memory", data: memory.data } as const;
+  const tiron = TironRequestSchema.safeParse(body);
+  if (tiron.success) return { kind: "tiron", data: tiron.data } as const;
   const spark = SparkRequestSchema.safeParse(body);
   if (spark.success) return { kind: "spark", data: spark.data } as const;
   return null;
@@ -48,6 +53,9 @@ export async function POST(request: Request) {
   }
   if (input.kind === "memory") {
     return respond(await runMemory(input.data, complete, AbortSignal.timeout(MEMORY_TIMEOUT_MS)));
+  }
+  if (input.kind === "tiron") {
+    return respond(await runTiron(input.data, complete, AbortSignal.timeout(TIRON_TIMEOUT_MS)));
   }
 
   const ghost = input.data.mode === "ghost";

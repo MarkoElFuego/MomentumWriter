@@ -1,6 +1,7 @@
 // Browser side of /api/spark. Types only from lib/ai — never the SDK or the key.
 import type { MemoryRequest, MemoryResult } from "./memory";
 import type { ProofreadRequest } from "./proofread";
+import type { TironRequest, WhisperResult } from "./tiron";
 import type { SparkRequest, SparkResponse } from "./schemas";
 
 export type SparkClientError = "offline" | "timeout" | "unavailable";
@@ -69,6 +70,28 @@ export async function requestMemory(
     });
     if (!response.ok) return { ok: false, status: response.status };
     const { data } = (await response.json()) as { data: MemoryResult };
+    return { ok: true, data };
+  } catch {
+    return { ok: false, status: "network" };
+  }
+}
+
+// The server gives up on a whisper at 30 s.
+const TIRON_CLIENT_TIMEOUT_MS = 35_000;
+
+/** One whisper (T5), in the background. A failure only means no whisper this time. */
+export async function requestTiron(
+  body: TironRequest,
+): Promise<{ ok: true; data: WhisperResult } | { ok: false; status: number | "network" }> {
+  try {
+    const response = await fetch("/api/spark", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(TIRON_CLIENT_TIMEOUT_MS),
+    });
+    if (!response.ok) return { ok: false, status: response.status };
+    const { data } = (await response.json()) as { data: WhisperResult };
     return { ok: true, data };
   } catch {
     return { ok: false, status: "network" };

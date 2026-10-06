@@ -19,6 +19,8 @@ export interface LanguagePrompts {
   stuck: string;
   /** Story memory, chapter summary and strongest sentence (T2) — read in the background. */
   memory: string;
+  /** Tiron's whisper (T5): the task after the Tiron rules, per moment and pattern. */
+  whisper: string;
 }
 
 export interface Typography {

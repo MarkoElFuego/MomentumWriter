@@ -497,3 +497,14 @@
   background-color: color-mix(in srgb, var(--ink) 9%, transparent);
   border-radius: 2px;
 }
+
+/* Tiron T5: a new whisper while the panel is closed — a still dot, no animation. */
+.tiron-dot {
+  position: absolute;
+  top: -0.1rem;
+  right: -0.45rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background-color: var(--ink-muted);
+}

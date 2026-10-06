@@ -5,7 +5,9 @@ import { parseSparkResponse, type SparkRequest, type SparkResponse } from "./sch
 
 // The model call is injected so the retry/guardrail flow is testable without the SDK.
 export type Completer = (call: {
-  mode: SparkMode | "proofread" | "memory";
+  mode: SparkMode | "proofread" | "memory" | "tiron";
+  /** Tiron: which moment — picks the effort and goes into the log. */
+  moment?: string;
   system: string;
   user: string;
   signal: AbortSignal;

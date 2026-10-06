@@ -3,8 +3,10 @@ import type { ReasoningEffort } from "openai/resources/shared";
 import { PROOFREAD_EFFORT, PROOFREAD_TEMPERATURE } from "./proofread";
 import { MAX_COMPLETION_TOKENS } from "./prompts";
 
-// Medium reasoning over a whole chapter plus three lists and a summary needs more room than a question.
-const MEMORY_COMPLETION_TOKENS = 4000;
+// The reasoning counts toward the cap. Medium reasoning over a whole chapter (memory) or
+// over the heart, memory, summaries and ~1500 words (a whisper) needs far more room than
+// 1200 — with less, the model thinks until the cap and the reply comes back empty.
+const COMPLETION_TOKENS: Partial<Record<string, number>> = { memory: 4000, tiron: 4000 };
 import { buildRequestParams } from "./requestParams";
 import type { Completer } from "./spark";
 
@@ -31,14 +33,20 @@ export function createCompleter(): Completer {
   const stuckEffort = (process.env.AI_EFFORT_STUCK || "low") as ReasoningEffort;
   // Memory reads a whole chapter in the background and must get names and threads right. Never "none".
   const memoryEffort = (process.env.AI_EFFORT_MEMORY || "medium") as ReasoningEffort;
+  // Tiron's whispers connect the heart, memory, summaries and signals — never "none".
+  const tironEffort = (process.env.AI_EFFORT_TIRON || "medium") as ReasoningEffort;
+  // The end of a session: a short look back, the author has already stopped.
+  const sessionEndEffort = (process.env.AI_EFFORT_SESSION_END || "low") as ReasoningEffort;
   const efforts: Partial<Record<string, ReasoningEffort>> = {
     ghost: ghostEffort,
     stuck: stuckEffort,
     memory: memoryEffort,
+    tiron: tironEffort,
   };
 
-  return async ({ mode, system, user, signal }) => {
+  return async ({ mode, moment, system, user, signal }) => {
     const proofread = mode === "proofread";
+    const effort = mode === "tiron" && moment === "sessionEnd" ? sessionEndEffort : efforts[mode];
     const started = Date.now();
     const completion = await client.chat.completions.create(
       buildRequestParams(
@@ -56,16 +64,16 @@ export function createCompleter(): Completer {
               model,
               system,
               user,
-              maxCompletionTokens: mode === "memory" ? MEMORY_COMPLETION_TOKENS : MAX_COMPLETION_TOKENS,
-              effort: efforts[mode],
+              maxCompletionTokens: COMPLETION_TOKENS[mode] ?? MAX_COMPLETION_TOKENS,
+              effort,
             },
       ),
       { signal },
     );
-    if (proofread || mode === "stuck" || mode === "memory") {
+    if (proofread || mode === "stuck" || mode === "memory" || mode === "tiron") {
       const { usage } = completion;
       const tokens = `in=${usage?.prompt_tokens ?? "?"} cached=${usage?.prompt_tokens_details?.cached_tokens ?? 0} out=${usage?.completion_tokens ?? "?"}`;
-      const label = proofread ? "[proofread]" : `[${mode}] effort=${efforts[mode]}`;
+      const label = proofread ? "[proofread]" : `[${mode}]${moment ? ` moment=${moment}` : ""} effort=${effort}`;
       console.log(`${label} ${Date.now() - started}ms ${tokens}`);
     }
     const choice = completion.choices[0];

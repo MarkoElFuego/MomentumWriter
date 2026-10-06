@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { copy } from "@/lib/copy";
+import { TIRON_MODES, type TironMode } from "@/lib/tironMode";
 import { ToolbarMenu } from "./ToolbarMenu";
 
 export interface EditorMenuProps {
@@ -14,6 +15,9 @@ export interface EditorMenuProps {
   /** Hyphenation of justified text. */
   hyphens: boolean;
   onToggleHyphens: () => void;
+  /** Tiron's whispers: present / quiet / off (T5). */
+  tironMode: TironMode;
+  onTironMode: (mode: TironMode) => void;
 }
 
 /** ··· — the settings that don't have their own icon in the toolbar. */
@@ -26,6 +30,8 @@ export function EditorMenu({
   onToggleProof,
   hyphens,
   onToggleHyphens,
+  tironMode,
+  onTironMode,
 }: EditorMenuProps) {
   const item = "ui-button block w-full whitespace-nowrap px-3 py-2 text-left";
   return (
@@ -46,7 +52,22 @@ export function EditorMenu({
       <button type="button" role="menuitemcheckbox" aria-checked={hyphens} className={item} onClick={onToggleHyphens}>
         {hyphens ? copy.menu.hyphensOn : copy.menu.hyphensOff}
       </button>
-      <Link href="/" role="menuitem" className="ui-button block px-3 py-2">
+      <div role="group" aria-label={copy.tiron.toggle} className="border-t border-muted/20">
+        {TIRON_MODES.map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            role="menuitemradio"
+            aria-checked={tironMode === mode}
+            title={copy.menu.tironModeHints[mode]}
+            className={`${item}${tironMode === mode ? " text-ink" : " text-muted"}`}
+            onClick={() => onTironMode(mode)}
+          >
+            {copy.menu.tironModes[mode]}
+          </button>
+        ))}
+      </div>
+      <Link href="/" role="menuitem" className="ui-button block border-t border-muted/20 px-3 py-2">
         {copy.menu.allBooks}
       </Link>
     </ToolbarMenu>
