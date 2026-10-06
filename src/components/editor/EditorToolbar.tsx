@@ -17,6 +17,8 @@ type MenuName = "style" | "align" | "theme" | "more";
 interface EditorToolbarProps {
   editor: Editor | null;
   saveStatus: SaveStatus;
+  /** First draft: "Nacrt 1 · Sačuvano" with its tooltip (an error is shown on its own). */
+  draft: boolean;
   structureOpen: boolean;
   onToggleStructure: () => void;
   tironOpen: boolean;
@@ -85,6 +87,7 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
   {
     editor,
     saveStatus,
+    draft,
     structureOpen,
     onToggleStructure,
     tironOpen,
@@ -98,6 +101,7 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
   ref,
 ) {
   const [openMenu, setOpenMenu] = useState<MenuName | null>(null);
+  const showDraft = draft && saveStatus !== "error";
 
   useEffect(() => onMenuOpenChange(openMenu !== null), [openMenu, onMenuOpenChange]);
 
@@ -219,8 +223,13 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
         </ToolbarMenu>
       </div>
 
-      <p role="status" aria-live="polite" className="toolbar-status text-center">
-        {copy.save[saveStatus]}
+      <p
+        role="status"
+        aria-live="polite"
+        title={showDraft ? copy.save.draftHint : undefined}
+        className="toolbar-status text-center"
+      >
+        {showDraft ? copy.save.draft(copy.save[saveStatus]) : copy.save[saveStatus]}
       </p>
 
       <div className="flex items-center justify-end gap-1">

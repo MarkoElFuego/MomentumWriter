@@ -76,6 +76,27 @@ describe("stuck — prompt", () => {
     );
   });
 
+  it("adds how the book ends after the text, before the questions to avoid", () => {
+    const fields = { bookTitle: "Kiša", chapterTitle: "Poglavlje I", context: "Tekst." };
+    expect(buildUserMessage("stuck", fields)).not.toContain("KAKO SE KNJIGA ZAVRŠAVA");
+    expect(buildUserMessage("stuck", { ...fields, ending: "Petar otvara kofer.", avoid: ["Gde je kofer?"] })).toBe(
+      "Knjiga: Kiša\nPoglavlje: Poglavlje I\n\n---TEKST---\nTekst.\n\n" +
+        "---KAKO SE KNJIGA ZAVRŠAVA---\nPetar otvara kofer.\n\n---NE PONAVLJAJ---\n- Gde je kofer?",
+    );
+    expect(buildSystemPrompt("stuck", "sr-Latn")).toContain("kraj ne prepričavaj");
+  });
+
+  it("never gives the ending to the gray completions", () => {
+    const fields = { bookTitle: "Kiša", chapterTitle: "Poglavlje I", context: "Tekst je", ending: "Petar otvara kofer." };
+    expect(buildUserMessage("ghost", fields)).not.toContain("Petar otvara kofer.");
+  });
+
+  it("accepts an ending of at most 1000 characters", () => {
+    const base = { mode: "stuck", context, bookTitle: "Kiša", chapterTitle: "Poglavlje I" };
+    expect(SparkRequestSchema.safeParse({ ...base, ending: "Kraj." }).success).toBe(true);
+    expect(SparkRequestSchema.safeParse({ ...base, ending: "a".repeat(1001) }).success).toBe(false);
+  });
+
   it("goes out with effort low and no temperature", () => {
     const params = buildRequestParams({ model: "m", system: "s", user: "u", maxCompletionTokens: 1200, effort: "low", temperature: 0.7 });
     expect(params.reasoning_effort).toBe("low");

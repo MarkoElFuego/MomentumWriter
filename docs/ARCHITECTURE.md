@@ -85,7 +85,13 @@ db.version(6).stores({});
 // v7: proofCache (provera jezika po pasusu: key, text, corrected|null, rejected, createdAt, usedAt)
 //   + opciono Part.languageScore / Book.languageScore (U7). Nova tabela, bez upgrade-a.
 db.version(7).stores({ proofCache: "key, usedAt" });
+// v8: opciono Book.heart {about?, ending?, why?} / targetWords? (40k/80k/120k, bez = „ne znam”) /
+//   genre? (Tiron T1) + zapis "panels" u settings ({ open: ["book"] } — otvorene sekcije desnog
+//   panela, podrazumevano sve skupljene). Bez indeksa i bez upgrade-a.
+db.version(8).stores({});
 ```
+
+Srce knjige (T1): „Nova knjiga” → `createBook` → `/start?book=…` (`components/book/StartScreen.tsx`): naslov (neobavezan, prazno = „Nova knjiga”), 3 pitanja, žanr i dužina, sve neobavezno; „Počni da pišeš” (`Ctrl/Cmd+Enter`) upisuje kroz `updateBook` (`cleanHeart` seče razmake i izbacuje prazne odgovore), „Preskoči” ne upisuje ništa; oba idu na prvo poglavlje preko `router.replace`. Stare knjige i preskočena pitanja → sekcija „Knjiga ›” u desnom panelu (`components/tiron/BookSection.tsx`), gde se svaka izmena odmah upisuje. Kraj knjige ide samo u „Zapeo sam” (`knownEnding`: „ne znam…” se ne šalje), nikad u ghost.
 
 Ocena jezika (U7, `lib/text/languageScore.ts`): pri izlasku iz dela (unmount ekrana ili sakriven tab) `useProofread().stats()` daje reči **proverenih** pasusa i otvorene podvlake; ako je provereno ≥ 50% reči dela, `saveLanguageScore` upisuje `Part.languageScore` i preračunava `Book.languageScore` (prosek po rečima, čuva `previous` za ↑/↓). Deo otvoren u editoru se nikad ne računa. Prikaz: sekcija „Jezik” u Tiron panelu — `Jezik 94 ↑3`, ispod (samo ako ovde ima podvlaka) „ovde: 4 kvačice · 1 gramatika”; klik → sledeća podvlaka sa otvorenim popoverom. Bez ocene knjige sekcije nema.
 

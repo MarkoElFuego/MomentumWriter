@@ -12,6 +12,8 @@ export const SparkRequestSchema = z.object({
   language: z.enum(LANGUAGES).optional(),
   /** Stuck: the last questions asked (at most 5), so "Još jedno" asks something new. */
   avoid: z.array(z.string().max(300)).max(5).optional(),
+  /** Stuck: how the book ends, from Srce knjige — never sent with ghost. */
+  ending: z.string().trim().max(1000).optional(),
 });
 export type SparkRequest = z.infer<typeof SparkRequestSchema>;
 

@@ -2,7 +2,7 @@ import { copy } from "@/lib/copy";
 import { DEFAULT_LANGUAGE } from "@/lib/languages";
 import { newId } from "./id";
 import { entryPart, isAlive, listParts, newPart } from "./parts";
-import { db, ORDER_STEP, type Book, type ID, type Part } from "./schema";
+import { db, ORDER_STEP, type Book, type BookHeart, type ID, type Part } from "./schema";
 
 /** A new book opens straight into its first chapter. */
 export async function createBook(
@@ -29,6 +29,34 @@ export function listBooks(): Promise<Book[]> {
 
 export async function renameBook(id: ID, title: string): Promise<void> {
   await db.books.update(id, { title, updatedAt: Date.now() });
+}
+
+/** What the start screen and the Knjiga section change. */
+export type BookDetails = Partial<Pick<Book, "title" | "heart" | "targetWords" | "genre">>;
+
+/** Trimmed answers; blank ones are dropped, and no answers at all is no heart. */
+export function cleanHeart(heart: BookHeart | undefined): BookHeart | undefined {
+  const clean: BookHeart = {};
+  for (const key of ["about", "ending", "why"] as const) {
+    const value = heart?.[key]?.trim();
+    if (value) clean[key] = value;
+  }
+  return Object.keys(clean).length ? clean : undefined;
+}
+
+/** The ending Tiron may lead toward — "ne znam (još)" is no ending. */
+export function knownEnding(heart: BookHeart | undefined): string | undefined {
+  const ending = heart?.ending?.trim();
+  if (!ending || /^ne znam\b/i.test(ending)) return undefined;
+  return ending.slice(0, 1000);
+}
+
+/** Undefined removes a field ("ne znam" length, no genre, no heart). */
+export async function updateBook(id: ID, details: BookDetails): Promise<void> {
+  const change: BookDetails = { ...details };
+  if ("heart" in details) change.heart = cleanHeart(details.heart);
+  if ("title" in details) change.title = details.title?.trim() || copy.structure.defaultBookTitle;
+  await db.books.update(id, { ...change, updatedAt: Date.now() });
 }
 
 export async function firstPartId(bookId: ID): Promise<ID | undefined> {

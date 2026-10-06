@@ -25,6 +25,7 @@ Odgovaraš isključivo JSON-om po zadatom formatu.`,
 - Pitanje je kratko, najviše 200 znakova. Pitanje mora da se završi upitnikom.
 - Ne predlaži rečenice priče i ne odgovaraj umesto autora — pitanje ostavlja odluku njemu.
 - Ako postoji deo ---NE PONAVLJAJ---, pitaj nešto drugo od navedenih pitanja (drugi lik, drugi ugao, druga prepreka).
+- Ako postoji deo ---KAKO SE KNJIGA ZAVRŠAVA---, neka pitanje vodi scenu korak bliže tom kraju, ali kraj ne prepričavaj i ne pominji ga u pitanju.
 - Piši istim jezikom i pismom kao autor; ako autor ne koristi dijakritike (č, ć, š, ž, đ), ne koristi ih ni ti.
 
 Format:

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Dexie from "dexie";
-import { bookWordTotal, createBook, firstPartId, getBook, listBooks, renameBook } from "./books";
+import { bookWordTotal, cleanHeart, knownEnding, createBook, firstPartId, getBook, listBooks, renameBook, updateBook } from "./books";
 import { getDailyStat } from "./dailyStats";
 import { mergeScenes, type LegacyScene } from "./migrations";
 import {
@@ -21,7 +21,7 @@ import {
 import { getProofResult, proofCacheKey, purgeProofCache, saveProofResult } from "./proofCache";
 import { bookEntry, bookEntryHref, getResumeState, saveOpenQuestion } from "./resume";
 import type { Part, ResumeState } from "./schema";
-import { getAppearance, saveAppearance } from "./settings";
+import { getAppearance, getOpenSections, saveAppearance, setSectionOpen } from "./settings";
 import { db } from "./schema";
 import { openPart } from "./session";
 import { UNDO_DELETE_MS } from "@/lib/timing";
@@ -471,7 +471,7 @@ describe("migrations", () => {
     v3.close();
     await db.open();
 
-    expect(db.verno).toBe(7);
+    expect(db.verno).toBe(8);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await db.settings.count()).toBe(0);
     expect(await getAppearance()).toEqual({ key: "appearance", focusMode: false, typewriter: false });
@@ -510,7 +510,7 @@ describe("migrations", () => {
     v4.close();
     await db.open();
 
-    expect(db.verno).toBe(7);
+    expect(db.verno).toBe(8);
     const blocks = async (id: string) => (await getPart(id))!.content.content;
     expect(await blocks("front")).toEqual([p("Mami.")]);
     expect((await getPart("front"))!.wordCount).toBe(1);
@@ -549,7 +549,7 @@ describe("migrations", () => {
     v5.close();
     await db.open();
 
-    expect(db.verno).toBe(7);
+    expect(db.verno).toBe(8);
     expect((await listParts("b1")).map((p) => p.id)).toEqual(["p1", "p2"]);
     expect((await getPart("p2"))?.content).toEqual(doc("Tekst p2."));
     expect(await bookWordTotal("b1")).toBe(4);
@@ -575,10 +575,111 @@ describe("migrations", () => {
     v6.close();
     await db.open();
 
-    expect(db.verno).toBe(7);
+    expect(db.verno).toBe(8);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect((await getPart("p1"))?.languageScore).toBeUndefined();
     expect(await db.proofCache.count()).toBe(0);
+  });
+
+  it("v7 → v8: books and appearance stay, the heart starts unanswered", async () => {
+    db.close();
+    await Dexie.delete("momentum");
+    const v7 = new Dexie("momentum");
+    v7.version(7).stores({
+      ...V1_STORES,
+      parts: "id, bookId",
+      chapters: null,
+      scenes: null,
+      settings: "key",
+      proofCache: "key, usedAt",
+    });
+    await v7.table("books").add({ id: "b1", title: "Knjiga", language: "sr-Latn", createdAt: 1, updatedAt: 1 });
+    await v7.table("parts").add({
+      id: "p1",
+      bookId: "b1",
+      kind: "chapter",
+      title: "",
+      order: 1000,
+      content: doc("Tekst ostaje."),
+      wordCount: 2,
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    await v7.table("settings").put({ key: "appearance", theme: "noc", focusMode: true, typewriter: false });
+    v7.close();
+    await db.open();
+
+    expect(db.verno).toBe(8);
+    const book = await getBook("b1");
+    expect(book).toMatchObject({ title: "Knjiga", language: "sr-Latn" });
+    expect(book?.heart).toBeUndefined();
+    expect(book?.genre).toBeUndefined();
+    expect(book?.targetWords).toBeUndefined();
+    expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
+    expect(await getAppearance()).toMatchObject({ theme: "noc", focusMode: true });
+    expect(await getOpenSections()).toEqual([]);
+  });
+});
+
+describe("book heart, genre and length", () => {
+  it("cleans the answers: trimmed, blank ones dropped, none at all = no heart", () => {
+    expect(cleanHeart({ about: "  Kofer.  ", ending: " ", why: "" })).toEqual({ about: "Kofer." });
+    expect(cleanHeart({ about: "  ", ending: "" })).toBeUndefined();
+    expect(cleanHeart(undefined)).toBeUndefined();
+  });
+
+  it("gives Tiron the ending only when the author knows it", () => {
+    expect(knownEnding({ ending: " Petar otvara kofer. " })).toBe("Petar otvara kofer.");
+    expect(knownEnding({ ending: "ne znam još" })).toBeUndefined();
+    expect(knownEnding({ ending: "Ne znam." })).toBeUndefined();
+    expect(knownEnding({ about: "Kofer." })).toBeUndefined();
+    expect(knownEnding(undefined)).toBeUndefined();
+  });
+
+  it("saves the start screen answers and changes them later", async () => {
+    const { book } = await createBook();
+    await updateBook(book.id, {
+      title: "  Kofer ",
+      heart: { about: "O koferu.", ending: "ne znam još", why: "" },
+      genre: "misterija",
+      targetWords: 80_000,
+    });
+    expect(await getBook(book.id)).toMatchObject({
+      title: "Kofer",
+      heart: { about: "O koferu.", ending: "ne znam još" },
+      genre: "misterija",
+      targetWords: 80_000,
+    });
+
+    await updateBook(book.id, { heart: { why: "Za baku." }, targetWords: undefined, genre: undefined });
+    const changed = await getBook(book.id);
+    expect(changed?.heart).toEqual({ why: "Za baku." });
+    expect(changed).not.toHaveProperty("targetWords");
+    expect(changed).not.toHaveProperty("genre");
+    expect(changed?.title).toBe("Kofer");
+  });
+
+  it("keeps the default title when the title is left blank", async () => {
+    const { book } = await createBook();
+    await updateBook(book.id, { title: "   " });
+    expect((await getBook(book.id))?.title).toBe("Nova knjiga");
+  });
+});
+
+describe("right panel sections", () => {
+  it("start collapsed and remember which are open", async () => {
+    expect(await getOpenSections()).toEqual([]);
+    expect(await setSectionOpen("book", true)).toEqual(["book"]);
+    expect(await setSectionOpen("book", true)).toEqual(["book"]);
+    expect(await getOpenSections()).toEqual(["book"]);
+    await setSectionOpen("book", false);
+    expect(await getOpenSections()).toEqual([]);
+  });
+
+  it("live next to the appearance without touching it", async () => {
+    await saveAppearance({ theme: "magla" });
+    await setSectionOpen("book", true);
+    expect(await getAppearance()).toMatchObject({ theme: "magla" });
   });
 });
 

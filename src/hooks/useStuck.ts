@@ -27,8 +27,11 @@ interface Titles {
   language: Language;
 }
 
-/** „Zapeo sam”: one question from Tiron about the scene before the cursor. */
-export function useStuck(editor: Editor | null, titles: Titles | null) {
+/**
+ * „Zapeo sam”: one question from Tiron about the scene before the cursor.
+ * `ending` (Srce knjige) is its own argument so it never rides along with ghost's titles.
+ */
+export function useStuck(editor: Editor | null, titles: Titles | null, ending: string | undefined) {
   const [state, setState] = useState<StuckState>({ kind: "idle" });
   const asked = useRef<string[]>([]);
   const inFlight = useRef<AbortController | null>(null);
@@ -56,6 +59,7 @@ export function useStuck(editor: Editor | null, titles: Titles | null) {
         context: extractContext(doc, pos, CONTEXT_WORDS),
         ...titles,
         avoid: asked.current.slice(-MAX_AVOID),
+        ...(ending ? { ending } : {}),
       },
       controller.signal,
     );
@@ -68,7 +72,7 @@ export function useStuck(editor: Editor | null, titles: Titles | null) {
     } else {
       setState({ kind: "error" });
     }
-  }, [editor, titles]);
+  }, [editor, titles, ending]);
 
   return { state, ask };
 }

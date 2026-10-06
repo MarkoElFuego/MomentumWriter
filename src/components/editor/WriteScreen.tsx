@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditorState, type Editor as TiptapEditor, type JSONContent } from "@tiptap/react";
+import type { BookDetailsValue } from "@/components/book/BookDetailsFields";
 import { StructurePanel } from "@/components/structure/StructurePanel";
 import { UndoToast } from "@/components/structure/UndoToast";
 import { TironPanel } from "@/components/tiron/TironPanel";
@@ -18,6 +19,7 @@ import { offerUndo, purgeExpiredDeletes, takeUndo, useUndoDelete } from "@/hooks
 import { useStuck } from "@/hooks/useStuck";
 import { useTypewriterScroll } from "@/hooks/useTypewriterScroll";
 import { copy } from "@/lib/copy";
+import { knownEnding, updateBook } from "@/lib/db/books";
 import {
   chapterNumber,
   deletePart,
@@ -124,6 +126,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
   // Bumped after an undo so the open panel shows the part again.
   const [partsVersion, setPartsVersion] = useState(0);
   const [tironOpen, setTironOpen] = useState(false);
+  // Srce knjige, genre and length as typed in the Knjiga section (saved on every change).
+  const [bookDetails, setBookDetails] = useState<BookDetailsValue>({ heart: {} });
 
   useEffect(() => {
     setGhostEnabled(readEnabled(GHOST_KEY));
@@ -168,7 +172,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const scrollRef = useRef<HTMLElement>(null);
   useTypewriterScroll(editor, scrollRef, appearance.typewriter);
   useGhostText(editor, ghostEnabled, titles);
-  const stuck = useStuck(editor, titles);
+  const stuck = useStuck(editor, titles, knownEnding(bookDetails.heart));
   const proofread = useProofread(editor, proofEnabled, ready?.book.language ?? null);
   // Live count of open underlines in this chapter ("ovde: …" in the Jezik section).
   const marksHere = useEditorState({
@@ -252,6 +256,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
         setTitle(data.part.title);
         setNumber(data.chapterNumber);
         setWordCount(data.part.wordCount);
+        setBookDetails({ heart: data.book.heart ?? {}, genre: data.book.genre, targetWords: data.book.targetWords });
       })
       .catch((error) => {
         console.error("Failed to open part", error);
@@ -402,6 +407,15 @@ export function WriteScreen({ partId }: { partId: ID }) {
 
   const bookId = state.kind === "ready" ? state.data.book.id : null;
 
+  const changeBookDetails = useCallback(
+    (details: BookDetailsValue) => {
+      setBookDetails(details);
+      if (!bookId) return;
+      updateBook(bookId, details).catch((error) => console.error("Failed to save the book details", error));
+    },
+    [bookId],
+  );
+
   const removePart = useCallback(
     async (part: Part) => {
       if (!bookId) return;
@@ -470,6 +484,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
           ref={toolbarRef}
           editor={editor}
           saveStatus={status}
+          // Until T7 marks the end of the first draft, every book is "Nacrt 1".
+          draft
           structureOpen={panel.open}
           onToggleStructure={togglePanel}
           tironOpen={tironOpen}
@@ -507,6 +523,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
             <Editor
               initialContent={data.part.content}
               language={data.book.language}
+              // The first chapter of a book that has no words yet.
+              draftHint={data.chapterNumber === 1 && data.otherPartsTotal === 0 && data.part.wordCount === 0}
               onChange={handleChange}
               onExitTop={() => {
                 const input = titleRef.current;
@@ -538,6 +556,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
         <div ref={rightPanelRef} className={overlay ? "panel-overlay panel-overlay-right" : "flex h-full shrink-0"}>
         <TironPanel
           stuck={stuck.state}
+          book={bookDetails}
+          onBookChange={changeBookDetails}
           language={
             data.book.languageScore
               ? {

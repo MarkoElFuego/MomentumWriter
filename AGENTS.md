@@ -61,11 +61,14 @@ src/
     page.tsx                 # biblioteka knjiga / ulaz
     write/[partId]/page.tsx  # editor (jedan deo knjige)
     resume/page.tsx          # Resume ekran
+    start/page.tsx           # nova knjiga: naslov i Srce knjige (Tiron T1)
     api/spark/route.ts       # jedini AI endpoint
   components/
     editor/                  # TipTap editor, footer, brojač
     structure/               # sadržaj knjige: uvodni delovi / poglavlja / završni delovi
     resume/
+    book/                    # ekran sa pitanjima i polja Srca knjige
+    tiron/                   # desni panel (Tiron, Knjiga, Jezik)
   lib/
     db/                      # Dexie šema, migracije, repo funkcije
     ai/                      # promptovi, zod šeme, klijent

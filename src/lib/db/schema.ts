@@ -6,6 +6,30 @@ import { upgradeTitleHeadings, upgradeToParts } from "./migrations";
 
 export type ID = string;
 
+/** Srce knjige (Tiron T1): the author's own answers, each optional. */
+export interface BookHeart {
+  about?: string;
+  ending?: string;
+  why?: string;
+}
+
+export const GENRES = [
+  "misterija",
+  "triler",
+  "fantastika",
+  "naučna fantastika",
+  "ljubavni",
+  "horor",
+  "istorijski",
+  "literarni",
+  "za decu",
+  "drugo",
+] as const;
+export type Genre = (typeof GENRES)[number];
+
+/** Rough length choices: short novel / novel / long novel. Unset = "ne znam". */
+export const TARGET_WORDS = [40_000, 80_000, 120_000] as const;
+
 export interface Book {
   id: ID;
   title: string;
@@ -15,6 +39,9 @@ export interface Book {
   updatedAt: number;
   /** Book language score (U7) and the value before the last change, for ↑3 / ↓2. */
   languageScore?: { value: number; previous?: number };
+  heart?: BookHeart;
+  targetWords?: number;
+  genre?: Genre;
 }
 
 /** Front matter, a numbered chapter, or back matter — each is one document. */
@@ -97,6 +124,16 @@ export interface Appearance {
   typewriter: boolean;
 }
 
+/** Right panel sections that collapse; the ones listed here are open — key "panels". */
+export type PanelSection = "book";
+
+export interface PanelSettings {
+  key: "panels";
+  open: PanelSection[];
+}
+
+export type Setting = Appearance | PanelSettings;
+
 // Gaps between orders leave room to insert without renumbering.
 export const ORDER_STEP = 1000;
 
@@ -105,7 +142,7 @@ export class MomentumDB extends Dexie {
   parts!: EntityTable<Part, "id">;
   dailyStats!: Table<DailyStat, [string, ID]>;
   resumeState!: EntityTable<ResumeState, "bookId">;
-  settings!: EntityTable<Appearance, "key">;
+  settings!: EntityTable<Setting, "key">;
   proofCache!: EntityTable<ProofCacheEntry, "key">;
 
   constructor() {
@@ -146,6 +183,9 @@ export class MomentumDB extends Dexie {
     // v7: proofCache (language check per paragraph, so reopening a chapter
     // costs no API calls) + optional Part/Book.languageScore. New table only.
     this.version(7).stores({ proofCache: "key, usedAt" });
+    // v8: optional Book.heart / targetWords / genre (Tiron T1) and a "panels"
+    // record in settings. No index, nothing to copy — unset means "not answered".
+    this.version(8).stores({});
   }
 }
 

@@ -34,8 +34,9 @@ export function BookList() {
   const create = async () => {
     setBusy(true);
     try {
-      const { part } = await createBook();
-      router.push(`/write/${part.id}`);
+      // Title and Srce knjige first (all optional), then the first chapter.
+      const { book } = await createBook();
+      router.push(`/start?book=${book.id}`);
     } catch (error) {
       console.error("Failed to create book", error);
       setFailed(true);

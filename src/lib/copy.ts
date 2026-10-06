@@ -15,6 +15,8 @@ export const copy = {
   tagline: "Prostor koji ti pomaže da nastaviš da pišeš.",
   editor: {
     placeholder: "Počni ovde…",
+    // Prvo poglavlje knjige bez ijedne reči (Tiron T1).
+    draftPlaceholder: "Nacrt 1 · ovo niko ne čita. Napiši scenu koju već vidiš u glavi — može biti bilo koja.",
     menuLabel: "Meni",
     // 1, 21, 31… reč; sve ostalo reči (11 je izuzetak)
     wordsToday: (n: number) =>
@@ -96,6 +98,54 @@ export const copy = {
     saved: "Sačuvano",
     saving: "Čuvam…",
     error: "Čuvanje nije uspelo. Pokušavam ponovo…",
+    // Dok knjiga ima prvi nacrt; greška se prikazuje bez ovoga.
+    draft: (status: string) => `Nacrt 1 · ${status}`,
+    draftHint: "Nacrt 1 — ovo niko ne čita",
+  },
+  // Srce knjige: ekran sa pitanjima pri pravljenju knjige i sekcija „Knjiga” u desnom panelu.
+  book: {
+    startLabel: "Nova knjiga",
+    titlePlaceholder: "Naslov (može i kasnije)",
+    titleLabel: "Naslov knjige",
+    about: "O čemu je ova knjiga, u jednoj rečenici?",
+    ending: "Kako se završava?",
+    endingPlaceholder: "može i ‚ne znam još’",
+    why: "Zašto je pišeš?",
+    genre: "Žanr",
+    noGenre: "—",
+    genres: {
+      misterija: "Misterija",
+      triler: "Triler",
+      fantastika: "Fantastika",
+      "naučna fantastika": "Naučna fantastika",
+      ljubavni: "Ljubavni",
+      horor: "Horor",
+      istorijski: "Istorijski",
+      literarni: "Literarni",
+      "za decu": "Za decu",
+      drugo: "Drugo",
+    },
+    length: "Okvirna dužina",
+    lengthUnknown: "Ne znam",
+    lengths: {
+      40000: "Kratak roman, ~40.000 reči",
+      80000: "Roman, ~80.000 reči",
+      120000: "Dug roman, ~120.000 reči",
+    } as Record<number, string>,
+    start: "Počni da pišeš",
+    startShortcut: "Ctrl/Cmd+Enter",
+    skip: "Preskoči",
+    section: "Knjiga",
+    heart: "Srce knjige",
+    addHeart: "Dodaj srce knjige — o čemu je, kako se završava, zašto je pišeš.",
+    editHeart: "Izmeni srce knjige",
+    // Kratke oznake iznad odgovora u sekciji „Knjiga”.
+    aboutShort: "O čemu",
+    endingShort: "Kako se završava",
+    whyShort: "Zašto",
+    done: "Gotovo",
+    notFound: "Ova knjiga ne postoji.",
+    loadFailed: "Knjiga trenutno ne može da se učita. Osveži stranicu.",
   },
   library: {
     title: "Tvoje knjige",

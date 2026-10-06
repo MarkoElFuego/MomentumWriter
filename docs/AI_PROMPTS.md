@@ -83,7 +83,7 @@ User poruka: samo tekst pasusa (najviše 400 reči). Odgovor: ceo ispravljen pas
 
 ## mode: `stuck` — „Zapeo sam” (U5, desni panel)
 
-Klik na „Zapeo sam” (ili „Još jedno”). Klijent (`hooks/useStuck.ts`) šalje ~400 reči glavnog teksta pre kursora (bez fusnota); ako ih ima **manje od 30 — nema poziva**, prikaže se „Napiši prvo par rečenica, pa ću imati šta da pitam.”. „Još jedno” šalje poslednjih **najviše 5** pitanja u polju `avoid`, a korisnička poruka dobija `---NE PONAVLJAJ---` sa njima. Memorija knjige i `heart.ending` se dodaju posle sistem prompta kad postoje (Tiron T1/T2).
+Klik na „Zapeo sam” (ili „Još jedno”). Klijent (`hooks/useStuck.ts`) šalje ~400 reči glavnog teksta pre kursora (bez fusnota); ako ih ima **manje od 30 — nema poziva**, prikaže se „Napiši prvo par rečenica, pa ću imati šta da pitam.”. „Još jedno” šalje poslednjih **najviše 5** pitanja u polju `avoid`, a korisnička poruka dobija `---NE PONAVLJAJ---` sa njima. Ako je u Srcu knjige upisan kraj (`heart.ending`, polje `ending`, najviše 1000 znakova; „ne znam…” se ne šalje), korisnička poruka posle `---TEKST---` dobija `---KAKO SE KNJIGA ZAVRŠAVA---` (T1). Kraj knjige se **nikad** ne šalje uz ghost. Memorija knjige dolazi u T2.
 
 Sistem prompt **nema** urednički zajednički deo — to je Tiron: `tiron` + `stuck` iz `src/lib/languages/sr-Latn/prompts.ts`. Effort `AI_EFFORT_STUCK` (podrazumevano `low`), bez temperature, 2 pokušaja, timeout 15 s. Log: `[stuck] effort=low 1840ms in=… cached=… out=…`.
 
@@ -106,6 +106,7 @@ Autor je zapeo i pritisnuo „Zapeo sam”. U delu ---TEKST--- je ono što je na
 - Pitanje je kratko, najviše 200 znakova. Pitanje mora da se završi upitnikom.
 - Ne predlaži rečenice priče i ne odgovaraj umesto autora — pitanje ostavlja odluku njemu.
 - Ako postoji deo ---NE PONAVLJAJ---, pitaj nešto drugo od navedenih pitanja (drugi lik, drugi ugao, druga prepreka).
+- Ako postoji deo ---KAKO SE KNJIGA ZAVRŠAVA---, neka pitanje vodi scenu korak bliže tom kraju, ali kraj ne prepričavaj i ne pominji ga u pitanju.
 - Piši istim jezikom i pismom kao autor; ako autor ne koristi dijakritike (č, ć, š, ž, đ), ne koristi ih ni ti.
 
 Format:

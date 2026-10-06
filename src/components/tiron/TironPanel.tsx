@@ -1,7 +1,9 @@
 "use client";
 
+import type { BookDetailsValue } from "@/components/book/BookDetailsFields";
 import type { StuckState } from "@/hooks/useStuck";
 import { copy } from "@/lib/copy";
+import { BookSection } from "./BookSection";
 
 export interface LanguageRow {
   /** Book score (chapters behind the author) and the value before its last change. */
@@ -13,6 +15,9 @@ export interface LanguageRow {
 
 interface TironPanelProps {
   stuck: StuckState;
+  /** Srce knjige, genre and length — the Knjiga section. */
+  book: BookDetailsValue;
+  onBookChange: (details: BookDetailsValue) => void;
   /** null → no score yet, no section. */
   language: LanguageRow | null;
   onNextMark: () => void;
@@ -23,11 +28,20 @@ interface TironPanelProps {
 }
 
 /**
- * The right panel: Tiron („Zapeo sam” and its question) and Jezik once the
- * book has a score. Knjiga and Za kasnije appear with the phases that give
- * them content — never as empty or "coming soon" sections.
+ * The right panel: Tiron („Zapeo sam” and its question), Knjiga (Srce knjige —
+ * always there, it is how a skipped start screen gets filled in) and Jezik once
+ * the book has a score. Za kasnije appears with T3 — never as an empty section.
  */
-export function TironPanel({ stuck, language, onNextMark, onStuck, onClose, onBackToText }: TironPanelProps) {
+export function TironPanel({
+  stuck,
+  book,
+  onBookChange,
+  language,
+  onNextMark,
+  onStuck,
+  onClose,
+  onBackToText,
+}: TironPanelProps) {
   // A mouse click must not pull the cursor out of the text — the author keeps typing where they were.
   const keepEditorFocus = (event: React.MouseEvent) => event.preventDefault();
   const loading = stuck.kind === "loading";
@@ -85,6 +99,8 @@ export function TironPanel({ stuck, language, onNextMark, onStuck, onClose, onBa
           {stuck.kind === "error" && <p className="text-muted">{copy.tiron.unavailable}</p>}
         </div>
       </section>
+
+      <BookSection details={book} onChange={onBookChange} />
 
       {language && <LanguageSection row={language} onNextMark={onNextMark} />}
     </aside>

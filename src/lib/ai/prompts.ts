@@ -64,16 +64,20 @@ export interface SparkContext {
   context: string;
   /** Stuck: questions already asked — ask something else. */
   avoid?: string[];
+  /** Stuck: how the book ends (Srce knjige), so the question leads toward it. */
+  ending?: string;
 }
 
 export function buildUserMessage(
   mode: SparkMode,
-  { bookTitle, chapterTitle, context, avoid }: SparkContext,
+  { bookTitle, chapterTitle, context, avoid, ending }: SparkContext,
 ): string {
   const message = `Knjiga: ${bookTitle}\nPoglavlje: ${chapterTitle}\n\n---TEKST---\n${context}`;
   if (mode === "stuck") {
-    if (!avoid?.length) return message;
-    return `${message}\n\n---NE PONAVLJAJ---\n${avoid.map((question) => `- ${question}`).join("\n")}`;
+    const parts = [message];
+    if (ending) parts.push(`---KAKO SE KNJIGA ZAVRŠAVA---\n${ending}`);
+    if (avoid?.length) parts.push(`---NE PONAVLJAJ---\n${avoid.map((question) => `- ${question}`).join("\n")}`);
+    return parts.join("\n\n");
   }
   if (mode !== "ghost") return message;
   // Spelled out so the model finishes the author's thought instead of guessing where it stands.

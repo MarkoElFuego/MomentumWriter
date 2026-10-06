@@ -35,9 +35,11 @@ interface EditorProps {
   onReady?: (editor: TiptapEditor) => void;
   /** ↑ on the first line of the text — back to the chapter title. */
   onExitTop?: () => void;
+  /** First chapter of a book without a word yet: the "Nacrt 1" hint instead of "Počni ovde…". */
+  draftHint?: boolean;
 }
 
-export function Editor({ initialContent, language, onChange, onReady, onExitTop }: EditorProps) {
+export function Editor({ initialContent, language, onChange, onReady, onExitTop, draftHint = false }: EditorProps) {
   // The key handler is created once; the ref keeps the latest callback.
   const onExitTopRef = useRef(onExitTop);
   useEffect(() => {
@@ -56,8 +58,11 @@ export function Editor({ initialContent, language, onChange, onReady, onExitTop 
       Placeholder.configure({
         // Children too, so an empty note inside the zone gets its own hint.
         includeChildren: true,
-        placeholder: ({ node }) =>
-          node.type.name === "footnote" ? copy.footnotes.placeholder : copy.editor.placeholder,
+        placeholder: ({ editor, node }) => {
+          if (node.type.name === "footnote") return copy.footnotes.placeholder;
+          // Only on a blank page — an empty line between paragraphs keeps the short hint.
+          return draftHint && editor.isEmpty ? copy.editor.draftPlaceholder : copy.editor.placeholder;
+        },
       }),
       GhostText,
       footnotes,
