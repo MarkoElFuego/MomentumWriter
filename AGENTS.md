@@ -102,7 +102,7 @@ src/
 - Sivi tekst se pojavljuje sam posle pauze · `↑`/`↓` bira predlog · `Tab` prihvata · `Ctrl/Cmd+→` jednu reč · `Esc` sklanja. `/` je običan znak.
 - `Ctrl/Cmd+\` levi panel · `Ctrl/Cmd+Shift+\` desni panel (Tiron) · `Ctrl+Shift+F` fusnota · `***` u praznom pasusu prelom scene · `Alt+Enter` ispravka provere jezika.
 - `Ctrl/Cmd+B`/`I` · `Ctrl/Cmd+Alt+0/1/2` stil pasusa · `# ` `## ` `> ` na početku reda · `Alt+F10` fokus na traku.
-- Planirano: `Ctrl+Shift+N` beleška za kasnije (Tiron T3).
+- `Ctrl/Cmd+Shift+L` beleška za kasnije (Tiron T3; `Ctrl+Shift+N` iz ZADATAK-a Chrome/Edge ne puštaju stranici — otvara incognito, pa se sluša samo dodatno).
 
 ## 7b. Izbačeno (ne vraćati bez odluke autora proizvoda)
 

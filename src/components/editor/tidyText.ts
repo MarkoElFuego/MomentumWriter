@@ -8,8 +8,8 @@ import { isInFootnote, mainTextEnd } from "./footnotes";
 // formatting. No AI, and no word changes except joining a word hyphenated at a
 // line end. One transaction, so one Ctrl+Z brings everything back.
 
-/** The author's own formatting; anything else pasted in (strike, underline…) goes. */
-const KEPT_MARKS = new Set(["bold", "italic"]);
+/** The author's own formatting and notes; anything else pasted in (strike, underline…) goes. */
+const KEPT_MARKS = new Set(["bold", "italic", "laterNote"]);
 const TEXT_BLOCKS = new Set(["paragraph", "heading"]);
 const LISTS = new Set(["bulletList", "orderedList"]);
 

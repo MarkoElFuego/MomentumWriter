@@ -16,7 +16,7 @@ const EDGE = 16;
 const ROOM_BELOW = 140;
 
 // Under the word, or above it near the bottom of the window.
-function placeAt(anchor: PopoverAnchor): React.CSSProperties {
+export function placeAt(anchor: PopoverAnchor): React.CSSProperties {
   const left = Math.min(Math.max(anchor.left, EDGE), window.innerWidth - 260 - EDGE);
   return window.innerHeight - anchor.bottom >= ROOM_BELOW
     ? { position: "fixed", left, top: anchor.bottom + GAP }

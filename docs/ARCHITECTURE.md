@@ -155,12 +155,13 @@ Resume ekran: „Knjiga te čeka.” · „Ovde je priča stala ranije danas / j
 | `Ctrl/Cmd + Alt + 0` / `1` / `2` | Tekst / Naslov 1 / Naslov 2 (AltGr znak ima prednost — vidi ispod) |
 | `# ` `## ` `> ` na početku reda | Naslov 1 / Naslov 2 / Citat |
 | `Alt + F10` | Fokus na gornju traku (traka se vraća ako je izbledela) |
+| `Ctrl/Cmd + Shift + L` | Beleška za kasnije na selekciji ili reči kod kursora; u belešci → izmena njenog teksta (T3). `Ctrl+Shift+N` samo dodatno — Chrome/Edge ga ne puštaju stranici |
 
 `/` je običan znak. Na srpskom rasporedu `Ctrl+\` se hvata i po `event.code === "Backslash"` (taster „ž”).
 
 `Ctrl+Alt+cifra` se ne hvata kad je `AltGraph` aktivan ili kad raspored otkuca znak (srpski: AltGr+1 = `~`, često kao mrtav taster) — Windows prijavljuje AltGr kao Ctrl+Alt. Na Mac-u (`Cmd+Option`) odlučuje `event.code`. Poravnanje nema prečice (samo traka).
 
-Planirano: Tiron T3: `Ctrl+Shift+N` beleška za kasnije.
+Beleška za kasnije (T3, `components/editor/laterNote.ts`): TipTap oznaka `laterNote` `{ id, note, createdAt }` u JSON-u dela (kao fusnote — bez Dexie verzije), deo `contentExtensions`, pa je čitaju i Resume i Tironovo čitanje poglavlja. `inclusive: false`. Bez selekcije ide na reč kod kursora (ili reč neposredno pre njega); u fusnoti i praznom redu se ne dodaje. Popover „Šta ovde kasnije?” (`LaterNotePopover.tsx`), Enter = jedan korak istorije. Sekcija „Za kasnije (N) ›” (`components/tiron/LaterSection.tsx`, `hooks/useLaterNotes.ts`): otvoren deo uživo iz editora, ostali iz Dexie (`liveQuery` + `collectLaterNotes` iz `lib/text/laterNotes.ts`), jedan red po `id`. Klik → kursor na početak beleške (u drugom delu posle `flush` i prelaza; modul-stanje preživi remount). Kvačica skida oznaku: u otvorenom delu transakcijom (`Ctrl+Z` vraća), u zatvorenom `removeLaterNoteFromPart` (samo oznaka iz sačuvanog JSON-a, bez `Ctrl+Z`). „Sredi tekst” čuva `laterNote`.
 
 ## API: `POST /api/spark`
 

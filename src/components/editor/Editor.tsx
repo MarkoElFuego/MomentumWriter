@@ -37,16 +37,28 @@ interface EditorProps {
   onExitTop?: () => void;
   /** First chapter of a book without a word yet: the "Nacrt 1" hint instead of "Počni ovde…". */
   draftHint?: boolean;
+  /** Ctrl/Cmd+Shift+L — a note for later (T3). */
+  onLaterNote?: () => void;
 }
 
-export function Editor({ initialContent, language, onChange, onReady, onExitTop, draftHint = false }: EditorProps) {
-  // The key handler is created once; the ref keeps the latest callback.
+export function Editor({
+  initialContent,
+  language,
+  onChange,
+  onReady,
+  onExitTop,
+  draftHint = false,
+  onLaterNote,
+}: EditorProps) {
+  // The key handler is created once; the refs keep the latest callbacks.
   const onExitTopRef = useRef(onExitTop);
+  const onLaterNoteRef = useRef(onLaterNote);
   useEffect(() => {
     onExitTopRef.current = onExitTop;
+    onLaterNoteRef.current = onLaterNote;
   });
   // Same document schema as contentSchema.ts, in the original plugin order.
-  const [starterKit, textAlign, footnotes, sceneBreak] = contentExtensions(language);
+  const [starterKit, textAlign, footnotes, sceneBreak, laterNote] = contentExtensions(language);
   const editor = useEditor({
     // Next.js renders on the server first; TipTap must mount on the client only.
     immediatelyRender: false,
@@ -71,6 +83,7 @@ export function Editor({ initialContent, language, onChange, onReady, onExitTop,
       sceneBreak,
       // Alignment lives in the toolbar only — no extra Ctrl+Shift+L/E/R/J shortcuts.
       textAlign.extend({ addKeyboardShortcuts: () => ({}) }),
+      laterNote,
     ],
     editorProps: {
       attributes: { class: "prose-editor", spellcheck: "true", lang: "sr-Latn" },
@@ -118,6 +131,14 @@ export function Editor({ initialContent, language, onChange, onReady, onExitTop,
 
         const style = blockStyleShortcut(event);
         if (style) return run(() => setBlockStyle(style)(view.state, view.dispatch));
+
+        // Ctrl/Cmd+Shift+L — a note for later. Ctrl+Shift+N (the task's first choice) only
+        // where the browser lets the page have it: Chrome and Edge open an incognito window.
+        // event.code too, for the Cyrillic layout.
+        const laterKey = /^[ln]$/i.test(event.key) || event.code === "KeyL" || event.code === "KeyN";
+        if (mod && event.shiftKey && !event.altKey && laterKey) {
+          return run(() => onLaterNoteRef.current?.());
+        }
 
         // Ctrl/Cmd+Shift+F — event.code too, for the Cyrillic layout.
         if (mod && event.shiftKey && !event.altKey && (event.key.toLowerCase() === "f" || event.code === "KeyF")) {

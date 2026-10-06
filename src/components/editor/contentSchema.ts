@@ -5,6 +5,7 @@ import { Node as PMNode } from "@tiptap/pm/model";
 import { TextSelection } from "@tiptap/pm/state";
 import { getLanguage, type Language } from "@/lib/languages";
 import { Footnotes, mainTextEnd } from "./footnotes";
+import { LaterNote } from "./laterNote";
 import { SceneBreak } from "./sceneBreak";
 
 export const TEXT_ALIGNMENTS = ["left", "center", "justify"] as const;
@@ -35,6 +36,8 @@ export function contentExtensions(language: Language) {
     }),
     Footnotes,
     SceneBreak.configure({ symbol: getLanguage(language).typography.sceneBreak }),
+    // Beleška za kasnije (T3) — a mark in the text, so every reader of saved content must know it.
+    LaterNote,
   ] as const;
 }
 

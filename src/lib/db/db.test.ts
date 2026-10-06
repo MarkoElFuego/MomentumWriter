@@ -37,6 +37,7 @@ import {
   listParts,
   partHeading,
   purgeDeletedParts,
+  removeLaterNoteFromPart,
   renamePart,
   restorePart,
   reorderParts,
@@ -1010,5 +1011,41 @@ describe("deleting books", () => {
     expect((await getPart(other.part.id))?.wordCount).toBe(5);
     expect((await getMemory(other.book.id)).characters).toHaveLength(1);
     expect(await getResumeState(other.book.id)).toBeDefined();
+  });
+});
+
+describe("notes for later in saved parts", () => {
+  it("ticking off a note in a closed part removes only its mark; text and word count stay", async () => {
+    const { part } = await createBook("Kiša");
+    const mark = (id: string) => ({ type: "laterNote", attrs: { id, note: "Pojačaj", createdAt: 1 } });
+    const content = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "Kiša", marks: [{ type: "bold" }, mark("n1")] },
+            { type: "text", text: " pada", marks: [mark("n2")] },
+          ],
+        },
+      ],
+    };
+    await savePart(part.id, content, 2, "2026-10-06");
+
+    await removeLaterNoteFromPart(part.id, "n1");
+    const saved = await getPart(part.id);
+    expect(saved?.content).toEqual({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "Kiša", marks: [{ type: "bold" }] },
+            { type: "text", text: " pada", marks: [mark("n2")] },
+          ],
+        },
+      ],
+    });
+    expect(saved?.wordCount).toBe(2);
   });
 });

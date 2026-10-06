@@ -161,7 +161,7 @@ export interface Appearance {
 }
 
 /** Right panel sections that collapse; the ones listed here are open — key "panels". */
-export type PanelSection = "book";
+export type PanelSection = "book" | "later";
 
 export interface PanelSettings {
   key: "panels";

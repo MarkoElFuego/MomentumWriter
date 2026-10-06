@@ -168,6 +168,15 @@ export const copy = {
     notFound: "Ova knjiga ne postoji.",
     loadFailed: "Knjiga trenutno ne može da se učita. Osveži stranicu.",
   },
+  // Beleška za kasnije (T3): Ctrl/Cmd+Shift+L u tekstu i sekcija „Za kasnije” u desnom panelu.
+  later: {
+    prompt: "Šta ovde kasnije?",
+    hint: "Enter čuva · Esc odustaje",
+    section: "Za kasnije",
+    sectionCount: (n: number) => `Za kasnije (${n})`,
+    goTo: (text: string) => `Idi na mesto: „${text}”`,
+    tickOff: (note: string) => `Urađeno: ${note}`,
+  },
   library: {
     title: "Tvoje knjige",
     newBook: "Nova knjiga",

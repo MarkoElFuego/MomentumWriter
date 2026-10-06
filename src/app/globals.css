@@ -491,3 +491,9 @@
 .memory-row:focus-within .memory-remove {
   opacity: 1;
 }
+
+/* Beleška za kasnije (T3): a quiet tint in the theme's ink — not red, not underlined (underlines are the language check). */
+.prose-editor .later-note {
+  background-color: color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: 2px;
+}

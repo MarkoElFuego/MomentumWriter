@@ -99,7 +99,7 @@ Tiron je bio Ciceronov sekretar: zapisivao, pamtio i savetovao — ali govore je
 - **Pamti:** Srce knjige (o čemu je, kako se završava, zašto je pišeš), likove, mesta, otvorene niti, sažetke poglavlja, najjače rečenice autora
 - **Šapuće:** pri ulasku, na kraju poglavlja, kad primeti obrazac (vrtenje u krug, pad u sredini, duga pauza), na kraju sesije
 - **Zapeo sam:** jedno pitanje za trenutnu scenu, na klik
-- **Beleška za kasnije:** `Ctrl+Shift+N` — zapiši problem umesto da ga popravljaš
+- **Beleška za kasnije:** `Ctrl+Shift+L` — zapiši problem umesto da ga popravljaš (`Ctrl+Shift+N` Chrome/Edge zadržavaju za incognito prozor)
 - **Kraj nacrta:** tih ekran sa prvom i poslednjom rečenicom knjige
 
 Tiron: kratak, topao, više pita nego tvrdi, pohvaljuje konkretno, nikad ne ocenjuje kvalitet nacrta, nikad ne piše tekst umesto autora, nikad ne šapuće dok autor kuca.

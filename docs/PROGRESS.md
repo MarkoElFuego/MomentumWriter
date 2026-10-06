@@ -6,11 +6,12 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
-**Sledeće:** ZADATAK_Tiron T3 — Beleška za kasnije (`Ctrl+Shift+N`) (`docs/ZADATAK_Tiron.md`). Pre koda: plan i „ok” od autora.
+**Sledeće:** ZADATAK_Tiron T4 — Signali procesa (lokalno, bez AI-ja) (`docs/ZADATAK_Tiron.md`). Pre koda: plan i „ok” od autora.
+- Stanje 2026-10-06: T3 gotov, autor ručno proverio („sve radi sjajno”).
 - Stanje 2026-10-06: T2 gotov, autor ručno proverio („radi sve”).
 - Stanje 2026-10-06: brisanje knjiga u biblioteci (zahtev autora, van faze) gotovo, autor ručno proverio („sve radi”).
 - Stanje 2026-10-06: dugme ¶ „Sredi tekst" (zahtev autora, van faze) gotovo, autor ručno proverio („sve radi”).
-- Otvoreno 2026-10-06: „Rastavljanje reči” — autor prijavio da crtice ostaju i kad je prekidač isključen i da provera jezika vidi pola reči; čeka se proba u konzoli (meke crtice U+00AD?) i odluka da li rastavljanje treba da bude podrazumevano isključeno.
+- ~~Otvoreno „Rastavljanje reči” (crtice ostaju, provera vidi pola reči)~~ — zatvoreno 2026-10-06: autor potvrdio da sve radi kako treba; podrazumevano ostaje uključeno.
 - Stanje 2026-10-06: T1 gotov, autor ručno proverio („sve radi”).
 - Stanje 2026-10-02: ZADATAK_UI završen (U0–U7); U7 autor ručno proverio („fenomenalno radi”).
 - Stanje 2026-10-02: U6 gotov, autor ručno proverio („radi odlično”).
@@ -124,7 +125,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - [x] T0 — Provera stanja i dokumentacija (postoji / delimično / ne postoji)
 - [x] T1 — Srce knjige i prvi korak
 - [x] T2 — Tiron pamti: StoryMemory, sažeci poglavlja i najjače rečenice
-- [ ] T3 — Beleška za kasnije (`Ctrl+Shift+N`)
+- [x] T3 — Beleška za kasnije (`Ctrl+Shift+L`)
 - [ ] T4 — Signali procesa (lokalno, bez AI-ja)
 - [ ] T5 — Tiron šapuće
 - [ ] T6 — Mala pobeda i Resume
@@ -210,6 +211,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - 2026-10-06: **T2 (odluke autora):** prazne liste Likovi / Mesta / Otvorene niti se uvek vide sa naslovom i bledim „+ dodaj” (autor može sam da upiše pre nego što AI išta zapamti); poglavlje se šalje do **8.000 reči**, duže → poslednjih 8.000 celim pasusima. Tehnički: **Dexie v9** (tabela `storyMemory` + opciono `Part.summary` / `summaryForHash` / `memoryWords`, `Book.bestLines`) + test v8→v9. Mode `memory` ima svoju šemu iza istog `/api/spark` (kao proofread), sistem prompt `memory` u jezičkom modulu, effort `AI_EFFORT_MEMORY=medium`, 4000 izlaznih tokena, timeout 45 s, 1 ponovni pokušaj. Okidač pri izlasku iz dela: `flush()` pa čitanje iz Dexie-a (radi posle unmount-a); prag je **razlika** u broju reči (i brisanje pola poglavlja je promena), a isti tekst (hash) se nikad ne šalje ponovo — ni na „Osveži” (poruka „Ništa novo od poslednjeg čitanja.”). Delovi svih vrsta se čitaju (i predgovor, ako ima ≥ 500 reči). `bestLine` se proverava na serveru (doslovno, samo razmaci smeju da se razlikuju). AI stavka jednaka autorovoj otpada; stavka koju autor obriše može da se vrati pri sledećem čitanju (AI je ponovo nađe) — ako smeta, rešiti posle ručne provere. `Book.bestLines` zadržava i rečenice obrisanih delova — T5 ih filtrira po živim delovima. Kompaktna memorija (≤ 1200 znakova) ide samo u „Zapeo sam” (`---ŠTA TIRON PAMTI---`), nikad u ghost. `×` na stavci se vidi na hover/fokus.
 - 2026-10-06: **Brisanje knjiga (zahtev autora, van trenutne faze):** isti obrazac kao brisanje delova (U4) — `⋮` na hover/fokus reda u biblioteci → „Obriši” → potvrda „Obrisati knjigu ‚Kiša’ (3.214 reči)?” (fokus na „Odustani”, Esc odustaje; 0 reči → bez potvrde) → traka „Knjiga obrisana · Poništi” 10 s. Sme da se obriše i poslednja knjiga. **Dexie v10** (`Book.deletedAt?`, bez upgrade-a) + test v9→v10. Posle 10 s (ili pri sledećem otvaranju, ako je tab zatvoren) trajno se brišu knjiga, delovi, `dailyStats`, `resumeState`, `storyMemory`; `proofCache` ostaje (po tekstu, ističe za 90 dana). Link ka delu obrisane knjige → „Ovo poglavlje ne postoji.”.
 - 2026-10-06: **Dugme ¶ „Sredi tekst" (zahtev autora, van faze; novo dugme u traci posle poravnanja — zlatno pravilo 2 uz eksplicitno odobrenje):** autor izabrao sve četiri stvari — razmaci i uvlačenje (i meke crtice U+00AD; tvrdi razmak ostaje), prazni redovi (svi prazni pasusi; ✱ ✱ ✱ ostaje), iscepani pasusi (`Shift+Enter` → razmak; PDF redovi se spajaju samo kad prethodni ne završava rečenicu a sledeći počinje malim slovom — dijalog, veliko slovo i naslovi nikad; „rastav-" + „ljeno" → jedna reč), strano formatiranje (liste → pasusi, precrtano/podvučeno otpada; bold, kurziv, naslovi, citat, poravnanje ostaju). Opseg: selekcija (proširena na cele blokove), bez nje celo poglavlje; fusnote se ne diraju. Bez AI-ja, jedan `Ctrl+Z`. Poznato: reč sa crticom koja je slučajno pala na kraj PDF reda („crno-" + „beli") spojiće se u „crnobeli" — `Ctrl+Z` vraća.
+- 2026-10-06: **T3 (odluke autora):** (a) prečica **`Ctrl/Cmd+Shift+L`** — Chrome i Edge ne puštaju `Ctrl+Shift+N` stranici (otvaraju incognito prozor); `Ctrl+Shift+N` se sluša dodatno, gde browser dozvoli; (b) kvačica = beleška **nestaje** (oznaka se skida, nema je u listi), `Ctrl+Z` vraća — zato oznaka nema `done` (odstupanje od modela u ZADATAK-u: `{ id, note, createdAt }`); (c) bez selekcije beleška ide na **reč kod kursora** (ili reč neposredno pre njega), u praznom redu i fusnoti se ne dodaje. Tehnički: oznaka `laterNote` u JSON-u dela (bez Dexie verzije), ušla u `contentExtensions` (inače bi Resume i čitanje poglavlja za memoriju pali na delu sa beleškom). `Ctrl+Shift+L` kad je kursor u belešci → menja njen tekst. Beleška ≤ 200 znakova. Prikaz: tiha pozadina (`--ink` 9%), tooltip na hover. Sekcija „Za kasnije (N) ›” između Knjiga i Jezik, skupljiva i zapamćena (`settings.panels` sada i `"later"`), samo kad postoji beleška. Klik vodi kursor na početak beleške (ne selekciju — kucanje ne sme da zameni tekst). Kvačica u **drugom** poglavlju skida oznaku iz sačuvanog JSON-a — tu nema `Ctrl+Z`. „Sredi tekst” (¶) sada čuva beleške.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

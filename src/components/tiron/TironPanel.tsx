@@ -1,11 +1,13 @@
 "use client";
 
 import type { BookDetailsValue } from "@/components/book/BookDetailsFields";
+import type { BookLaterNote } from "@/hooks/useLaterNotes";
 import type { PartSummary, RefreshState } from "@/hooks/useStoryMemory";
 import type { StuckState } from "@/hooks/useStuck";
 import { copy } from "@/lib/copy";
 import type { ID, StoryMemory } from "@/lib/db/schema";
 import { BookSection } from "./BookSection";
+import { LaterSection } from "./LaterSection";
 
 export interface LanguageRow {
   /** Book score (chapters behind the author) and the value before its last change. */
@@ -26,6 +28,10 @@ interface TironPanelProps {
   summaries: PartSummary[];
   refreshState: RefreshState;
   onRefresh: () => void;
+  /** Za kasnije (T3): every note in the book; no notes → no section. */
+  laterNotes: BookLaterNote[];
+  onGoToNote: (note: BookLaterNote) => void;
+  onTickOffNote: (note: BookLaterNote) => void;
   /** null → no score yet, no section. */
   language: LanguageRow | null;
   onNextMark: () => void;
@@ -37,8 +43,8 @@ interface TironPanelProps {
 
 /**
  * The right panel: Tiron („Zapeo sam” and its question), Knjiga (Srce knjige —
- * always there, it is how a skipped start screen gets filled in) and Jezik once
- * the book has a score. Za kasnije appears with T3 — never as an empty section.
+ * always there, it is how a skipped start screen gets filled in), Za kasnije
+ * while the book has notes (T3) and Jezik once the book has a score.
  */
 export function TironPanel({
   stuck,
@@ -49,6 +55,9 @@ export function TironPanel({
   summaries,
   refreshState,
   onRefresh,
+  laterNotes,
+  onGoToNote,
+  onTickOffNote,
   language,
   onNextMark,
   onStuck,
@@ -122,6 +131,8 @@ export function TironPanel({
         refreshState={refreshState}
         onRefresh={onRefresh}
       />
+
+      <LaterSection notes={laterNotes} onGoTo={onGoToNote} onTickOff={onTickOffNote} />
 
       {language && <LanguageSection row={language} onNextMark={onNextMark} />}
     </aside>

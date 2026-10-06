@@ -8,6 +8,8 @@ import type { BookDetailsValue } from "@/components/book/BookDetailsFields";
 import { StructurePanel } from "@/components/structure/StructurePanel";
 import { UndoToast } from "@/components/structure/UndoToast";
 import { TironPanel } from "@/components/tiron/TironPanel";
+import { addLaterNoteTr, laterNoteAtCursor, laterNoteRangeAt, updateLaterNoteTr, type TextRange } from "./laterNote";
+import { LaterNotePopover } from "./LaterNotePopover";
 import { updateStoryMemory } from "@/components/tiron/updateMemory";
 import { useAppearance } from "@/hooks/useAppearance";
 import { useAutosave } from "@/hooks/useAutosave";
@@ -17,6 +19,7 @@ import { usePanelsOverlay } from "@/hooks/usePanelsOverlay";
 import { useOpenProofMark, useProofread } from "@/hooks/useProofread";
 import { useToolbarFade } from "@/hooks/useToolbarFade";
 import { offerUndo, purgeExpiredDeletes, takeUndo, useUndoDelete } from "@/hooks/useUndoDelete";
+import { useLaterNotes } from "@/hooks/useLaterNotes";
 import { useStoryMemory } from "@/hooks/useStoryMemory";
 import { useStuck } from "@/hooks/useStuck";
 import { useTypewriterScroll } from "@/hooks/useTypewriterScroll";
@@ -297,6 +300,46 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const bookId = state.kind === "ready" ? state.data.book.id : null;
   const storyMemory = useStoryMemory(bookId, partId, flush);
   const stuck = useStuck(editor, titles, knownEnding(bookDetails.heart), storyMemory.compact);
+  const laterNotes = useLaterNotes(editor, bookId, partId, flush);
+  // Ctrl/Cmd+Shift+L: „Šta ovde kasnije?” under the word — a new note, or the one the cursor is in.
+  const [laterDraft, setLaterDraft] = useState<
+    { anchor: PopoverAnchor; initial: string; target: { range: TextRange } | { id: string } } | null
+  >(null);
+
+  const openLaterNote = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const existing = laterNoteAtCursor(editor.state);
+    const range = existing ? null : laterNoteRangeAt(editor.state);
+    if (!existing && !range) return;
+    try {
+      const { left, top, bottom } = editor.view.coordsAtPos(range?.from ?? editor.state.selection.from);
+      setLaterDraft({
+        anchor: { left, top, bottom },
+        initial: existing?.note ?? "",
+        target: existing ? { id: existing.id } : { range: range! },
+      });
+    } catch {
+      // Not laid out yet.
+    }
+  }, []);
+
+  // No note = cancelled. Either way the cursor goes back to the text.
+  const closeLaterNote = useCallback(
+    (note?: string) => {
+      const editor = editorRef.current;
+      if (laterDraft && editor && note !== undefined) {
+        const tr =
+          "id" in laterDraft.target
+            ? updateLaterNoteTr(editor.state, laterDraft.target.id, note)
+            : addLaterNoteTr(editor.state, laterDraft.target.range, note);
+        if (tr) editor.view.dispatch(tr);
+      }
+      setLaterDraft(null);
+      editor?.commands.focus();
+    },
+    [laterDraft],
+  );
   // Leaving the part (another part, the library, Resume): Tiron reads it in the
   // background if it has enough new words — after the last save is in.
   useEffect(
@@ -539,6 +582,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
               // The first chapter of a book that has no words yet.
               draftHint={data.chapterNumber === 1 && data.otherPartsTotal === 0 && data.part.wordCount === 0}
               onChange={handleChange}
+              onLaterNote={openLaterNote}
               onExitTop={() => {
                 const input = titleRef.current;
                 if (!input) return;
@@ -552,6 +596,14 @@ export function WriteScreen({ partId }: { partId: ID }) {
             />
           </div>
         </main>
+        {laterDraft && (
+          <LaterNotePopover
+            anchor={laterDraft.anchor}
+            initial={laterDraft.initial}
+            onSave={(note) => closeLaterNote(note)}
+            onCancel={() => closeLaterNote()}
+          />
+        )}
         {proofMark && proofAnchor && (
           <ProofPopover
             mark={proofMark}
@@ -576,6 +628,9 @@ export function WriteScreen({ partId }: { partId: ID }) {
           summaries={storyMemory.summaries}
           refreshState={storyMemory.refreshState}
           onRefresh={() => void storyMemory.refresh()}
+          laterNotes={laterNotes.notes}
+          onGoToNote={(note) => void laterNotes.goTo(note)}
+          onTickOffNote={laterNotes.tickOff}
           language={
             data.book.languageScore
               ? {

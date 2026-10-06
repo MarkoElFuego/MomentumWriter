@@ -1,5 +1,6 @@
 import type { JSONContent } from "@tiptap/react";
 import { copy } from "@/lib/copy";
+import { stripLaterNote } from "@/lib/text/laterNotes";
 import { bookLanguageScore } from "@/lib/text/languageScore";
 import { UNDO_DELETE_MS } from "@/lib/timing";
 import { ensureDailyStat } from "./dailyStats";
@@ -198,4 +199,16 @@ export function partHeading(part: Part, number: number | undefined): string {
 export function partLabel(part: Part, number: number | undefined): string {
   if (part.kind === "chapter" && number) return copy.structure.chapterLabel(number, part.title);
   return part.title || copy.structure.untitledPart;
+}
+
+/**
+ * A ticked-off note in a part that is not open (T3): its mark leaves the saved
+ * content — the text stays exactly as it was. The open part does this in the editor.
+ */
+export async function removeLaterNoteFromPart(id: ID, noteId: string): Promise<void> {
+  await db.transaction("rw", db.parts, async () => {
+    const part = await getPart(id);
+    if (!part) return;
+    await db.parts.update(id, { content: stripLaterNote(part.content, noteId) });
+  });
 }
