@@ -1,5 +1,6 @@
 import { copy } from "@/lib/copy";
 import { DEFAULT_LANGUAGE } from "@/lib/languages";
+import { UNDO_DELETE_MS } from "@/lib/timing";
 import { newId } from "./id";
 import { entryPart, isAlive, listParts, newPart } from "./parts";
 import { db, ORDER_STEP, type Book, type BookHeart, type ID, type Part } from "./schema";
@@ -19,12 +20,48 @@ export async function createBook(
   return { book, part };
 }
 
-export function getBook(id: ID): Promise<Book | undefined> {
-  return db.books.get(id);
+/** Deleted books wait for a possible undo; everywhere else they no longer exist. */
+export const isLiveBook = (book: Book) => book.deletedAt === undefined;
+
+export async function getBook(id: ID): Promise<Book | undefined> {
+  const book = await db.books.get(id);
+  return book && isLiveBook(book) ? book : undefined;
 }
 
-export function listBooks(): Promise<Book[]> {
-  return db.books.orderBy("updatedAt").reverse().toArray();
+export async function listBooks(): Promise<Book[]> {
+  return (await db.books.orderBy("updatedAt").reverse().toArray()).filter(isLiveBook);
+}
+
+/** Soft delete: the book disappears at once but can be restored for UNDO_DELETE_MS. */
+export async function deleteBook(id: ID, now = Date.now()): Promise<void> {
+  await db.books.update(id, { deletedAt: now });
+}
+
+/** Undo: back with all its parts and notes — nothing else was touched. */
+export async function restoreBook(id: ID): Promise<void> {
+  await db.books
+    .where("id")
+    .equals(id)
+    .modify((book) => {
+      delete book.deletedAt;
+    });
+}
+
+/** Books deleted ≥ UNDO_DELETE_MS ago go for good, with everything that belongs to them. */
+export async function purgeDeletedBooks(now = Date.now()): Promise<number> {
+  return db.transaction("rw", [db.books, db.parts, db.dailyStats, db.resumeState, db.storyMemory], async () => {
+    const expired = (await db.books.filter((book) => book.deletedAt !== undefined && now - book.deletedAt >= UNDO_DELETE_MS).toArray()).map(
+      (book) => book.id,
+    );
+    for (const bookId of expired) {
+      await db.parts.where("bookId").equals(bookId).delete();
+      await db.dailyStats.where("bookId").equals(bookId).delete();
+      await db.resumeState.delete(bookId);
+      await db.storyMemory.delete(bookId);
+    }
+    await db.books.bulkDelete(expired);
+    return expired.length;
+  });
 }
 
 export async function renameBook(id: ID, title: string): Promise<void> {

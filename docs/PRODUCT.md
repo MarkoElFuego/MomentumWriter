@@ -64,6 +64,7 @@ Oba panela su podrazumevano zatvorena. Gornja traka bledi dok kucaš.
 - **Tekst ▾** — stil pasusa: Tekst, Naslov 1, Naslov 2, Citat
 - **B**, **I**
 - **≡▾** — poravnanje: levo (podrazumevano), centar, obostrano
+- **¶** — „Sredi tekst": razmaci i uvlačenje, prazni redovi, pasusi iscepani pri lepljenju, strano formatiranje; označeno ili celo poglavlje, jedan `Ctrl+Z` vraća (odluka autora 2026-10-06)
 - „Sačuvano" — bledo, u sredini
 - **◐** teme · **⌨** pisaća mašina · **◎** fokus · **⛶** ceo ekran · **T** Tiron panel (tačkica = novi šapat)
 
@@ -84,7 +85,7 @@ Naslov poglavlja na vrhu (povezan sa sadržajem), tekst, prelom scene `***`, fus
 ### Editor
 - 4 teme (Papir, Noć, Mašina, Magla) — menjaju samo boje i font
 - Fokus mod, pisaća mašina skrol, ceo ekran
-- Stilovi: Tekst, Naslov 1, Naslov 2, Citat · B, I · poravnanje
+- Stilovi: Tekst, Naslov 1, Naslov 2, Citat · B, I · poravnanje · ¶ Sredi tekst
 - Prelom scene, fusnote
 - Autosave, sve lokalno (IndexedDB)
 

@@ -83,7 +83,7 @@ User poruka: samo tekst pasusa (najviše 400 reči). Odgovor: ceo ispravljen pas
 
 ## mode: `stuck` — „Zapeo sam” (U5, desni panel)
 
-Klik na „Zapeo sam” (ili „Još jedno”). Klijent (`hooks/useStuck.ts`) šalje ~400 reči glavnog teksta pre kursora (bez fusnota); ako ih ima **manje od 30 — nema poziva**, prikaže se „Napiši prvo par rečenica, pa ću imati šta da pitam.”. „Još jedno” šalje poslednjih **najviše 5** pitanja u polju `avoid`, a korisnička poruka dobija `---NE PONAVLJAJ---` sa njima. Ako je u Srcu knjige upisan kraj (`heart.ending`, polje `ending`, najviše 1000 znakova; „ne znam…” se ne šalje), korisnička poruka posle `---TEKST---` dobija `---KAKO SE KNJIGA ZAVRŠAVA---` (T1). Kraj knjige se **nikad** ne šalje uz ghost. Memorija knjige dolazi u T2.
+Klik na „Zapeo sam” (ili „Još jedno”). Klijent (`hooks/useStuck.ts`) šalje ~400 reči glavnog teksta pre kursora (bez fusnota); ako ih ima **manje od 30 — nema poziva**, prikaže se „Napiši prvo par rečenica, pa ću imati šta da pitam.”. „Još jedno” šalje poslednjih **najviše 5** pitanja u polju `avoid`, a korisnička poruka dobija `---NE PONAVLJAJ---` sa njima. Ako je u Srcu knjige upisan kraj (`heart.ending`, polje `ending`, najviše 1000 znakova; „ne znam…” se ne šalje), korisnička poruka posle `---TEKST---` dobija `---KAKO SE KNJIGA ZAVRŠAVA---` (T1). Kraj knjige se **nikad** ne šalje uz ghost. Od T2 i kompaktna memorija knjige (`compactMemory`, ≤ 1200 znakova ≈ 300 tokena, polje `memory`, najviše 1500) ide u `---ŠTA TIRON PAMTI---` posle kraja, pre `---NE PONAVLJAJ---` — takođe nikad uz ghost.
 
 Sistem prompt **nema** urednički zajednički deo — to je Tiron: `tiron` + `stuck` iz `src/lib/languages/sr-Latn/prompts.ts`. Effort `AI_EFFORT_STUCK` (podrazumevano `low`), bez temperature, 2 pokušaja, timeout 15 s. Log: `[stuck] effort=low 1840ms in=… cached=… out=…`.
 
@@ -112,6 +112,16 @@ Autor je zapeo i pritisnuo „Zapeo sam”. U delu ---TEKST--- je ono što je na
 Format:
 {"question":"..."}
 ```
+
+## mode: `memory` — Tiron pamti (T2)
+
+Pozadinski poziv, ništa ne čeka na njega. Okidač (`components/tiron/updateMemory.ts`): autor napusti deo (unmount editora, posle `flush`-a autosave-a) i deo ima **≥ 500 reči razlike** od poslednjeg čitanja (`Part.memoryWords`), ili klik „Osveži” u sekciji Knjiga (bez praga). Tekst koji je već pročitan (`Part.summaryForHash` = `hashText` glavnog teksta) se **nikad** ne šalje ponovo. Šalje se glavni tekst dela bez fusnota, najviše **8.000 reči** (duže → poslednjih 8.000 celim pasusima, `MEMORY_CHAPTER_WORDS`).
+
+Svoja šema (kao proofread): `{ mode: "memory", text, memory, pinned, bookTitle, chapterTitle, genre?, language? }` — `memory` su AI stavke, `pinned` stavke koje je autor upisao/izmenio (liste `characters`, `places`, `openThreads`, ≤ 12 × ≤ 80 znakova). Sistem prompt: `memory` iz `src/lib/languages/sr-Latn/prompts.ts` (nije Tironov glas — urednikove beleške). Korisnička poruka: zaglavlje (Knjiga / Žanr / Poglavlje), `---TRENUTNA MEMORIJA---`, `---AUTOR UPISAO---`, `---POGLAVLJE---`.
+
+Izlaz: `{"characters":[…],"places":[…],"openThreads":[…],"summary":"…","bestLine":"…"}`. Predugačke stavke se seku na 80, višak preko 12 otpada, `summary` se seče na 600. **`bestLine` mora biti doslovan citat** — sme da se razlikuje samo u razmacima/prelomima reda (`isExactQuote`); inače se izbacuje, a ostatak ostaje. Loš JSON / bez `summary` → jedan ponovni pokušaj, pa 502 — klijent zadržava staru memoriju i loguje `[memory] kept the old memory`.
+
+Spajanje (`applyMemoryResult`, jedna transakcija): AI stavke se zamenjuju novim, **zakucane (`pinned`) ostaju iste i prve**, AI stavka jednaka zakucanoj otpada, max 12; `Part.summary` / `summaryForHash` / `memoryWords`; `Book.bestLines` — jedna po delu, nova zamenjuje staru (bez nove ostaje stara). Effort `AI_EFFORT_MEMORY` (podrazumevano `medium`), bez temperature, `max_completion_tokens` 4000, timeout 45 s. Log: `[memory] effort=medium … ms in=… cached=… out=…`.
 
 ## Zod šeme
 

@@ -66,16 +66,19 @@ export interface SparkContext {
   avoid?: string[];
   /** Stuck: how the book ends (Srce knjige), so the question leads toward it. */
   ending?: string;
+  /** Stuck: what Tiron remembers (characters, places, open threads). */
+  memory?: string;
 }
 
 export function buildUserMessage(
   mode: SparkMode,
-  { bookTitle, chapterTitle, context, avoid, ending }: SparkContext,
+  { bookTitle, chapterTitle, context, avoid, ending, memory }: SparkContext,
 ): string {
   const message = `Knjiga: ${bookTitle}\nPoglavlje: ${chapterTitle}\n\n---TEKST---\n${context}`;
   if (mode === "stuck") {
     const parts = [message];
     if (ending) parts.push(`---KAKO SE KNJIGA ZAVRŠAVA---\n${ending}`);
+    if (memory) parts.push(`---ŠTA TIRON PAMTI---\n${memory}`);
     if (avoid?.length) parts.push(`---NE PONAVLJAJ---\n${avoid.map((question) => `- ${question}`).join("\n")}`);
     return parts.join("\n\n");
   }

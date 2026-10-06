@@ -42,6 +42,36 @@ export interface Book {
   heart?: BookHeart;
   targetWords?: number;
   genre?: Genre;
+  /** The strongest sentence of each part, quoted exactly (T2) — Tiron uses them later, never shown. */
+  bestLines?: BestLine[];
+  /** Set while the deletion can still be undone; the book and all its records go after UNDO_DELETE_MS. */
+  deletedAt?: number;
+}
+
+export interface BestLine {
+  partId: ID;
+  text: string;
+  savedAt: number;
+}
+
+/** One line Tiron remembers (T2). The author's own (added or edited) are pinned — AI never touches them. */
+export interface MemoryItem {
+  id: ID;
+  /** At most MEMORY_ITEM_CHARS (lib/ai/memory). */
+  text: string;
+  source: "ai" | "user";
+  pinned: boolean;
+}
+
+export const MEMORY_LISTS = ["characters", "places", "openThreads"] as const;
+export type MemoryList = (typeof MEMORY_LISTS)[number];
+
+/** What Tiron remembers about one book. No separate promises: a promise of the story is an open thread. */
+export interface StoryMemory extends Record<MemoryList, MemoryItem[]> {
+  bookId: ID;
+  updatedAt: number;
+  /** The part whose text the last AI update read. */
+  updatedAfterPartId?: ID;
 }
 
 /** Front matter, a numbered chapter, or back matter — each is one document. */
@@ -63,6 +93,12 @@ export interface Part {
   deletedAt?: number;
   /** Saved when the author leaves the part; never for the part being written. */
   languageScore?: PartLanguageScore;
+  /** 2–3 sentences of what happens, like an editor's note (T2). */
+  summary?: string;
+  /** hashText of the text the summary was made from — unchanged text is never sent again. */
+  summaryForHash?: string;
+  /** Word count when Tiron last read this part — the 500-new-words threshold counts from here. */
+  memoryWords?: number;
 }
 
 export interface PartLanguageScore {
@@ -144,6 +180,7 @@ export class MomentumDB extends Dexie {
   resumeState!: EntityTable<ResumeState, "bookId">;
   settings!: EntityTable<Setting, "key">;
   proofCache!: EntityTable<ProofCacheEntry, "key">;
+  storyMemory!: EntityTable<StoryMemory, "bookId">;
 
   constructor() {
     super("momentum");
@@ -186,6 +223,12 @@ export class MomentumDB extends Dexie {
     // v8: optional Book.heart / targetWords / genre (Tiron T1) and a "panels"
     // record in settings. No index, nothing to copy — unset means "not answered".
     this.version(8).stores({});
+    // v9: storyMemory (Tiron T2) + optional Part.summary / summaryForHash /
+    // memoryWords and Book.bestLines. New table only — nothing to copy.
+    this.version(9).stores({ storyMemory: "bookId" });
+    // v10: Book.deletedAt (soft delete with undo, like parts in v6). Optional,
+    // unset on every existing book — nothing to upgrade, no index.
+    this.version(10).stores({});
   }
 }
 

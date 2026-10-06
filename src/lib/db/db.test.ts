@@ -1,7 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Dexie from "dexie";
-import { bookWordTotal, cleanHeart, knownEnding, createBook, firstPartId, getBook, listBooks, renameBook, updateBook } from "./books";
+import {
+  bookWordTotal,
+  cleanHeart,
+  knownEnding,
+  createBook,
+  deleteBook,
+  firstPartId,
+  getBook,
+  listBooks,
+  purgeDeletedBooks,
+  renameBook,
+  restoreBook,
+  updateBook,
+} from "./books";
 import { getDailyStat } from "./dailyStats";
+import {
+  addMemoryItem,
+  applyMemoryResult,
+  compactMemory,
+  COMPACT_MEMORY_CHARS,
+  editMemoryItem,
+  emptyMemory,
+  getMemory,
+  mergeAiLines,
+  needsMemoryUpdate,
+  removeMemoryItem,
+} from "./memory";
 import { mergeScenes, type LegacyScene } from "./migrations";
 import {
   canDeletePart,
@@ -20,6 +45,7 @@ import {
 } from "./parts";
 import { getProofResult, proofCacheKey, purgeProofCache, saveProofResult } from "./proofCache";
 import { bookEntry, bookEntryHref, getResumeState, saveOpenQuestion } from "./resume";
+import type { MemoryResult } from "@/lib/ai/memory";
 import type { Part, ResumeState } from "./schema";
 import { getAppearance, getOpenSections, saveAppearance, setSectionOpen } from "./settings";
 import { db } from "./schema";
@@ -448,7 +474,7 @@ describe("migrations", () => {
     const resume = await getResumeState("b1");
     expect(resume).toMatchObject({ partId: "c2", cursorPos: 0, lastSentence: "Peta." });
     expect(resume).not.toHaveProperty("sceneId");
-    expect(db.tables.map((t) => t.name).sort()).toEqual(["books", "dailyStats", "parts", "proofCache", "resumeState", "settings"]);
+    expect(db.tables.map((t) => t.name).sort()).toEqual(["books", "dailyStats", "parts", "proofCache", "resumeState", "settings", "storyMemory"]);
   });
 
   it("v3 → v4: parts stay, settings start empty (defaults)", async () => {
@@ -471,7 +497,7 @@ describe("migrations", () => {
     v3.close();
     await db.open();
 
-    expect(db.verno).toBe(8);
+    expect(db.verno).toBe(10);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await db.settings.count()).toBe(0);
     expect(await getAppearance()).toEqual({ key: "appearance", focusMode: false, typewriter: false });
@@ -510,7 +536,7 @@ describe("migrations", () => {
     v4.close();
     await db.open();
 
-    expect(db.verno).toBe(8);
+    expect(db.verno).toBe(10);
     const blocks = async (id: string) => (await getPart(id))!.content.content;
     expect(await blocks("front")).toEqual([p("Mami.")]);
     expect((await getPart("front"))!.wordCount).toBe(1);
@@ -549,7 +575,7 @@ describe("migrations", () => {
     v5.close();
     await db.open();
 
-    expect(db.verno).toBe(8);
+    expect(db.verno).toBe(10);
     expect((await listParts("b1")).map((p) => p.id)).toEqual(["p1", "p2"]);
     expect((await getPart("p2"))?.content).toEqual(doc("Tekst p2."));
     expect(await bookWordTotal("b1")).toBe(4);
@@ -575,7 +601,7 @@ describe("migrations", () => {
     v6.close();
     await db.open();
 
-    expect(db.verno).toBe(8);
+    expect(db.verno).toBe(10);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect((await getPart("p1"))?.languageScore).toBeUndefined();
     expect(await db.proofCache.count()).toBe(0);
@@ -609,7 +635,7 @@ describe("migrations", () => {
     v7.close();
     await db.open();
 
-    expect(db.verno).toBe(8);
+    expect(db.verno).toBe(10);
     const book = await getBook("b1");
     expect(book).toMatchObject({ title: "Knjiga", language: "sr-Latn" });
     expect(book?.heart).toBeUndefined();
@@ -618,6 +644,75 @@ describe("migrations", () => {
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await getAppearance()).toMatchObject({ theme: "noc", focusMode: true });
     expect(await getOpenSections()).toEqual([]);
+  });
+
+  it("v8 → v9: books and parts stay, Tiron remembers nothing yet", async () => {
+    db.close();
+    await Dexie.delete("momentum");
+    const v8 = new Dexie("momentum");
+    v8.version(8).stores({
+      ...V1_STORES,
+      parts: "id, bookId",
+      chapters: null,
+      scenes: null,
+      settings: "key",
+      proofCache: "key, usedAt",
+    });
+    await v8.table("books").add({
+      id: "b1",
+      title: "Knjiga",
+      language: "sr-Latn",
+      createdAt: 1,
+      updatedAt: 1,
+      heart: { about: "O kiši." },
+      genre: "misterija",
+    });
+    await v8.table("parts").add({
+      id: "p1",
+      bookId: "b1",
+      kind: "chapter",
+      title: "Dolazak",
+      order: 1000,
+      content: doc("Tekst ostaje."),
+      wordCount: 2,
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    v8.close();
+    await db.open();
+
+    expect(db.verno).toBe(10);
+    const book = await getBook("b1");
+    expect(book).toMatchObject({ title: "Knjiga", heart: { about: "O kiši." }, genre: "misterija" });
+    expect(book?.bestLines).toBeUndefined();
+    const part = await getPart("p1");
+    expect(part).toMatchObject({ title: "Dolazak", content: doc("Tekst ostaje."), wordCount: 2 });
+    expect(part?.summary).toBeUndefined();
+    expect(await db.storyMemory.count()).toBe(0);
+    expect(await getMemory("b1")).toEqual(emptyMemory("b1"));
+  });
+
+  it("v9 → v10: every book stays, none counts as deleted", async () => {
+    db.close();
+    await Dexie.delete("momentum");
+    const v9 = new Dexie("momentum");
+    v9.version(9).stores({
+      ...V1_STORES,
+      parts: "id, bookId",
+      chapters: null,
+      scenes: null,
+      settings: "key",
+      proofCache: "key, usedAt",
+      storyMemory: "bookId",
+    });
+    await v9.table("books").add({ id: "b1", title: "Kiša", language: "sr-Latn", createdAt: 1, updatedAt: 1 });
+    await v9.table("books").add({ id: "b2", title: "Sneg", language: "sr-Latn", createdAt: 2, updatedAt: 2 });
+    v9.close();
+    await db.open();
+
+    expect(db.verno).toBe(10);
+    expect((await listBooks()).map((book) => book.title)).toEqual(["Sneg", "Kiša"]);
+    expect((await getBook("b1"))?.deletedAt).toBeUndefined();
   });
 });
 
@@ -754,5 +849,166 @@ describe("language score in the database", () => {
     await deletePart(b.id);
     await saveLanguageScore(b.id, { score: 50, diacritics: 0, grammar: 5, words: 100 });
     expect((await getBook(book.id))!.languageScore).toBeUndefined();
+  });
+});
+
+describe("story memory", () => {
+  const result = (change: Partial<MemoryResult> = {}): MemoryResult => ({
+    characters: ["Petar — dolazi u selo"],
+    places: ["Stara kuća"],
+    openThreads: ["Šta je u koferu?"],
+    summary: "Petar je stigao. Mara je ćutala.",
+    bestLine: "Kofer je ostao kod nje.",
+    ...change,
+  });
+
+  it("reads again only after 500 new words and a changed text", () => {
+    expect(needsMemoryUpdate({ wordCount: 499 }, "h1")).toBe(false);
+    expect(needsMemoryUpdate({ wordCount: 500 }, "h1")).toBe(true);
+    expect(needsMemoryUpdate({ wordCount: 1200, memoryWords: 800 }, "h2")).toBe(false);
+    expect(needsMemoryUpdate({ wordCount: 1300, memoryWords: 800 }, "h2")).toBe(true);
+    // Half the chapter deleted is also a lot of change.
+    expect(needsMemoryUpdate({ wordCount: 200, memoryWords: 800 }, "h2")).toBe(true);
+    expect(needsMemoryUpdate({ wordCount: 1300, memoryWords: 800, summaryForHash: "h2" }, "h2")).toBe(false);
+  });
+
+  it("keeps the author's pinned lines exactly, first, and never twice", () => {
+    const current = [
+      { id: "u1", text: "Mara — Petrova sestra", source: "user" as const, pinned: true },
+      { id: "a1", text: "Petar — dolazi u selo", source: "ai" as const, pinned: false },
+      { id: "a2", text: "Stari lik", source: "ai" as const, pinned: false },
+    ];
+    const merged = mergeAiLines(current, ["mara — petrova sestra", "Petar — dolazi u selo", "Jovan — poštar", "Jovan — poštar"]);
+    expect(merged.map((item) => item.text)).toEqual(["Mara — Petrova sestra", "Petar — dolazi u selo", "Jovan — poštar"]);
+    expect(merged[0]).toEqual(current[0]);
+    // An unchanged AI line keeps its id.
+    expect(merged[1]!.id).toBe("a1");
+    expect(merged[2]).toMatchObject({ source: "ai", pinned: false });
+  });
+
+  it("keeps at most 12 lines per list, pinned ones first", () => {
+    const pinned = Array.from({ length: 10 }, (_, i) => ({ id: `u${i}`, text: `Moj ${i}`, source: "user" as const, pinned: true }));
+    const merged = mergeAiLines(pinned, ["A", "B", "C", "D"]);
+    expect(merged).toHaveLength(12);
+    expect(merged.slice(0, 10)).toEqual(pinned);
+  });
+
+  it("saves memory, summary and the best line in one go; a new best line replaces the old", async () => {
+    const { book, part } = await createBook("Kiša");
+    await addMemoryItem(book.id, "characters", "Mara — Petrova sestra");
+    await applyMemoryResult(book.id, { partId: part.id, hash: "h1", words: 600 }, result(), 5_000);
+
+    const memory = await getMemory(book.id);
+    expect(memory.characters.map((item) => item.text)).toEqual(["Mara — Petrova sestra", "Petar — dolazi u selo"]);
+    expect(memory).toMatchObject({ updatedAt: 5_000, updatedAfterPartId: part.id });
+    expect(await getPart(part.id)).toMatchObject({ summary: "Petar je stigao. Mara je ćutala.", summaryForHash: "h1", memoryWords: 600 });
+    expect((await getBook(book.id))?.bestLines).toEqual([{ partId: part.id, text: "Kofer je ostao kod nje.", savedAt: 5_000 }]);
+
+    const second = await createPart(book.id, "chapter");
+    await applyMemoryResult(book.id, { partId: second.id, hash: "h2", words: 700 }, result({ bestLine: "Druga." }), 6_000);
+    await applyMemoryResult(book.id, { partId: part.id, hash: "h3", words: 1200 }, result({ bestLine: "Nova prva." }), 7_000);
+    expect((await getBook(book.id))?.bestLines?.map((line) => [line.partId, line.text])).toEqual([
+      [second.id, "Druga."],
+      [part.id, "Nova prva."],
+    ]);
+
+    // No best line this time: the old one stays.
+    await applyMemoryResult(book.id, { partId: second.id, hash: "h4", words: 800 }, result({ bestLine: undefined }), 8_000);
+    expect((await getBook(book.id))?.bestLines).toHaveLength(2);
+  });
+
+  it("an edited AI line becomes the author's; empty text removes it", async () => {
+    const { book, part } = await createBook("Kiša");
+    await applyMemoryResult(book.id, { partId: part.id, hash: "h1", words: 600 }, result());
+    const [line] = (await getMemory(book.id)).places;
+
+    await editMemoryItem(book.id, "places", line!.id, "Stara kuća na brdu");
+    expect((await getMemory(book.id)).places[0]).toEqual({ id: line!.id, text: "Stara kuća na brdu", source: "user", pinned: true });
+    // The next read leaves it alone.
+    await applyMemoryResult(book.id, { partId: part.id, hash: "h2", words: 1200 }, result({ places: ["Stara kuća"] }));
+    expect((await getMemory(book.id)).places.map((item) => item.text)).toEqual(["Stara kuća na brdu", "Stara kuća"]);
+
+    await editMemoryItem(book.id, "places", line!.id, "  ");
+    expect((await getMemory(book.id)).places.map((item) => item.text)).toEqual(["Stara kuća"]);
+    await removeMemoryItem(book.id, "openThreads", (await getMemory(book.id)).openThreads[0]!.id);
+    expect((await getMemory(book.id)).openThreads).toEqual([]);
+  });
+
+  it("adds the author's line clipped to 80 characters, not past 12, not empty", async () => {
+    const { book } = await createBook("Kiša");
+    expect(await addMemoryItem(book.id, "openThreads", "   ")).toBe(false);
+    expect(await addMemoryItem(book.id, "openThreads", "reč ".repeat(40))).toBe(true);
+    expect((await getMemory(book.id)).openThreads[0]!.text.length).toBeLessThanOrEqual(80);
+    for (let i = 0; i < 11; i++) await addMemoryItem(book.id, "openThreads", `Nit ${i}`);
+    expect(await addMemoryItem(book.id, "openThreads", "Trinaesta")).toBe(false);
+    expect((await getMemory(book.id)).openThreads).toHaveLength(12);
+  });
+
+  it("gives Tiron a compact memory of at most ~300 tokens, nothing when empty", () => {
+    expect(compactMemory(null)).toBeUndefined();
+    expect(compactMemory(emptyMemory("b"))).toBeUndefined();
+    const item = (text: string) => ({ id: text, text, source: "ai" as const, pinned: false });
+    const memory = {
+      ...emptyMemory("b"),
+      characters: [item("Mara — sestra"), item("Petar — brat")],
+      openThreads: [item("Šta je u koferu?")],
+    };
+    expect(compactMemory(memory)).toBe("Likovi: Mara — sestra; Petar — brat\nOtvorene niti: Šta je u koferu?");
+
+    const long = (prefix: string) => Array.from({ length: 12 }, (_, i) => item(`${prefix} ${i} ${"x".repeat(70)}`));
+    const full = { ...emptyMemory("b"), characters: long("Lik"), places: long("Mesto"), openThreads: long("Nit") };
+    const compact = compactMemory(full)!;
+    expect(compact.length).toBeLessThanOrEqual(COMPACT_MEMORY_CHARS);
+    // The most important (first) lines of every list stay.
+    expect(compact).toContain("Lik 0");
+    expect(compact).toContain("Mesto 0");
+    expect(compact).toContain("Nit 0");
+  });
+});
+
+describe("deleting books", () => {
+  async function bookWithEverything(title: string) {
+    const { book, part } = await createBook(title);
+    await savePart(part.id, doc("Kiša je padala celu noć."), 5, "2026-10-06", { pos: 3, lastSentence: "Kiša je padala celu noć." });
+    await addMemoryItem(book.id, "characters", "Mara — sestra");
+    return { book, part };
+  }
+
+  it("a deleted book is gone from the library and the editor at once, and comes back whole", async () => {
+    const { book, part } = await bookWithEverything("Kiša");
+    const other = await createBook("Sneg");
+
+    await deleteBook(book.id);
+    expect((await listBooks()).map((b) => b.id)).toEqual([other.book.id]);
+    expect(await getBook(book.id)).toBeUndefined();
+    expect(await openPart(part.id, "2026-10-06")).toBeUndefined();
+
+    await restoreBook(book.id);
+    expect(await getBook(book.id)).toMatchObject({ title: "Kiša" });
+    expect((await getPart(part.id))?.content).toEqual(doc("Kiša je padala celu noć."));
+    expect((await getMemory(book.id)).characters).toHaveLength(1);
+    expect(await getResumeState(book.id)).toBeDefined();
+  });
+
+  it("goes for good with all its records only after the undo time", async () => {
+    const { book, part } = await bookWithEverything("Kiša");
+    const other = await bookWithEverything("Sneg");
+
+    await deleteBook(book.id, 50_000);
+    expect(await purgeDeletedBooks(50_000 + UNDO_DELETE_MS - 1)).toBe(0);
+    expect(await db.books.get(book.id)).toBeDefined();
+
+    expect(await purgeDeletedBooks(50_000 + UNDO_DELETE_MS)).toBe(1);
+    expect(await db.books.get(book.id)).toBeUndefined();
+    expect(await db.parts.get(part.id)).toBeUndefined();
+    expect(await db.dailyStats.where("bookId").equals(book.id).count()).toBe(0);
+    expect(await getResumeState(book.id)).toBeUndefined();
+    expect(await db.storyMemory.get(book.id)).toBeUndefined();
+
+    // The other book is untouched.
+    expect(await getBook(other.book.id)).toMatchObject({ title: "Sneg" });
+    expect((await getPart(other.part.id))?.wordCount).toBe(5);
+    expect((await getMemory(other.book.id)).characters).toHaveLength(1);
+    expect(await getResumeState(other.book.id)).toBeDefined();
   });
 });

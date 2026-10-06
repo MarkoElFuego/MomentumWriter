@@ -8,6 +8,7 @@ import type { BookDetailsValue } from "@/components/book/BookDetailsFields";
 import { StructurePanel } from "@/components/structure/StructurePanel";
 import { UndoToast } from "@/components/structure/UndoToast";
 import { TironPanel } from "@/components/tiron/TironPanel";
+import { updateStoryMemory } from "@/components/tiron/updateMemory";
 import { useAppearance } from "@/hooks/useAppearance";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useFullscreen } from "@/hooks/useFullscreen";
@@ -16,10 +17,11 @@ import { usePanelsOverlay } from "@/hooks/usePanelsOverlay";
 import { useOpenProofMark, useProofread } from "@/hooks/useProofread";
 import { useToolbarFade } from "@/hooks/useToolbarFade";
 import { offerUndo, purgeExpiredDeletes, takeUndo, useUndoDelete } from "@/hooks/useUndoDelete";
+import { useStoryMemory } from "@/hooks/useStoryMemory";
 import { useStuck } from "@/hooks/useStuck";
 import { useTypewriterScroll } from "@/hooks/useTypewriterScroll";
 import { copy } from "@/lib/copy";
-import { knownEnding, updateBook } from "@/lib/db/books";
+import { knownEnding, restoreBook, updateBook } from "@/lib/db/books";
 import {
   chapterNumber,
   deletePart,
@@ -172,7 +174,6 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const scrollRef = useRef<HTMLElement>(null);
   useTypewriterScroll(editor, scrollRef, appearance.typewriter);
   useGhostText(editor, ghostEnabled, titles);
-  const stuck = useStuck(editor, titles, knownEnding(bookDetails.heart));
   const proofread = useProofread(editor, proofEnabled, ready?.book.language ?? null);
   // Live count of open underlines in this chapter ("ovde: …" in the Jezik section).
   const marksHere = useEditorState({
@@ -293,6 +294,18 @@ export function WriteScreen({ partId }: { partId: ID }) {
 
   const { status, schedule, flush } = useAutosave(save);
 
+  const bookId = state.kind === "ready" ? state.data.book.id : null;
+  const storyMemory = useStoryMemory(bookId, partId, flush);
+  const stuck = useStuck(editor, titles, knownEnding(bookDetails.heart), storyMemory.compact);
+  // Leaving the part (another part, the library, Resume): Tiron reads it in the
+  // background if it has enough new words — after the last save is in.
+  useEffect(
+    () => () => {
+      void flush().then(() => updateStoryMemory(partId));
+    },
+    [partId, flush],
+  );
+
   const handleChange = useCallback(
     (content: JSONContent, text: string) => {
       const count = countWords(text);
@@ -405,8 +418,6 @@ export function WriteScreen({ partId }: { partId: ID }) {
     setNumber(chapterNumber(parts, part.id));
   }, [state, partId]);
 
-  const bookId = state.kind === "ready" ? state.data.book.id : null;
-
   const changeBookDetails = useCallback(
     (details: BookDetailsValue) => {
       setBookDetails(details);
@@ -437,6 +448,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const undoDelete = useCallback(async () => {
     const pending = takeUndo();
     if (!pending) return;
+    // A book deleted in the library a moment before opening another one.
+    if (pending.kind === "book") return restoreBook(pending.bookId);
     await restorePart(pending.partId);
     if (pending.wasOpen) {
       router.push(`/write/${pending.partId}`);
@@ -558,6 +571,11 @@ export function WriteScreen({ partId }: { partId: ID }) {
           stuck={stuck.state}
           book={bookDetails}
           onBookChange={changeBookDetails}
+          bookId={data.book.id}
+          memory={storyMemory.memory}
+          summaries={storyMemory.summaries}
+          refreshState={storyMemory.refreshState}
+          onRefresh={() => void storyMemory.refresh()}
           language={
             data.book.languageScore
               ? {

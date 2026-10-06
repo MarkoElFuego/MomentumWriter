@@ -1,16 +1,19 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { purgeDeletedBooks } from "@/lib/db/books";
 import { purgeDeletedParts } from "@/lib/db/parts";
 import type { ID, PartKind } from "@/lib/db/schema";
 import { UNDO_DELETE_MS } from "@/lib/timing";
 
-export interface PendingDelete {
-  partId: ID;
-  kind: PartKind;
-  /** It was open in the editor — undo goes back to it. */
-  wasOpen: boolean;
-}
+export type PendingDelete =
+  | {
+      partId: ID;
+      kind: PartKind;
+      /** It was open in the editor — undo goes back to it. */
+      wasOpen: boolean;
+    }
+  | { kind: "book"; bookId: ID };
 
 // Module state, not component state: deleting the open part moves the editor
 // to a neighbour, which remounts the writing screen — the offer has to survive.
@@ -25,6 +28,7 @@ function set(next: PendingDelete | null) {
 
 function purge() {
   purgeDeletedParts().catch((error) => console.error("Failed to remove deleted parts", error));
+  purgeDeletedBooks().catch((error) => console.error("Failed to remove deleted books", error));
 }
 
 /** Shows "Poništi" for UNDO_DELETE_MS. A newer deletion replaces the offer; the older one becomes final. */
@@ -45,7 +49,7 @@ export function takeUndo(): PendingDelete | null {
   return taken;
 }
 
-/** On start: parts deleted earlier (closed tab, reload) whose undo time is over go for good. */
+/** On start: parts and books deleted earlier (closed tab, reload) whose undo time is over go for good. */
 export function purgeExpiredDeletes() {
   purge();
 }

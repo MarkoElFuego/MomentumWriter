@@ -17,6 +17,8 @@ export interface LanguagePrompts {
   tiron: string;
   /** „Zapeo sam”: the task after the Tiron rules. */
   stuck: string;
+  /** Story memory, chapter summary and strongest sentence (T2) — read in the background. */
+  memory: string;
 }
 
 export interface Typography {

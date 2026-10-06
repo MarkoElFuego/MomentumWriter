@@ -29,9 +29,15 @@ interface Titles {
 
 /**
  * „Zapeo sam”: one question from Tiron about the scene before the cursor.
- * `ending` (Srce knjige) is its own argument so it never rides along with ghost's titles.
+ * `ending` (Srce knjige) and `memory` (what Tiron remembers) are their own
+ * arguments so they never ride along with ghost's titles.
  */
-export function useStuck(editor: Editor | null, titles: Titles | null, ending: string | undefined) {
+export function useStuck(
+  editor: Editor | null,
+  titles: Titles | null,
+  ending: string | undefined,
+  memory: string | undefined,
+) {
   const [state, setState] = useState<StuckState>({ kind: "idle" });
   const asked = useRef<string[]>([]);
   const inFlight = useRef<AbortController | null>(null);
@@ -60,6 +66,7 @@ export function useStuck(editor: Editor | null, titles: Titles | null, ending: s
         ...titles,
         avoid: asked.current.slice(-MAX_AVOID),
         ...(ending ? { ending } : {}),
+        ...(memory ? { memory } : {}),
       },
       controller.signal,
     );
@@ -72,7 +79,7 @@ export function useStuck(editor: Editor | null, titles: Titles | null, ending: s
     } else {
       setState({ kind: "error" });
     }
-  }, [editor, titles, ending]);
+  }, [editor, titles, ending, memory]);
 
   return { state, ask };
 }

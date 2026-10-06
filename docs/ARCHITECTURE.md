@@ -89,9 +89,21 @@ db.version(7).stores({ proofCache: "key, usedAt" });
 //   genre? (Tiron T1) + zapis "panels" u settings ({ open: ["book"] } — otvorene sekcije desnog
 //   panela, podrazumevano sve skupljene). Bez indeksa i bez upgrade-a.
 db.version(8).stores({});
+// v9: tabela storyMemory (ključ bookId: characters / places / openThreads — stavke
+//   { id, text ≤ 80, source: "ai" | "user", pinned }, ≤ 12 po listi; updatedAt, updatedAfterPartId)
+//   + opciono Part.summary / summaryForHash / memoryWords i Book.bestLines (Tiron T2). Bez upgrade-a.
+db.version(9).stores({ storyMemory: "bookId" });
+// v10: Book.deletedAt? — meko brisanje knjige sa „Poništi” (kao delovi u v6); bez indeksa i bez upgrade-a.
+db.version(10).stores({});
 ```
 
+Brisanje knjige (odluka autora 2026-10-06): u biblioteci `⋮` → „Obriši” → potvrda sa brojem reči (prazna knjiga bez potvrde) → `deleteBook` upisuje `deletedAt`; `listBooks`, `getBook` i `openPart` je od tog trenutka ne vide. Traka „Knjiga obrisana · Poništi” 10 s (isti modul `hooks/useUndoDelete.ts`, `PendingDelete` ima i `kind: "book"`). `purgeDeletedBooks` (uz `purgeDeletedParts`, kad istekne „Poništi” i pri otvaranju biblioteke/editora) trajno briše knjigu, njene delove, `dailyStats`, `resumeState` i `storyMemory`; `proofCache` je po tekstu i ističe sam.
+
 Srce knjige (T1): „Nova knjiga” → `createBook` → `/start?book=…` (`components/book/StartScreen.tsx`): naslov (neobavezan, prazno = „Nova knjiga”), 3 pitanja, žanr i dužina, sve neobavezno; „Počni da pišeš” (`Ctrl/Cmd+Enter`) upisuje kroz `updateBook` (`cleanHeart` seče razmake i izbacuje prazne odgovore), „Preskoči” ne upisuje ništa; oba idu na prvo poglavlje preko `router.replace`. Stare knjige i preskočena pitanja → sekcija „Knjiga ›” u desnom panelu (`components/tiron/BookSection.tsx`), gde se svaka izmena odmah upisuje. Kraj knjige ide samo u „Zapeo sam” (`knownEnding`: „ne znam…” se ne šalje), nikad u ghost.
+
+Tiron pamti (T2): `lib/db/memory.ts` (repo, spajanje, `compactMemory`), `components/tiron/updateMemory.ts` (čita sačuvan deo iz Dexie-a — radi i posle unmount-a editora; isti deo se ne šalje dvaput u isto vreme), `hooks/useStoryMemory.ts` (Dexie `liveQuery`: memorija i sažeci se pojavljuju u panelu i kad čitanje završi posle prelaska u drugo poglavlje), prikaz u `components/tiron/BookMemory.tsx` (Likovi / Mesta / Otvorene niti uvek sa „+ dodaj”, Poglavlja samo kad postoji sažetak, „Osveži”). Izmena ili dodavanje stavke = `source: "user"`, `pinned: true`. Najjače rečenice se ne prikazuju (koristi ih T5). Detalji poziva: `docs/AI_PROMPTS.md` → mode `memory`.
+
+„Sredi tekst" (¶ u traci, odluka autora 2026-10-06): `components/editor/tidyText.ts` — čista `tidyBlocks` (razmaci/tabovi/meke crtice, prazni pasusi, `hardBreak` → razmak, PDF redovi se spajaju kad prethodni ne završava rečenicu a sledeći počinje malim slovom, „rastav-" + „ljeno" → „rastavljeno", liste → pasusi, oznake osim bold/kurziv otpadaju; naslovi, citat, poravnanje, `sceneBreak` i brojevi fusnota ostaju) i `tidyTr` (selekcija proširena na cele blokove ili ceo glavni tekst, jedna `replaceWith` transakcija = jedan `Ctrl+Z`; zona fusnota se ne dira; u fusnoti onemogućeno). Bez AI-ja.
 
 Ocena jezika (U7, `lib/text/languageScore.ts`): pri izlasku iz dela (unmount ekrana ili sakriven tab) `useProofread().stats()` daje reči **proverenih** pasusa i otvorene podvlake; ako je provereno ≥ 50% reči dela, `saveLanguageScore` upisuje `Part.languageScore` i preračunava `Book.languageScore` (prosek po rečima, čuva `previous` za ↑/↓). Deo otvoren u editoru se nikad ne računa. Prikaz: sekcija „Jezik” u Tiron panelu — `Jezik 94 ↑3`, ispod (samo ako ovde ima podvlaka) „ovde: 4 kvačice · 1 gramatika”; klik → sledeća podvlaka sa otvorenim popoverom. Bez ocene knjige sekcije nema.
 
@@ -155,7 +167,7 @@ Planirano: Tiron T3: `Ctrl+Shift+N` beleška za kasnije.
 Ulaz (Zod):
 ```ts
 {
-  mode: "resume" | "ghost",  // "proofread" ima svoju šemu; "stuck" (U5) i Tiron modovi dolaze kasnije; ostalo → 400
+  mode: "resume" | "ghost" | "stuck",  // "proofread" i "memory" (T2) imaju svoje šeme; ostalo → 400
   context: string,          // max ~3000 karaktera
   chapterTitle?: string,    // naslov otvorenog dela: „Poglavlje IV · Dolazak”, „Posveta”
   bookTitle?: string,

@@ -1,4 +1,5 @@
 // Browser side of /api/spark. Types only from lib/ai — never the SDK or the key.
+import type { MemoryRequest, MemoryResult } from "./memory";
 import type { ProofreadRequest } from "./proofread";
 import type { SparkRequest, SparkResponse } from "./schemas";
 
@@ -49,5 +50,27 @@ export async function requestProofread(body: ProofreadRequest, signal: AbortSign
     return { ok: true, corrected: data.corrected };
   } catch {
     return { ok: false, retry: true };
+  }
+}
+
+// Memory reads a whole chapter with medium reasoning; the server gives up at 45 s.
+const MEMORY_CLIENT_TIMEOUT_MS = 50_000;
+
+/** Background read of one chapter (T2). Any failure keeps the old memory — the caller only logs it. */
+export async function requestMemory(
+  body: MemoryRequest,
+): Promise<{ ok: true; data: MemoryResult } | { ok: false; status: number | "network" }> {
+  try {
+    const response = await fetch("/api/spark", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(MEMORY_CLIENT_TIMEOUT_MS),
+    });
+    if (!response.ok) return { ok: false, status: response.status };
+    const { data } = (await response.json()) as { data: MemoryResult };
+    return { ok: true, data };
+  } catch {
+    return { ok: false, status: "network" };
   }
 }

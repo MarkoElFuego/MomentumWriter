@@ -1,8 +1,10 @@
 "use client";
 
 import type { BookDetailsValue } from "@/components/book/BookDetailsFields";
+import type { PartSummary, RefreshState } from "@/hooks/useStoryMemory";
 import type { StuckState } from "@/hooks/useStuck";
 import { copy } from "@/lib/copy";
+import type { ID, StoryMemory } from "@/lib/db/schema";
 import { BookSection } from "./BookSection";
 
 export interface LanguageRow {
@@ -18,6 +20,12 @@ interface TironPanelProps {
   /** Srce knjige, genre and length — the Knjiga section. */
   book: BookDetailsValue;
   onBookChange: (details: BookDetailsValue) => void;
+  /** What Tiron remembers (T2), also in the Knjiga section. */
+  bookId: ID;
+  memory: StoryMemory | null;
+  summaries: PartSummary[];
+  refreshState: RefreshState;
+  onRefresh: () => void;
   /** null → no score yet, no section. */
   language: LanguageRow | null;
   onNextMark: () => void;
@@ -36,6 +44,11 @@ export function TironPanel({
   stuck,
   book,
   onBookChange,
+  bookId,
+  memory,
+  summaries,
+  refreshState,
+  onRefresh,
   language,
   onNextMark,
   onStuck,
@@ -100,7 +113,15 @@ export function TironPanel({
         </div>
       </section>
 
-      <BookSection details={book} onChange={onBookChange} />
+      <BookSection
+        details={book}
+        onChange={onBookChange}
+        bookId={bookId}
+        memory={memory}
+        summaries={summaries}
+        refreshState={refreshState}
+        onRefresh={onRefresh}
+      />
 
       {language && <LanguageSection row={language} onNextMark={onNextMark} />}
     </aside>

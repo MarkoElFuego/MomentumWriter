@@ -86,6 +86,29 @@ describe("stuck — prompt", () => {
     expect(buildSystemPrompt("stuck", "sr-Latn")).toContain("kraj ne prepričavaj");
   });
 
+  it("adds what Tiron remembers after the ending, before the questions to avoid", () => {
+    const fields = { bookTitle: "Kiša", chapterTitle: "Poglavlje I", context: "Tekst." };
+    expect(buildUserMessage("stuck", fields)).not.toContain("ŠTA TIRON PAMTI");
+    expect(
+      buildUserMessage("stuck", { ...fields, ending: "Kraj.", memory: "Likovi: Mara — sestra", avoid: ["Gde je kofer?"] }),
+    ).toBe(
+      "Knjiga: Kiša\nPoglavlje: Poglavlje I\n\n---TEKST---\nTekst.\n\n---KAKO SE KNJIGA ZAVRŠAVA---\nKraj.\n\n" +
+        "---ŠTA TIRON PAMTI---\nLikovi: Mara — sestra\n\n---NE PONAVLJAJ---\n- Gde je kofer?",
+    );
+    expect(buildSystemPrompt("stuck", "sr-Latn")).toContain("---ŠTA TIRON PAMTI---");
+  });
+
+  it("never gives the memory to the gray completions", () => {
+    const fields = { bookTitle: "Kiša", chapterTitle: "Poglavlje I", context: "Tekst je", memory: "Likovi: Mara" };
+    expect(buildUserMessage("ghost", fields)).not.toContain("Mara");
+  });
+
+  it("accepts a memory of at most 1500 characters", () => {
+    const base = { mode: "stuck", context, bookTitle: "Kiša", chapterTitle: "Poglavlje I" };
+    expect(SparkRequestSchema.safeParse({ ...base, memory: "Likovi: Mara" }).success).toBe(true);
+    expect(SparkRequestSchema.safeParse({ ...base, memory: "a".repeat(1501) }).success).toBe(false);
+  });
+
   it("never gives the ending to the gray completions", () => {
     const fields = { bookTitle: "Kiša", chapterTitle: "Poglavlje I", context: "Tekst je", ending: "Petar otvara kofer." };
     expect(buildUserMessage("ghost", fields)).not.toContain("Petar otvara kofer.");

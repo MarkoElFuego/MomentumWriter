@@ -52,6 +52,9 @@ export const copy = {
     italicShortcut: "Ctrl/Cmd+I",
     align: "Poravnanje",
     alignments: { left: "Levo", center: "Centar", justify: "Obostrano" },
+    tidy: "Sredi tekst",
+    // Tooltip: šta tačno radi; bez selekcije radi na celom poglavlju.
+    tidyHint: "Sredi tekst — razmaci, prazni redovi, iscepani pasusi, strano formatiranje (označeno ili celo poglavlje)",
     themes: "Tema",
     themeNames: { papir: "Papir", noc: "Noć", masina: "Mašina", magla: "Magla" },
     typewriter: "Pisaća mašina",
@@ -144,6 +147,24 @@ export const copy = {
     endingShort: "Kako se završava",
     whyShort: "Zašto",
     done: "Gotovo",
+    // Šta Tiron pamti (T2): podsekcije u „Knjiga”.
+    memoryLists: {
+      characters: "Likovi",
+      places: "Mesta",
+      openThreads: "Otvorene niti",
+    },
+    addItem: "+ dodaj",
+    addItemLabel: (list: string) => `Dodaj: ${list}`,
+    editItem: (text: string) => `Izmeni: ${text}`,
+    removeItem: (text: string) => `Obriši: ${text}`,
+    itemHint: "Enter čuva · Esc odustaje · prazno briše",
+    chapters: "Poglavlja",
+    refresh: "Osveži",
+    refreshHint: "Tiron ponovo čita ovo poglavlje",
+    reading: "Tiron čita…",
+    refreshUnchanged: "Ništa novo od poslednjeg čitanja.",
+    refreshEmpty: "U ovom poglavlju još nema teksta.",
+    refreshFailed: "Tiron sada ne može da pročita poglavlje. Pokušaj malo kasnije.",
     notFound: "Ova knjiga ne postoji.",
     loadFailed: "Knjiga trenutno ne može da se učita. Osveži stranicu.",
   },
@@ -152,6 +173,16 @@ export const copy = {
     newBook: "Nova knjiga",
     empty: "Još nema knjiga. Kad budeš spreman, počni jednu.",
     loadFailed: "Knjige trenutno ne mogu da se učitaju. Osveži stranicu.",
+    bookMenu: (title: string) => `Opcije: ${title}`,
+    delete: "Obriši",
+    cancel: "Odustani",
+    // Ista množina kao kod delova: 1, 21, 31… reč; ostalo reči (11 je izuzetak).
+    confirmDelete: (title: string, words: number) =>
+      `Obrisati knjigu ‚${title}’ (${new Intl.NumberFormat("sr-Latn").format(words)} ${
+        words % 10 === 1 && words % 100 !== 11 ? "reč" : "reči"
+      })?`,
+    bookDeleted: "Knjiga obrisana",
+    undo: "Poništi",
   },
   structure: {
     panelLabel: "Struktura knjige",

@@ -10,6 +10,7 @@ import { THEME_PAPER, THEMES } from "@/lib/themes";
 import { BLOCK_STYLES, blockStyleAt, setBlockStyle, type BlockStyle } from "./blockStyle";
 import { TEXT_ALIGNMENTS, type TextAlignment } from "./contentSchema";
 import { EditorMenu, type EditorMenuProps } from "./EditorMenu";
+import { tidyTr } from "./tidyText";
 import { ToolbarMenu } from "./ToolbarMenu";
 
 type MenuName = "style" | "align" | "theme" | "more";
@@ -221,6 +222,24 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
             </button>
           ))}
         </ToolbarMenu>
+        <button
+          type="button"
+          title={t.tidyHint}
+          aria-label={t.tidy}
+          // Like alignment: not in a footnote.
+          disabled={noBlockStyle}
+          className="ui-button toolbar-button"
+          // The selection stays in the text — it is what gets tidied.
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            if (!editor) return;
+            const tr = tidyTr(editor.state);
+            if (tr) editor.view.dispatch(tr);
+            editor.commands.focus();
+          }}
+        >
+          <span aria-hidden="true">¶</span>
+        </button>
       </div>
 
       <p

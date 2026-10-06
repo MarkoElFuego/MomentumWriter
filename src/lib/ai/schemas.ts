@@ -14,12 +14,14 @@ export const SparkRequestSchema = z.object({
   avoid: z.array(z.string().max(300)).max(5).optional(),
   /** Stuck: how the book ends, from Srce knjige — never sent with ghost. */
   ending: z.string().trim().max(1000).optional(),
+  /** Stuck: what Tiron remembers about the book (compactMemory) — never sent with ghost. */
+  memory: z.string().trim().max(1500).optional(),
 });
 export type SparkRequest = z.infer<typeof SparkRequestSchema>;
 
 // AGENTS.md §7: overlong items are clipped, not rejected — a slightly long
 // but good question is still worth showing.
-function clip(text: string, max: number): string {
+export function clip(text: string, max: number): string {
   if (text.length <= max) return text;
   const cut = text.slice(0, max - 1);
   const lastSpace = cut.lastIndexOf(" ");

@@ -18,7 +18,8 @@ export async function openPart(partId: ID, date: string): Promise<OpenedPart | u
     const part = await db.parts.get(partId);
     if (!part || !isAlive(part)) return undefined;
     const book = await db.books.get(part.bookId);
-    if (!book) return undefined;
+    // A book waiting for "Poništi" is gone for the editor too.
+    if (!book || book.deletedAt !== undefined) return undefined;
 
     const parts = (await db.parts.where("bookId").equals(book.id).toArray()).filter(isAlive);
     const bookTotal = parts.reduce((sum, p) => sum + p.wordCount, 0);

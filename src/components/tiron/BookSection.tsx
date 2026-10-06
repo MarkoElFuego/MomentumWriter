@@ -4,19 +4,28 @@ import { useEffect, useRef, useState } from "react";
 import { BookDetailsFields, handleFieldKeys, type BookDetailsValue } from "@/components/book/BookDetailsFields";
 import { copy } from "@/lib/copy";
 import { cleanHeart } from "@/lib/db/books";
+import type { ID, StoryMemory } from "@/lib/db/schema";
 import { getOpenSections, setSectionOpen } from "@/lib/db/settings";
+import type { PartSummary, RefreshState } from "@/hooks/useStoryMemory";
+import { BookMemory } from "./BookMemory";
 
 interface BookSectionProps {
   details: BookDetailsValue;
   /** Every change is saved right away, like the chapter title. */
   onChange: (details: BookDetailsValue) => void;
+  bookId: ID;
+  memory: StoryMemory | null;
+  summaries: PartSummary[];
+  refreshState: RefreshState;
+  onRefresh: () => void;
 }
 
 /**
  * „Knjiga ›” in the right panel, collapsed until the author opens it (remembered
- * in Dexie). First subsection: Srce knjige — one faded line while it is empty.
+ * in Dexie). First subsection: Srce knjige — one faded line while it is empty;
+ * then what Tiron remembers (T2).
  */
-export function BookSection({ details, onChange }: BookSectionProps) {
+export function BookSection({ details, onChange, bookId, memory, summaries, refreshState, onRefresh }: BookSectionProps) {
   // null until the remembered state is read — drawn collapsed meanwhile.
   const [open, setOpen] = useState<boolean | null>(null);
   const [editing, setEditing] = useState(false);
@@ -113,6 +122,13 @@ export function BookSection({ details, onChange }: BookSectionProps) {
               )}
             </button>
           )}
+          <BookMemory
+            bookId={bookId}
+            memory={memory}
+            summaries={summaries}
+            refreshState={refreshState}
+            onRefresh={onRefresh}
+          />
         </div>
       )}
     </section>

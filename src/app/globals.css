@@ -305,6 +305,8 @@
 
 .part-row:hover .part-menu,
 .part-row:focus-within .part-menu,
+.book-row:hover .part-menu,
+.book-row:focus-within .part-menu,
 .part-menu:has([aria-expanded="true"]) {
   opacity: 1;
 }
@@ -479,4 +481,13 @@
   .book-chevron {
     transition: none;
   }
+}
+
+/* Šta Tiron pamti (T2): × only while the row is pointed at or focused — the list stays quiet. */
+.memory-remove {
+  opacity: 0;
+}
+.memory-row:hover .memory-remove,
+.memory-row:focus-within .memory-remove {
+  opacity: 1;
 }
