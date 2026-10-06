@@ -33,6 +33,8 @@ interface TironPanelProps {
   summaries: PartSummary[];
   refreshState: RefreshState;
   onRefresh: () => void;
+  /** Pages left near the end of the draft (T7); null → no countdown. */
+  countdown: number | null;
   /** Za kasnije (T3): every note in the book; no notes → no section. */
   laterNotes: BookLaterNote[];
   onGoToNote: (note: BookLaterNote) => void;
@@ -62,6 +64,7 @@ export function TironPanel({
   summaries,
   refreshState,
   onRefresh,
+  countdown,
   laterNotes,
   onGoToNote,
   onTickOffNote,
@@ -139,6 +142,7 @@ export function TironPanel({
         summaries={summaries}
         refreshState={refreshState}
         onRefresh={onRefresh}
+        countdown={countdown}
       />
 
       <LaterSection notes={laterNotes} onGoTo={onGoToNote} onTickOff={onTickOffNote} />

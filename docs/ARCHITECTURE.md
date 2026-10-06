@@ -104,7 +104,11 @@ db.version(12).stores({ whispers: "id, bookId" });
 // v13: opciono ResumeState.lastWin { progress, tomorrow, sessionId, createdAt } i Whisper.waiting (T6).
 //   Bez indeksa i bez upgrade-a.
 db.version(13).stores({});
+// v14: opciono Book.draftFinishedAt (T7). Bez indeksa i bez upgrade-a.
+db.version(14).stores({});
 ```
+
+Put do kraja (T7, `lib/text/draftEnd.ts`): kad je `bookPosition(ukupno, targetWords) === "kraj"` i nacrt nije završen, sekcija Knjiga ispod Srca knjige pokazuje „Još oko N stranica do kraja nacrta” (`pagesLeft`, 300 reči = stranica; ≤ 0 → „Planirana dužina je dostignuta.”) i otvorene niti iz memorije kao listu sa kvačicama (kvačica briše nit iz memorije; tada se ista lista ne ponavlja niže). `···` → „Označi kraj nacrta” → `flush` → `/draft-end?book=…&from=…` (`components/book/DraftEnd.tsx`): potvrda (Odustani u fokusu, Esc nazad), pa `finishDraft` i tih ekran — prva rečenica prvog poglavlja sa tekstom i poslednja rečenica poslednjeg (cela; bez poglavlja → svi delovi; bez fusnota), `writingDays` (dani iz `dailyStats` kad se zbir reči menjao) i `pageCount`. Posle toga traka nema „Nacrt 1 ·”, nema placeholdera „Nacrt 1 · …”, odbrojavanja ni stavke u `···`.
 
 Resume i mala pobeda (T6): kraj sesije upisuje `lastWin` (`saveLastWin`; `savePart` ga čuva kroz `...previous`) i pravi ulazni šapat unapred (`waiting`, skriven u panelu i bez tačkice). `ResumeScreen` (`hooks/useResumeTiron.ts`, Dexie `liveQuery`): ispod poslednje rečenice „Prošli put / Za danas” iz `lastWin` — tada bez poziva `resume` — ili „Otvoreno pitanje” kao rezerva; ispod toga ulazni šapat (isporučen čekajući, šapat obrasca ili napravljen pri otvaranju — pojavi se kad stigne). Posle ≥ 4 kalendarska dana dugme glasi „Samo 10 minuta?” (vodi u editor isto). Bez AI-ja Resume radi kao pre.
 

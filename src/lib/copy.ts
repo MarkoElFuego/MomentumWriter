@@ -82,6 +82,7 @@ export const copy = {
       quiet: "Šapće samo na ulasku i na kraju sesije",
       off: "Ne šapće (pamćenje knjige i „Zapeo sam” rade)",
     },
+    finishDraft: "Označi kraj nacrta",
     allBooks: "Sve knjige",
   },
   tiron: {
@@ -182,6 +183,10 @@ export const copy = {
     refreshUnchanged: "Ništa novo od poslednjeg čitanja.",
     refreshEmpty: "U ovom poglavlju još nema teksta.",
     refreshFailed: "Tiron sada ne može da pročita poglavlje. Pokušaj malo kasnije.",
+    // Put do kraja (T7): blizu planirane dužine, ispod Srca knjige.
+    draftCountdown: (pages: number) =>
+      pages <= 0 ? "Planirana dužina je dostignuta." : `Još oko ${count(pages, "stranica", "stranice", "stranica")} do kraja nacrta`,
+    closeThread: (text: string) => `Zatvorena nit: ${text}`,
     notFound: "Ova knjiga ne postoji.",
     loadFailed: "Knjiga trenutno ne može da se učita. Osveži stranicu.",
   },
@@ -193,6 +198,21 @@ export const copy = {
     sectionCount: (n: number) => `Za kasnije (${n})`,
     goTo: (text: string) => `Idi na mesto: „${text}”`,
     tickOff: (note: string) => `Urađeno: ${note}`,
+  },
+  // Kraj nacrta (T7): tih ekran, bez konfeta.
+  draftEnd: {
+    confirm: "Označiti kraj nacrta?",
+    confirmHint: "Knjiga posle toga više nije „Nacrt 1”. Tekst se ne menja.",
+    mark: "Označi",
+    cancel: "Odustani",
+    title: "Kraj nacrta.",
+    first: "Prva rečenica:",
+    last: "Poslednja:",
+    stats: (days: number, pages: number) =>
+      `${count(days, "dan", "dana", "dana")} pisanja · ${count(pages, "stranica", "stranice", "stranica")}`,
+    back: "Nazad u knjigu",
+    notFound: "Ova knjiga ne postoji.",
+    loadFailed: "Knjiga trenutno ne može da se učita. Osveži stranicu.",
   },
   library: {
     title: "Tvoje knjige",

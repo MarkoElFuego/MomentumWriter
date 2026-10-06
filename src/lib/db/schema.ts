@@ -47,6 +47,8 @@ export interface Book {
   bestLines?: BestLine[];
   /** Set while the deletion can still be undone; the book and all its records go after UNDO_DELETE_MS. */
   deletedAt?: number;
+  /** „Označi kraj nacrta” (T7): from now on the book is no longer "Nacrt 1". */
+  draftFinishedAt?: number;
 }
 
 export interface BestLine {
@@ -286,6 +288,8 @@ export class MomentumDB extends Dexie {
     this.version(12).stores({ whispers: "id, bookId" });
     // v13: optional ResumeState.lastWin and Whisper.waiting (T6). No index, nothing to copy.
     this.version(13).stores({});
+    // v14: optional Book.draftFinishedAt (T7). No index, nothing to copy.
+    this.version(14).stores({});
   }
 }
 

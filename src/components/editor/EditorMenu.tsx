@@ -18,6 +18,8 @@ export interface EditorMenuProps {
   /** Tiron's whispers: present / quiet / off (T5). */
   tironMode: TironMode;
   onTironMode: (mode: TironMode) => void;
+  /** „Označi kraj nacrta” (T7); undefined once the draft is finished — no item then. */
+  onFinishDraft?: () => void;
 }
 
 /** ··· — the settings that don't have their own icon in the toolbar. */
@@ -32,6 +34,7 @@ export function EditorMenu({
   onToggleHyphens,
   tironMode,
   onTironMode,
+  onFinishDraft,
 }: EditorMenuProps) {
   const item = "ui-button block w-full whitespace-nowrap px-3 py-2 text-left";
   return (
@@ -67,6 +70,11 @@ export function EditorMenu({
           </button>
         ))}
       </div>
+      {onFinishDraft && (
+        <button type="button" role="menuitem" className={`${item} border-t border-muted/20`} onClick={onFinishDraft}>
+          {copy.menu.finishDraft}
+        </button>
+      )}
       <Link href="/" role="menuitem" className="ui-button block border-t border-muted/20 px-3 py-2">
         {copy.menu.allBooks}
       </Link>

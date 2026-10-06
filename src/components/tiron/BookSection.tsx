@@ -5,6 +5,7 @@ import { BookDetailsFields, handleFieldKeys, type BookDetailsValue } from "@/com
 import { copy } from "@/lib/copy";
 import { cleanHeart } from "@/lib/db/books";
 import type { ID, StoryMemory } from "@/lib/db/schema";
+import { removeMemoryItem } from "@/lib/db/memory";
 import { getOpenSections, setSectionOpen } from "@/lib/db/settings";
 import type { PartSummary, RefreshState } from "@/hooks/useStoryMemory";
 import { BookMemory } from "./BookMemory";
@@ -18,6 +19,8 @@ interface BookSectionProps {
   summaries: PartSummary[];
   refreshState: RefreshState;
   onRefresh: () => void;
+  /** Pages left near the end of the draft (T7); null → no countdown. */
+  countdown: number | null;
 }
 
 /**
@@ -25,7 +28,16 @@ interface BookSectionProps {
  * in Dexie). First subsection: Srce knjige — one faded line while it is empty;
  * then what Tiron remembers (T2).
  */
-export function BookSection({ details, onChange, bookId, memory, summaries, refreshState, onRefresh }: BookSectionProps) {
+export function BookSection({
+  details,
+  onChange,
+  bookId,
+  memory,
+  summaries,
+  refreshState,
+  onRefresh,
+  countdown,
+}: BookSectionProps) {
   // null until the remembered state is read — drawn collapsed meanwhile.
   const [open, setOpen] = useState<boolean | null>(null);
   const [editing, setEditing] = useState(false);
@@ -122,12 +134,41 @@ export function BookSection({ details, onChange, bookId, memory, summaries, refr
               )}
             </button>
           )}
+          {countdown !== null && (
+            <div className="mt-4">
+              <p className="text-xs text-muted">{copy.book.draftCountdown(countdown)}</p>
+              {(memory?.openThreads.length ?? 0) > 0 && (
+                <>
+                  <h3 className="mt-3 text-xs text-muted">{copy.book.memoryLists.openThreads}</h3>
+                  <ul className="mt-1 space-y-1">
+                    {memory!.openThreads.map((thread) => (
+                      <li key={thread.id} className="flex items-start gap-2">
+                        <input
+                          type="checkbox"
+                          aria-label={copy.book.closeThread(thread.text)}
+                          className="mt-1 shrink-0"
+                          checked={false}
+                          onChange={() =>
+                            removeMemoryItem(bookId, "openThreads", thread.id).catch((error) =>
+                              console.error("Failed to close the thread", error),
+                            )
+                          }
+                        />
+                        <span className="text-ink">{thread.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
           <BookMemory
             bookId={bookId}
             memory={memory}
             summaries={summaries}
             refreshState={refreshState}
             onRefresh={onRefresh}
+            hideThreads={countdown !== null}
           />
         </div>
       )}

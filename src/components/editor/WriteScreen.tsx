@@ -46,6 +46,8 @@ import { chapterLanguageScore } from "@/lib/text/languageScore";
 import type { ID, Part } from "@/lib/db/schema";
 import { openPart, type OpenedPart } from "@/lib/db/session";
 import { getSignals } from "@/lib/db/sessions";
+import { bookPosition } from "@/lib/process/signals";
+import { pagesLeft } from "@/lib/text/draftEnd";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
 import { lastSentence } from "@/lib/text/lastSentence";
@@ -546,6 +548,13 @@ export function WriteScreen({ partId }: { partId: ID }) {
 
   const { data } = state;
   const wordsToday = wordsDelta(data.startWordTotal, data.otherPartsTotal + wordCount);
+  // T7: near the planned length, pages left (the whole book, live) — never after the draft is finished.
+  const draftFinished = !!data.book.draftFinishedAt;
+  const bookTotal = data.otherPartsTotal + wordCount;
+  const countdown =
+    !draftFinished && bookDetails.targetWords && bookPosition(bookTotal, bookDetails.targetWords) === "kraj"
+      ? pagesLeft(bookTotal, bookDetails.targetWords)
+      : null;
 
   return (
     <div className="flex h-dvh">
@@ -569,8 +578,8 @@ export function WriteScreen({ partId }: { partId: ID }) {
           ref={toolbarRef}
           editor={editor}
           saveStatus={status}
-          // Until T7 marks the end of the first draft, every book is "Nacrt 1".
-          draft
+          // Until "Označi kraj nacrta" (T7), every book is "Nacrt 1".
+          draft={!draftFinished}
           structureOpen={panel.open}
           onToggleStructure={togglePanel}
           tironOpen={tironOpen}
@@ -587,6 +596,13 @@ export function WriteScreen({ partId }: { partId: ID }) {
             onToggleHyphens: toggleHyphens,
             tironMode,
             onTironMode: changeTironMode,
+            onFinishDraft: draftFinished
+              ? undefined
+              : () => {
+                  void flush().then(() =>
+                    router.push(`/draft-end?book=${encodeURIComponent(data.book.id)}&from=${encodeURIComponent(partId)}`),
+                  );
+                },
           }}
           faded={toolbarFaded}
           onMenuOpenChange={setMenuOpen}
@@ -612,7 +628,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
               initialContent={data.part.content}
               language={data.book.language}
               // The first chapter of a book that has no words yet.
-              draftHint={data.chapterNumber === 1 && data.otherPartsTotal === 0 && data.part.wordCount === 0}
+              draftHint={!draftFinished && data.chapterNumber === 1 && data.otherPartsTotal === 0 && data.part.wordCount === 0}
               onChange={handleChange}
               onLaterNote={openLaterNote}
               onExitTop={() => {
@@ -662,6 +678,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
           summaries={storyMemory.summaries}
           refreshState={storyMemory.refreshState}
           onRefresh={() => void storyMemory.refresh()}
+          countdown={countdown}
           laterNotes={laterNotes.notes}
           onGoToNote={(note) => void laterNotes.goTo(note)}
           onTickOffNote={laterNotes.tickOff}

@@ -13,6 +13,8 @@ interface BookMemoryProps {
   summaries: PartSummary[];
   refreshState: RefreshState;
   onRefresh: () => void;
+  /** Near the end (T7) the open threads are a checklist under the countdown — not listed twice. */
+  hideThreads?: boolean;
 }
 
 const REFRESH_NOTES: Partial<Record<RefreshState, string>> = {
@@ -25,11 +27,11 @@ const REFRESH_NOTES: Partial<Record<RefreshState, string>> = {
 const logError = (error: unknown) => console.error("Failed to save the story memory", error);
 
 /** Šta Tiron pamti: Likovi, Mesta, Otvorene niti, sažeci poglavlja and „Osveži”. Changes save at once. */
-export function BookMemory({ bookId, memory, summaries, refreshState, onRefresh }: BookMemoryProps) {
+export function BookMemory({ bookId, memory, summaries, refreshState, onRefresh, hideThreads = false }: BookMemoryProps) {
   const note = REFRESH_NOTES[refreshState];
   return (
     <>
-      {MEMORY_LISTS.map((list) => (
+      {MEMORY_LISTS.filter((list) => !(hideThreads && list === "openThreads")).map((list) => (
         <MemoryListView key={list} bookId={bookId} list={list} items={memory?.[list] ?? []} />
       ))}
 

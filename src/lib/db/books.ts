@@ -109,3 +109,12 @@ export async function bookWordTotal(bookId: ID): Promise<number> {
   });
   return total;
 }
+
+/** The end of the first draft (T7). Marking it again keeps the first date. */
+export async function finishDraft(id: ID, now = Date.now()): Promise<void> {
+  await db.transaction("rw", db.books, async () => {
+    const book = await db.books.get(id);
+    if (!book || book.draftFinishedAt) return;
+    await db.books.update(id, { draftFinishedAt: now, updatedAt: now });
+  });
+}

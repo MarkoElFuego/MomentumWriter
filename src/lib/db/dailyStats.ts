@@ -26,3 +26,8 @@ export async function ensureDailyStat(
     return stat;
   });
 }
+
+/** Every day the book was opened — for "dana pisanja" on the end-of-draft screen (T7). */
+export function listDailyStats(bookId: ID): Promise<DailyStat[]> {
+  return db.dailyStats.where("bookId").equals(bookId).toArray();
+}
