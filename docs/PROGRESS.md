@@ -7,6 +7,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
 **Sledeće:** ZADATAK_Tiron je završen (T0–T7). Sledi Faza 5 — Polish; redosled stavki određuje autor. Pre koda: plan i „ok” od autora.
+- **Za sledeći put (zapisano 2026-10-06, kraj dana):** sve je commitovano do `94caeda` (T7). (1) Autor bira redosled Faze 5: ton u `copy.ts` · tipografija i prazna stanja · izvoz u Markdown · provera prečica po browserima · `/review` bez ❌. (2) Pri prvom otvaranju knjige posle pauze proveriti pun T6 slučaj: Resume sa „Prošli put / Za danas” i unapred spremnim šapatom (bez poziva `resume` u terminalu); ako se ne pojavi — pogledati terminal (`[tiron] moment=sessionEnd` / `entry`). (3) Probna knjiga iz T7 ima ručno smanjen `targetWords` i označen kraj nacrta — po želji vratiti dužinu u sekciji Knjiga.
 - Stanje 2026-10-06: T7 gotov, autor ručno proverio („radi”). ZADATAK_Tiron završen.
 - Stanje 2026-10-06: T6 gotov; autor video Resume u rezervnom slučaju (bez male pobede: „Otvoreno pitanje” + ulazni šapat napravljen pri otvaranju). Pun slučaj („Prošli put / Za danas”) pokrivaju testovi, autor ga vidi posle prave pauze.
 - Stanje 2026-10-06: T5 gotov, autor proverio: šapat posle poglavlja (prisutan) i bez šapata u režimu „tih” (memorija radi). Ulazak i kraj sesije pokrivaju testovi.
