@@ -1,7 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildRequestParams } from "./requestParams";
 import type { Completer } from "./spark";
-import { buildTironMessage, parseWhisperReply, runTiron, TironRequestSchema, whisperProblem, type TironRequest } from "./tiron";
+import {
+  buildTironMessage,
+  parseWinReply,
+  parseWhisperReply,
+  runTiron,
+  TironRequestSchema,
+  whisperProblem,
+  winProblem,
+  type TironRequest,
+} from "./tiron";
 
 const reply = (change: Record<string, unknown> = {}) => JSON.stringify({ whisper: "Mara još čuva kofer — šta će Petar reći kad ga vidi?", kind: "story", ...change });
 const bestLines = ["Kofer je ostao kod nje, zaključan, kao da čeka nekoga drugog."];
@@ -119,10 +128,10 @@ describe("tiron — one more try", () => {
   it("asks again once and passes the moment along", async () => {
     const replies = [reply({ whisper: "Ovo je dosadno." }), reply()];
     const complete = vi.fn<Completer>(async () => replies.shift() ?? "");
-    const result = await runTiron({ mode: "tiron", moment: "sessionEnd", bookTitle: "Kiša" }, complete, new AbortController().signal);
+    const result = await runTiron({ mode: "tiron", moment: "chapterEnd", bookTitle: "Kiša" }, complete, new AbortController().signal);
     expect(result.ok).toBe(true);
     expect(complete).toHaveBeenCalledTimes(2);
-    expect(complete.mock.calls[0]![0]).toMatchObject({ mode: "tiron", moment: "sessionEnd" });
+    expect(complete.mock.calls[0]![0]).toMatchObject({ mode: "tiron", moment: "chapterEnd" });
     expect(complete.mock.calls[0]![0].system.startsWith("Ti si Tiron")).toBe(true);
   });
 
@@ -132,5 +141,36 @@ describe("tiron — one more try", () => {
       ok: false,
       error: "unavailable",
     });
+  });
+});
+
+describe("tiron — small win at the end of a session (T6)", () => {
+  const win = (change: Record<string, unknown> = {}) =>
+    JSON.stringify({ progress: "Petar je ušao u kuću i našao kofer.", tomorrow: "Šta je u koferu?", ...change });
+
+  it("keeps what moved in the story and one question for today", () => {
+    expect(parseWinReply(win())).toEqual({
+      ok: true,
+      data: { progress: "Petar je ušao u kuću i našao kofer.", tomorrow: "Šta je u koferu?" },
+    });
+  });
+
+  it("rejects a question without „?”, two sentences, a verdict, dialogue and length", () => {
+    const ok = { progress: "Petar je našao kofer.", tomorrow: "Šta je u koferu?" };
+    expect(winProblem({ ...ok, tomorrow: "Otvori kofer." })).toBe("win-not-question");
+    expect(winProblem({ ...ok, progress: "Petar je stigao. Našao je kofer." })).toBe("win-sentences");
+    expect(winProblem({ ...ok, progress: "Scena je bila dosadna." })).toBe("judgment");
+    expect(winProblem({ ...ok, progress: "— Stigao sam, rekao je Petar." })).toBe("dialogue");
+    expect(winProblem({ ...ok, tomorrow: `${"a".repeat(160)}?` })).toBe("win-too-long");
+    expect(winProblem(ok)).toBeNull();
+  });
+
+  it("the end of a session asks for a small win, once more if the first is bad", async () => {
+    const replies = [win({ tomorrow: "Otvori kofer." }), win()];
+    const complete = vi.fn<Completer>(async () => replies.shift() ?? "");
+    const result = await runTiron({ mode: "tiron", moment: "sessionEnd", bookTitle: "Kiša" }, complete, new AbortController().signal);
+    expect(result).toEqual({ ok: true, data: { progress: "Petar je ušao u kuću i našao kofer.", tomorrow: "Šta je u koferu?" } });
+    expect(complete).toHaveBeenCalledTimes(2);
+    expect(complete.mock.calls[0]![0]).toMatchObject({ moment: "sessionEnd" });
   });
 });

@@ -8,6 +8,25 @@ export async function listWhispers(bookId: ID): Promise<Whisper[]> {
 
 export type NewWhisper = Omit<Whisper, "id" | "dismissed" | "seen">;
 
+/** The entry whisper made ahead at the end of the last session, if any (newest). */
+export async function waitingEntry(bookId: ID): Promise<Whisper | undefined> {
+  return (await listWhispers(bookId)).find((whisper) => whisper.waiting);
+}
+
+/** Resume shows it: from now on an ordinary whisper, already seen, dated now. */
+export async function deliverWhisper(id: ID, now: number): Promise<void> {
+  await db.whispers.update(id, { waiting: false, seen: true, createdAt: now });
+}
+
+/** A waiting entry whisper that won't be shown (a pattern took its place, or a newer one was made). */
+export async function dropWaiting(bookId: ID): Promise<void> {
+  await db.whispers
+    .where("bookId")
+    .equals(bookId)
+    .filter((whisper) => !!whisper.waiting)
+    .delete();
+}
+
 export async function addWhisper(whisper: NewWhisper): Promise<Whisper> {
   const saved: Whisper = { ...whisper, id: newId(), dismissed: false, seen: false };
   await db.whispers.add(saved);

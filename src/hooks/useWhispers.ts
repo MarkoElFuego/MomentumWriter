@@ -33,7 +33,8 @@ export function useWhispers(bookId: ID | null): WhisperList {
       return { whispers, parts };
     }).subscribe({
       next: ({ whispers, parts }) => {
-        const shown = whispers.map((whisper): ShownWhisper => {
+        // A waiting entry whisper belongs to the next Resume, not to this panel.
+        const shown = whispers.filter((whisper) => !whisper.waiting).map((whisper): ShownWhisper => {
           const part = whisper.quotePartId ? parts.find((p) => p.id === whisper.quotePartId) : undefined;
           return part ? { ...whisper, quoteLabel: partLabel(part, chapterNumber(parts, part.id)) } : whisper;
         });

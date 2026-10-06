@@ -7,8 +7,8 @@ import { copy } from "@/lib/copy";
 /** The history shows this many before „Prikaži sve”. */
 const HISTORY_SHOWN = 10;
 
-/** The newest whisper, large, with its quote and ×. */
-export function TopWhisper({ whisper, onDismiss }: { whisper: ShownWhisper; onDismiss: () => void }) {
+/** The newest whisper, large, with its quote and × (no × on Resume). */
+export function TopWhisper({ whisper, onDismiss }: { whisper: ShownWhisper; onDismiss?: () => void }) {
   return (
     <div className="mb-4 flex items-start gap-2">
       <div className="min-w-0 flex-1">
@@ -22,9 +22,11 @@ export function TopWhisper({ whisper, onDismiss }: { whisper: ShownWhisper; onDi
           </figure>
         )}
       </div>
-      <button type="button" aria-label={copy.tiron.dismiss} title={copy.tiron.dismiss} className="ui-button px-1 text-muted" onClick={onDismiss}>
-        ×
-      </button>
+      {onDismiss && (
+        <button type="button" aria-label={copy.tiron.dismiss} title={copy.tiron.dismiss} className="ui-button px-1 text-muted" onClick={onDismiss}>
+          ×
+        </button>
+      )}
     </div>
   );
 }

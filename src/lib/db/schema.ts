@@ -168,6 +168,8 @@ export interface Whisper {
   dismissed: boolean;
   /** The author has opened the panel since it came — no dot on T. */
   seen: boolean;
+  /** An entry whisper made ahead, at the end of the last session (T6): hidden until Resume shows it. */
+  waiting?: boolean;
 }
 
 export interface DailyStat {
@@ -185,6 +187,15 @@ export interface ResumeState {
   lastWrittenAt: number;
   openQuestion?: string;
   openQuestionFor?: string;
+  /** Mala pobeda (T6): what moved in the story last session and one question for today. */
+  lastWin?: LastWin;
+}
+
+export interface LastWin {
+  progress: string;
+  tomorrow: string;
+  sessionId: ID;
+  createdAt: number;
 }
 
 /** How the writing screen looks — one record, key "appearance". */
@@ -273,6 +284,8 @@ export class MomentumDB extends Dexie {
     this.version(11).stores({ sessions: "id, bookId" });
     // v12: whispers (Tiron T5). New table only.
     this.version(12).stores({ whispers: "id, bookId" });
+    // v13: optional ResumeState.lastWin and Whisper.waiting (T6). No index, nothing to copy.
+    this.version(13).stores({});
   }
 }
 

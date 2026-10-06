@@ -7,7 +7,17 @@ import { compactMemory, getMemory } from "@/lib/db/memory";
 import { chapterNumber, getPart, listParts, partLabel } from "@/lib/db/parts";
 import type { ID, Part, Session, WhisperMoment } from "@/lib/db/schema";
 import { getSignals, listSessions } from "@/lib/db/sessions";
-import { addWhisper, chapterEndsInSession, listWhispers, patternToday, sessionEndSaid } from "@/lib/db/whispers";
+import { saveLastWin } from "@/lib/db/resume";
+import {
+  addWhisper,
+  chapterEndsInSession,
+  deliverWhisper,
+  dropWaiting,
+  listWhispers,
+  patternToday,
+  sessionEndSaid,
+  waitingEntry,
+} from "@/lib/db/whispers";
 import { pickPattern } from "@/lib/process/patterns";
 import { isSessionOver } from "@/lib/process/signals";
 import { momentAllowed, readTironMode } from "@/lib/tironMode";
@@ -25,8 +35,11 @@ const MAX_SUMMARIES = 30;
 export type WhisperOutcome = "said" | "skipped" | "failed";
 
 export type WhisperTarget =
-  /** Entering the book (Resume). */
-  | { moment: "entry"; bookId: ID }
+  /**
+   * Entering the book (Resume). `ahead`: made at the end of the last session and
+   * kept waiting for the next Resume (T6) — no pattern then, those belong to the moment of entry.
+   */
+  | { moment: "entry"; bookId: ID; ahead?: boolean }
   /** Left a part after Tiron read it (T2). */
   | { moment: "chapterEnd"; partId: ID }
   /** The session is over (or was, when the tab closed). */
@@ -37,7 +50,8 @@ export type WhisperTarget =
 const inFlight = new Map<string, Promise<WhisperOutcome>>();
 
 export function requestWhisper(target: WhisperTarget, now = Date.now()): Promise<WhisperOutcome> {
-  const key = `${target.moment}:${"bookId" in target ? target.bookId : "partId" in target ? target.partId : target.session.id}`;
+  const subject = "bookId" in target ? target.bookId : "partId" in target ? target.partId : target.session.id;
+  const key = `${target.moment}${"ahead" in target && target.ahead ? ":ahead" : ""}:${subject}`;
   const pending = inFlight.get(key);
   if (pending) return pending;
   const run = whisper(target, now)
@@ -87,15 +101,25 @@ async function whisper(target: WhisperTarget, now: number): Promise<WhisperOutco
   if (!partId) return "skipped";
 
   let moment: WhisperMoment = target.moment;
+  const ahead = target.moment === "entry" && !!target.ahead;
   const signals = await getSignals(bookId, partId, now);
   let pattern: ReturnType<typeof pickPattern> = null;
-  if (moment === "entry") {
-    if (whispers.some((w) => (w.moment === "entry" || w.moment === "pattern") && now - w.createdAt < ENTRY_COOLDOWN_MS)) {
+  if (target.moment === "entry" && !ahead) {
+    const shown = whispers.filter((w) => !w.waiting);
+    if (shown.some((w) => (w.moment === "entry" || w.moment === "pattern") && now - w.createdAt < ENTRY_COOLDOWN_MS)) {
       return "skipped";
     }
     // A pattern takes the place of the greeting — at most one a day.
     if (signals && !(await patternToday(bookId, now))) pattern = pickPattern(signals);
-    if (pattern) moment = "pattern";
+    const waiting = await waitingEntry(bookId);
+    if (pattern) {
+      moment = "pattern";
+      await dropWaiting(bookId);
+    } else if (waiting) {
+      // Made at the end of the last session: shown at once, no request.
+      await deliverWhisper(waiting.id, now);
+      return "said";
+    }
   }
 
   const label = (part: Part) => partLabel(part, chapterNumber(parts, part.id));
@@ -140,7 +164,22 @@ async function whisper(target: WhisperTarget, now: number): Promise<WhisperOutco
     console.warn(`[tiron] no whisper (${result.status})`);
     return "failed";
   }
-  const quoted = result.data.quote ? bestLines.find((line) => line.text === result.data.quote) : undefined;
+
+  // The end of a session is a small win (T6): for Resume, and as a whisper in the panel.
+  if ("progress" in result.data) {
+    if (!session) return "skipped";
+    const { progress, tomorrow } = result.data;
+    await saveLastWin(bookId, { progress, tomorrow, sessionId: session.id, createdAt: now });
+    await addWhisper({ bookId, moment, kind: "win", text: `${progress} ${tomorrow}`, sessionId: session.id, createdAt: now });
+    // The greeting for next time, made now so Resume doesn't wait for it.
+    await requestWhisper({ moment: "entry", bookId, ahead: true }, now);
+    return "said";
+  }
+
+  const { quote } = result.data;
+  const quoted = quote ? bestLines.find((line) => line.text === quote) : undefined;
+  // Only the newest greeting waits.
+  if (ahead) await dropWaiting(bookId);
   await addWhisper({
     bookId,
     moment,
@@ -148,6 +187,7 @@ async function whisper(target: WhisperTarget, now: number): Promise<WhisperOutco
     text: result.data.whisper,
     ...(quoted ? { quote: quoted.text, quotePartId: quoted.partId } : {}),
     ...(session ? { sessionId: session.id } : {}),
+    ...(ahead ? { waiting: true } : {}),
     createdAt: now,
   });
   return "said";

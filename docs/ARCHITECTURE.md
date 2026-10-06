@@ -101,7 +101,12 @@ db.version(11).stores({ sessions: "id, bookId" });
 // v12: tabela whispers (Tiron T5): { id, bookId, moment, kind, text, quote?, quotePartId?,
 //   sessionId?, createdAt, dismissed, seen }. Nova tabela, bez upgrade-a.
 db.version(12).stores({ whispers: "id, bookId" });
+// v13: opciono ResumeState.lastWin { progress, tomorrow, sessionId, createdAt } i Whisper.waiting (T6).
+//   Bez indeksa i bez upgrade-a.
+db.version(13).stores({});
 ```
+
+Resume i mala pobeda (T6): kraj sesije upisuje `lastWin` (`saveLastWin`; `savePart` ga čuva kroz `...previous`) i pravi ulazni šapat unapred (`waiting`, skriven u panelu i bez tačkice). `ResumeScreen` (`hooks/useResumeTiron.ts`, Dexie `liveQuery`): ispod poslednje rečenice „Prošli put / Za danas” iz `lastWin` — tada bez poziva `resume` — ili „Otvoreno pitanje” kao rezerva; ispod toga ulazni šapat (isporučen čekajući, šapat obrasca ili napravljen pri otvaranju — pojavi se kad stigne). Posle ≥ 4 kalendarska dana dugme glasi „Samo 10 minuta?” (vodi u editor isto). Bez AI-ja Resume radi kao pre.
 
 Šapati (T5): okidači i kontekst su u `docs/AI_PROMPTS.md` → mode `tiron`; logika u `components/tiron/whisper.ts` (`requestWhisper`, `whisperSessionEndIfDue`; jedan zahtev po trenutku u isto vreme). Okidači: `ResumeScreen` (zaostali kraj sesije, pa ulazak/obrazac), izlazak iz dela u `WriteScreen` (posle `updateStoryMemory === "updated"` → `chapterEnd`), `hooks/useSessionEnd.ts` (provera svakog minuta + `visibilitychange`). Prikaz: `hooks/useWhispers.ts` (Dexie `liveQuery`) → sekcija Tiron u panelu (`components/tiron/Whispers.tsx`): najnoviji nesklonjen šapat gore (serif, citat u kurzivu sa „— II · Kofer”, `×` = `dismissed`), dugme „Zapeo sam”, ispod „Ranije” (10, pa „Prikaži sve”). Tačkica pored `T` dok postoji neviđen šapat i panel je zatvoren; otvaranje panela ih označava viđenim (`seen`). Tačkica je u traci koja bledi dok autor kuca. Režim u `···` (`lib/tironMode.ts`, `localStorage`): prisutan / tih / isključen — isključen gasi samo šapate (memorija i „Zapeo sam” rade). `purgeDeletedBooks` briše i šapate.
 

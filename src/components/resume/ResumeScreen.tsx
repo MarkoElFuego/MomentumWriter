@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { docFromJSON, restorablePos } from "@/components/editor/contentSchema";
 import { requestWhisper, whisperSessionEndIfDue } from "@/components/tiron/whisper";
+import { TopWhisper } from "@/components/tiron/Whispers";
+import { useResumeTiron } from "@/hooks/useResumeTiron";
 import { useOpenQuestion, type OpenQuestionInput } from "@/hooks/useOpenQuestion";
 import { copy } from "@/lib/copy";
 import { firstPartId, getBook } from "@/lib/db/books";
@@ -66,7 +68,8 @@ export function ResumeScreen({ bookId }: { bookId: ID }) {
 
   const ready = state.kind === "ready" ? state.data : null;
   const questionInput = useMemo<OpenQuestionInput | null>(() => {
-    if (!ready) return null;
+    // One question on Resume: with a small win from the last session, "Za danas" is it (T6).
+    if (!ready || ready.resume.lastWin) return null;
     const { book, part, heading, resume, context } = ready;
     return {
       bookId: book.id,
@@ -80,9 +83,10 @@ export function ResumeScreen({ bookId }: { bookId: ID }) {
   }, [ready]);
   const prompt = useOpenQuestion(questionInput);
 
-  // Tiron (T5): a session left behind by a closed tab gets its closing whisper,
-  // then the greeting (or a process pattern) — both wait in the panel.
+  // Tiron (T5/T6): a session left behind by a closed tab gets its small win (and
+  // a greeting made ahead), then the greeting is shown — or a pattern, or made now.
   const readyBookId = ready?.book.id ?? null;
+  const tiron = useResumeTiron(readyBookId);
   useEffect(() => {
     if (!readyBookId) return;
     void whisperSessionEndIfDue(readyBookId).then(() => requestWhisper({ moment: "entry", bookId: readyBookId }));
@@ -120,7 +124,25 @@ export function ResumeScreen({ bookId }: { bookId: ID }) {
           <hr className="mt-8 border-muted/20" />
         </>
       )}
-      <ResumePrompt lines={prompt.lines} loading={prompt.loading} />
+      {tiron.lastWin ? (
+        <dl className="mt-10 space-y-3">
+          <div>
+            <dt className="text-sm text-muted">{copy.resume.lastTime}</dt>
+            <dd className="mt-1 font-serif text-lg">{tiron.lastWin.progress}</dd>
+          </div>
+          <div>
+            <dt className="text-sm text-muted">{copy.resume.today}</dt>
+            <dd className="mt-1 font-serif text-lg">{tiron.lastWin.tomorrow}</dd>
+          </div>
+        </dl>
+      ) : (
+        <ResumePrompt lines={prompt.lines} loading={prompt.loading} />
+      )}
+      {tiron.entry && (
+        <div aria-live="polite" className="mt-10">
+          <TopWhisper whisper={tiron.entry} />
+        </div>
+      )}
       {/* Works right away — never waits for the question. */}
       <button
         type="button"
@@ -128,7 +150,8 @@ export function ResumeScreen({ bookId }: { bookId: ID }) {
         className="ui-button mt-12 border border-muted/30 px-4 py-2"
         onClick={() => router.push(`/write/${part.id}`)}
       >
-        {copy.resume.continue}
+        {/* After four days or more: a smaller ask, the same way in. */}
+        {days >= 4 ? copy.resume.tenMinutes : copy.resume.continue}
       </button>
     </main>
   );

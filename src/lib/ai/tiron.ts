@@ -59,7 +59,19 @@ export interface WhisperResult {
   quote?: string;
 }
 
-export type TironResult = { ok: true; data: WhisperResult } | { ok: false; error: "timeout" | "unavailable" };
+/** The end of a session (T6): what moved in the story, and one question for next time. */
+export interface WinResult {
+  progress: string;
+  tomorrow: string;
+}
+export const MAX_WIN_CHARS = 160;
+
+const WinReplySchema = z.object({
+  progress: z.string().trim().min(3),
+  tomorrow: z.string().trim().min(3),
+});
+
+export type TironResult = { ok: true; data: WhisperResult | WinResult } | { ok: false; error: "timeout" | "unavailable" };
 
 function signalLines(signals: z.infer<typeof SignalsSchema>): string {
   const lines = [
@@ -112,6 +124,32 @@ export function whisperProblem(text: string): string | null {
   return null;
 }
 
+const ENDS_WITH_QUESTION = /\?[”"»’')\]]*$/u;
+const sentenceCount = (text: string) => splitSentences(text).filter((sentence) => HAS_WORD_CHAR.test(sentence)).length;
+
+/** Why a small win may not be shown, or null: one sentence each, the second a question, no verdicts. */
+export function winProblem({ progress, tomorrow }: WinResult): string | null {
+  if (progress.length > MAX_WIN_CHARS || tomorrow.length > MAX_WIN_CHARS) return "win-too-long";
+  if (DIALOGUE_START.test(progress) || DIALOGUE_START.test(tomorrow)) return "dialogue";
+  if (sentenceCount(progress) > 1 || sentenceCount(tomorrow) > 1) return "win-sentences";
+  if (!ENDS_WITH_QUESTION.test(tomorrow)) return "win-not-question";
+  if (JUDGMENT.test(progress) || JUDGMENT.test(tomorrow)) return "judgment";
+  return null;
+}
+
+export function parseWinReply(raw: string): { ok: true; data: WinResult } | { ok: false; reason: string } {
+  let json: unknown;
+  try {
+    json = JSON.parse(raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""));
+  } catch {
+    return { ok: false, reason: "invalid-json" };
+  }
+  const parsed = WinReplySchema.safeParse(json);
+  if (!parsed.success) return { ok: false, reason: "schema" };
+  const problem = winProblem(parsed.data);
+  return problem ? { ok: false, reason: problem } : { ok: true, data: parsed.data };
+}
+
 const collapse = (text: string) => text.replace(/\s+/gu, " ").trim();
 
 export function parseWhisperReply(raw: string, bestLines: string[] = []): { ok: true; data: WhisperResult } | { ok: false; reason: string } {
@@ -142,7 +180,8 @@ export async function runTiron(request: TironRequest, complete: Completer, signa
     let reason: string;
     try {
       const raw = await complete({ mode: "tiron", moment: request.moment, system, user, signal });
-      const parsed = parseWhisperReply(raw, request.bestLines);
+      // The end of a session answers with a small win instead of a whisper (T6).
+      const parsed = request.moment === "sessionEnd" ? parseWinReply(raw) : parseWhisperReply(raw, request.bestLines);
       if (parsed.ok) return parsed;
       reason = parsed.reason;
     } catch (error) {

@@ -1,6 +1,6 @@
 import { RESUME_AFTER_MS } from "@/lib/timing";
 import { entryPart, listParts } from "./parts";
-import { db, type ID, type Part, type ResumeState } from "./schema";
+import { db, type ID, type LastWin, type Part, type ResumeState } from "./schema";
 
 export function getResumeState(bookId: ID): Promise<ResumeState | undefined> {
   return db.resumeState.get(bookId);
@@ -33,4 +33,9 @@ export async function bookEntryHref(bookId: ID, now = Date.now()): Promise<strin
 /** Caches the Resume question; `key` = part + context hash, so a changed text asks again. */
 export async function saveOpenQuestion(bookId: ID, openQuestion: string, key: string): Promise<void> {
   await db.resumeState.update(bookId, { openQuestion, openQuestionFor: key });
+}
+
+/** The end of a session (T6): what moved and a question for today — shown on the next Resume. */
+export async function saveLastWin(bookId: ID, lastWin: LastWin): Promise<void> {
+  await db.resumeState.update(bookId, { lastWin });
 }

@@ -265,6 +265,11 @@ export const copy = {
       return `Ovde je priča stala pre ${days} ${days % 10 === 1 && days % 100 !== 11 ? "dan" : "dana"}:`;
     },
     openQuestion: "Otvoreno pitanje:",
+    // Mala pobeda (T6), iz kraja prethodne sesije.
+    lastTime: "Prošli put:",
+    today: "Za danas:",
+    // Posle pauze od 4+ dana — isto vodi u editor.
+    tenMinutes: "Samo 10 minuta?",
     loadingQuestion: "Tražim pitanje za danas…",
     continue: "Nastavi da pišeš",
     notFound: "Ova knjiga ne postoji.",

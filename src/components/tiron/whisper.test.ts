@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createBook, updateBook } from "@/lib/db/books";
 import { db, type Session } from "@/lib/db/schema";
-import { listWhispers } from "@/lib/db/whispers";
+import { getResumeState } from "@/lib/db/resume";
+import { addWhisper, listWhispers } from "@/lib/db/whispers";
 import type { TironRequest } from "@/lib/ai/tiron";
 import { requestWhisper, whisperSessionEndIfDue } from "./whisper";
 
@@ -12,7 +13,12 @@ const NOW = new Date(2026, 9, 6, 12, 0).getTime();
 const doc = (text: string) => ({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text }] }] });
 
 let reply: Record<string, unknown>;
-const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: reply }), { status: 200 }));
+// The end of a session answers with a small win (T6), everything else with a whisper.
+const win = { progress: "Mara je otvorila kofer.", tomorrow: "Šta je bilo unutra?" };
+const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+  const moment = (JSON.parse(init.body as string) as TironRequest).moment;
+  return new Response(JSON.stringify({ data: moment === "sessionEnd" ? win : reply }), { status: 200 });
+});
 const sent = (call = 0) => JSON.parse((fetchMock.mock.calls[call] as unknown as [string, RequestInit])[1].body as string) as TironRequest;
 const storage = new Map<string, string>();
 
@@ -34,6 +40,7 @@ afterEach(() => {
 async function bookWithText() {
   const { book, part } = await createBook("Kiša");
   await db.parts.update(part.id, { content: doc("Kiša je padala celu noć, a Mara je čuvala kofer."), wordCount: 10 });
+  await db.resumeState.put({ bookId: book.id, partId: part.id, cursorPos: 3, lastSentence: "Kiša.", lastWrittenAt: NOW - HOUR });
   return { book, part };
 }
 
@@ -140,7 +147,21 @@ describe("whispers — end of a session", () => {
     expect(sent()).not.toHaveProperty("heart");
 
     expect(await whisperSessionEndIfDue(book.id, undefined, NOW + HOUR)).toBe("skipped");
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // The small win and the greeting made ahead for next time.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("saves the small win for Resume, shows it in the panel and makes the next greeting ahead (T6)", async () => {
+    const { book, part } = await bookWithText();
+    const ended = await session(book.id, part.id);
+    expect(await whisperSessionEndIfDue(book.id, undefined, NOW)).toBe("said");
+
+    expect((await getResumeState(book.id))?.lastWin).toEqual({ ...win, sessionId: ended.id, createdAt: NOW });
+    expect(sent(1)).toMatchObject({ moment: "entry" });
+    expect(sent(1)).not.toHaveProperty("pattern");
+    const whispers = await listWhispers(book.id);
+    expect(whispers.find((w) => w.moment === "sessionEnd")).toMatchObject({ kind: "win", text: `${win.progress} ${win.tomorrow}` });
+    expect(whispers.find((w) => w.moment === "entry")).toMatchObject({ waiting: true });
   });
 
   it("a failed request leaves no whisper", async () => {
@@ -149,5 +170,39 @@ describe("whispers — end of a session", () => {
     await session(book.id, part.id);
     expect(await whisperSessionEndIfDue(book.id, undefined, NOW)).toBe("failed");
     expect(await listWhispers(book.id)).toEqual([]);
+  });
+});
+
+describe("whispers — the greeting made ahead (T6)", () => {
+  async function waiting(bookId: string) {
+    return addWhisper({ bookId, moment: "entry", kind: "story", text: "Kofer te čeka.", waiting: true, createdAt: NOW - DAY });
+  }
+
+  it("Resume shows it at once, without a request", async () => {
+    const { book } = await bookWithText();
+    const made = await waiting(book.id);
+    expect(await requestWhisper({ moment: "entry", bookId: book.id }, NOW)).toBe("said");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect((await listWhispers(book.id)).find((w) => w.id === made.id)).toMatchObject({ waiting: false, seen: true, createdAt: NOW });
+  });
+
+  it("a process pattern takes its place", async () => {
+    const { book, part } = await bookWithText();
+    await waiting(book.id);
+    await session(book.id, part.id, { startedAt: NOW - 5 * DAY, endedAt: NOW - 5 * DAY + HOUR });
+    expect(await requestWhisper({ moment: "entry", bookId: book.id }, NOW)).toBe("said");
+    expect(sent()).toMatchObject({ moment: "pattern", pattern: "longBreak" });
+    const whispers = await listWhispers(book.id);
+    expect(whispers.some((w) => w.waiting)).toBe(false);
+    expect(whispers.map((w) => w.moment)).toEqual(["pattern"]);
+  });
+
+  it("a newer greeting made ahead replaces the older one", async () => {
+    const { book } = await bookWithText();
+    await waiting(book.id);
+    expect(await requestWhisper({ moment: "entry", bookId: book.id, ahead: true }, NOW)).toBe("said");
+    const waitingNow = (await listWhispers(book.id)).filter((w) => w.waiting);
+    expect(waitingNow).toHaveLength(1);
+    expect(waitingNow[0]).toMatchObject({ text: reply.whisper, createdAt: NOW });
   });
 });

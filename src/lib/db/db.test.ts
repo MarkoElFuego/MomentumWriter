@@ -45,7 +45,7 @@ import {
   savePart,
 } from "./parts";
 import { getProofResult, proofCacheKey, purgeProofCache, saveProofResult } from "./proofCache";
-import { bookEntry, bookEntryHref, getResumeState, saveOpenQuestion } from "./resume";
+import { bookEntry, bookEntryHref, getResumeState, saveLastWin, saveOpenQuestion } from "./resume";
 import type { MemoryResult } from "@/lib/ai/memory";
 import type { Part, ResumeState } from "./schema";
 import { getAppearance, getOpenSections, saveAppearance, setSectionOpen } from "./settings";
@@ -500,7 +500,7 @@ describe("migrations", () => {
     v3.close();
     await db.open();
 
-    expect(db.verno).toBe(12);
+    expect(db.verno).toBe(13);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await db.settings.count()).toBe(0);
     expect(await getAppearance()).toEqual({ key: "appearance", focusMode: false, typewriter: false });
@@ -539,7 +539,7 @@ describe("migrations", () => {
     v4.close();
     await db.open();
 
-    expect(db.verno).toBe(12);
+    expect(db.verno).toBe(13);
     const blocks = async (id: string) => (await getPart(id))!.content.content;
     expect(await blocks("front")).toEqual([p("Mami.")]);
     expect((await getPart("front"))!.wordCount).toBe(1);
@@ -578,7 +578,7 @@ describe("migrations", () => {
     v5.close();
     await db.open();
 
-    expect(db.verno).toBe(12);
+    expect(db.verno).toBe(13);
     expect((await listParts("b1")).map((p) => p.id)).toEqual(["p1", "p2"]);
     expect((await getPart("p2"))?.content).toEqual(doc("Tekst p2."));
     expect(await bookWordTotal("b1")).toBe(4);
@@ -604,7 +604,7 @@ describe("migrations", () => {
     v6.close();
     await db.open();
 
-    expect(db.verno).toBe(12);
+    expect(db.verno).toBe(13);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect((await getPart("p1"))?.languageScore).toBeUndefined();
     expect(await db.proofCache.count()).toBe(0);
@@ -638,7 +638,7 @@ describe("migrations", () => {
     v7.close();
     await db.open();
 
-    expect(db.verno).toBe(12);
+    expect(db.verno).toBe(13);
     const book = await getBook("b1");
     expect(book).toMatchObject({ title: "Knjiga", language: "sr-Latn" });
     expect(book?.heart).toBeUndefined();
@@ -684,7 +684,7 @@ describe("migrations", () => {
     v8.close();
     await db.open();
 
-    expect(db.verno).toBe(12);
+    expect(db.verno).toBe(13);
     const book = await getBook("b1");
     expect(book).toMatchObject({ title: "Knjiga", heart: { about: "O kiši." }, genre: "misterija" });
     expect(book?.bestLines).toBeUndefined();
@@ -713,7 +713,7 @@ describe("migrations", () => {
     v9.close();
     await db.open();
 
-    expect(db.verno).toBe(12);
+    expect(db.verno).toBe(13);
     expect((await listBooks()).map((book) => book.title)).toEqual(["Sneg", "Kiša"]);
     expect((await getBook("b1"))?.deletedAt).toBeUndefined();
   });
@@ -746,7 +746,7 @@ describe("migrations", () => {
     v10.close();
     await db.open();
 
-    expect(db.verno).toBe(12);
+    expect(db.verno).toBe(13);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await listSessions("b1")).toEqual([]);
   });
@@ -770,10 +770,38 @@ describe("migrations", () => {
     v11.close();
     await db.open();
 
-    expect(db.verno).toBe(12);
+    expect(db.verno).toBe(13);
     expect(await getBook("b1")).toMatchObject({ title: "Kiša" });
     expect(await listSessions("b1")).toHaveLength(1);
     expect(await listWhispers("b1")).toEqual([]);
+  });
+
+  it("v12 → v13: the resume point and whispers stay, no small win yet", async () => {
+    db.close();
+    await Dexie.delete("momentum");
+    const v12 = new Dexie("momentum");
+    v12.version(12).stores({
+      ...V1_STORES,
+      parts: "id, bookId",
+      chapters: null,
+      scenes: null,
+      settings: "key",
+      proofCache: "key, usedAt",
+      storyMemory: "bookId",
+      sessions: "id, bookId",
+      whispers: "id, bookId",
+    });
+    await v12.table("books").add({ id: "b1", title: "Kiša", language: "sr-Latn", createdAt: 1, updatedAt: 1 });
+    await v12.table("resumeState").put({ bookId: "b1", partId: "p1", cursorPos: 3, lastSentence: "Kiša.", lastWrittenAt: 5 });
+    await v12.table("whispers").add({ id: "w1", bookId: "b1", moment: "entry", kind: "story", text: "Mara čeka.", createdAt: 1, dismissed: false, seen: true });
+    v12.close();
+    await db.open();
+
+    expect(db.verno).toBe(13);
+    const resume = await getResumeState("b1");
+    expect(resume).toMatchObject({ partId: "p1", lastSentence: "Kiša." });
+    expect(resume?.lastWin).toBeUndefined();
+    expect((await listWhispers("b1"))[0]?.waiting).toBeUndefined();
   });
 });
 
@@ -1222,5 +1250,20 @@ describe("whispers in the database", () => {
     await deleteBook(book.id, 5_000);
     await purgeDeletedBooks(5_000 + UNDO_DELETE_MS);
     expect(await listWhispers(book.id)).toEqual([]);
+  });
+});
+
+describe("small win in the resume point", () => {
+  it("is kept by later saves, replaced by the next one", async () => {
+    const { book, part } = await createBook("Kiša");
+    await savePart(part.id, doc("Kiša je padala."), 3, "2026-10-06", { pos: 3, lastSentence: "Kiša je padala." });
+    const win = { progress: "Petar je našao kofer.", tomorrow: "Šta je u koferu?", sessionId: "s1", createdAt: 7 };
+    await saveLastWin(book.id, win);
+
+    await savePart(part.id, doc("Kiša je padala celu noć."), 5, "2026-10-06", { pos: 5, lastSentence: "Kiša je padala celu noć." });
+    expect((await getResumeState(book.id))?.lastWin).toEqual(win);
+
+    await saveLastWin(book.id, { ...win, progress: "Mara je otvorila kofer.", sessionId: "s2" });
+    expect((await getResumeState(book.id))?.lastWin?.progress).toBe("Mara je otvorila kofer.");
   });
 });

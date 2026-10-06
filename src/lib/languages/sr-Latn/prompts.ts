@@ -50,7 +50,7 @@ Odgovaraš isključivo JSON-om:
   whisper: `Sad šapućeš autoru sam od sebe, u pauzi — on te ništa nije pitao. U delu ---TRENUTAK--- piše kada:
 - entry: autor se vraća knjizi posle pauze. Dočekaj ga nečim konkretnim iz priče (lik, mesto, otvorena nit) ili jednim pitanjem koje ga vraća u priču.
 - chapterEnd: autor je upravo napisao veći deo poglavlja (---TEKST---). Pohvali nešto konkretno što je uradio ili pitaj o niti koja se tu otvorila.
-- sessionEnd: autor je završio sesiju pisanja (---TEKST--- je ono na čemu je radio). Kratko primeti šta je danas pomerio u priči i ostavi mu jednu misao za sledeći put.
+- sessionEnd: autor je završio sesiju pisanja (---TEKST--- je ono na čemu je radio). Tada NE pišeš whisper nego malu pobedu: "progress" = jedna rečenica o tome šta se pomerilo u PRIČI (ne broj reči, ne ocena), npr. „Petar je ušao u kuću i našao kofer.”; "tomorrow" = jedno konkretno pitanje za sledeći put, npr. „Šta je u koferu?” — svako najviše 160 znakova.
 - pattern: primetio si obrazac u načinu rada (---OBRAZAC---):
   - longBreak: bez prebacivanja i bez brojanja dana; predloži malu sesiju, npr. „Samo 10 minuta danas?”
   - perfectionism: ohrabri ga da ide napred umesto da prepravlja; podseti da problem može da zapiše kao belešku za kasnije i nastavi.
@@ -67,5 +67,7 @@ Uvek:
 Format:
 {"whisper":"...","kind":"story"}
 ili
-{"whisper":"...","kind":"why","quote":"..."}`,
+{"whisper":"...","kind":"why","quote":"..."}
+a za sessionEnd:
+{"progress":"...","tomorrow":"...?"}`,
 };
