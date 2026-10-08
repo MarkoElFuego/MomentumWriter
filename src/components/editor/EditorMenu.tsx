@@ -20,6 +20,10 @@ export interface EditorMenuProps {
   onTironMode: (mode: TironMode) => void;
   /** „Označi kraj nacrta” (T7); undefined once the draft is finished — no item then. */
   onFinishDraft?: () => void;
+  /** „Sačuvaj kopiju (.md)” — the whole book as Markdown (Faza 5). */
+  onExport: () => void;
+  /** „Sačuvaj kao PDF (A5)” — the book laid out for print (Faza 5). */
+  onExportPdf: () => void;
 }
 
 /** ··· — the settings that don't have their own icon in the toolbar. */
@@ -35,6 +39,8 @@ export function EditorMenu({
   tironMode,
   onTironMode,
   onFinishDraft,
+  onExport,
+  onExportPdf,
 }: EditorMenuProps) {
   const item = "ui-button block w-full whitespace-nowrap px-3 py-2 text-left";
   return (
@@ -75,6 +81,12 @@ export function EditorMenu({
           {copy.menu.finishDraft}
         </button>
       )}
+      <button type="button" role="menuitem" className={`${item} border-t border-muted/20`} onClick={onExport}>
+        {copy.menu.exportMarkdown}
+      </button>
+      <button type="button" role="menuitem" className={item} onClick={onExportPdf}>
+        {copy.menu.exportPdf}
+      </button>
       <Link href="/" role="menuitem" className="ui-button block border-t border-muted/20 px-3 py-2">
         {copy.menu.allBooks}
       </Link>
