@@ -14,7 +14,7 @@ Detalji: `docs/PRODUCT.md` (izvor istine za raspored ekrana i listu funkcija) ·
 2. **Editor je svetinja.** Raspored je tačno onaj iz `docs/PRODUCT.md` → „Raspored ekrana”: gornja traka koja bledi dok kucaš, tekst, „reči danas”, levi panel (sadržaj) i desni panel (Tiron, 4 sekcije) — oba panela podrazumevano zatvorena. Ništa više bez eksplicitnog odobrenja.
 3. **Tekst korisnika se nikad ne gubi.** Autosave (debounce ~800 ms) + save na `visibilitychange`/`beforeunload`. Svaka izmena modela podataka = nova Dexie verzija + migracija + test migracije.
 4. **Bez gamifikacije u Duolingo stilu.** Nema streak-ova, plamenčića, kažnjavanja, crvenih upozorenja.
-5. **Radi samo trenutnu fazu** iz `docs/PROGRESS.md` (planovi: `docs/ZADATAK_UI.md`, pa `docs/ZADATAK_Tiron.md`). Ne dodaj funkcije iz kasnijih faza ili verzija (email, sync, auth…) čak i ako „izgleda lako”.
+5. **Radi samo trenutnu fazu** iz `docs/PROGRESS.md` (planovi: `docs/ZADATAK_UI.md`, pa `docs/ZADATAK_Tiron.md`, pa `docs/ZADATAK_IZVOZ.md`). Ne dodaj funkcije iz kasnijih faza ili verzija (email, sync, auth…) čak i ako „izgleda lako”.
 6. **Minimalizam.** Editor je tekst, kursor i tišina. Sve je nevidljivo dok ne zatreba. Nema novih dugmadi, panela ni funkcija van trenutne faze.
 7. **Ne diraj ono što radi.** Sivi tekst (dopune), provera jezika, Resume i autosave zadržavaju postojeće ponašanje osim ako faza kaže drugačije.
 
