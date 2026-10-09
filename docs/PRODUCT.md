@@ -28,7 +28,7 @@ Svaka faza ima svoju zamku — i svoju Tironovu pomoć:
 | **Početak** | prazna strana, „ne znam odakle” | Srce knjige (o čemu je, kako se završava, zašto je pišeš) i „Nacrt 1 · ovo niko ne čita” |
 | **Perfekcionizam** | ista scena po peti put | beleška za kasnije umesto popravke; ohrabrenje da ide napred |
 | **Sredina** | izgubljenost, nestalo oduševljenje | podseti na „zašto je pišeš” i pokaži autorovu najjaču rečenicu |
-| **Blokada** | ne zna šta dalje u sceni | „Zapeo sam” — jedno pitanje o ovoj sceni |
+| **Blokada** | ne zna šta dalje u sceni | „Pomozi mi” — jedno pitanje o ovoj sceni |
 | **Pauza** | teško se vraća posle više dana | Resume: šta se prošli put pomerilo u priči, pitanje za danas, „Samo 10 minuta?” |
 | **Kraj** | otvorene niti, umor pred ciljem | koliko je još do kraja, otvorene niti kao checklist, tih ekran kraja nacrta |
 
@@ -50,7 +50,7 @@ Kad nisi siguran: **„Da li bi Tiron ovo uradio?"** (vidi dole)
 ├───────────┬───────────────────────────────────┬──────────────────┤
 │ SADRŽAJ   │          II · Kofer               │ TIRON            │
 │           │                                   │  šapat           │
-│ Posveta   │   Petar je zastao ispred vrata.   │  [ Zapeo sam ]   │
+│ Posveta   │   Petar je zastao ispred vrata.   │  [ Pomozi mi ]   │
 │ I Vrata   │   Nije se sećao da su juče bila   │ KNJIGA        ›  │
 │ II Kofer ⋮│   zaključana|                     │ ZA KASNIJE    ›  │
 │ + Novo    │                                   │ JEZIK  94        │
@@ -75,7 +75,7 @@ Uvodni delovi, poglavlja (automatski I, II, III), završni delovi. Prevlačenje 
 Naslov poglavlja na vrhu (povezan sa sadržajem), tekst, prelom scene `***`, fusnote. Ghost dopune i provera jezika.
 
 ### Desno — Tiron (četiri sekcije)
-1. **Tiron** — poslednji šapat, istorija, dugme **„Zapeo sam"**
+1. **Tiron** — poslednji šapat, istorija, dugme **„Pomozi mi"**
 2. **Knjiga** — Srce knjige, likovi, mesta, otvorene niti, sažeci poglavlja
 3. **Za kasnije** — beleške za prepravku
 4. **Jezik** — ocena jezika u jednom redu
@@ -98,7 +98,7 @@ Naslov poglavlja na vrhu (povezan sa sadržajem), tekst, prelom scene `***`, fus
 Tiron je bio Ciceronov sekretar: zapisivao, pamtio i savetovao — ali govore je pisao Ciceron.
 - **Pamti:** Srce knjige (o čemu je, kako se završava, zašto je pišeš), likove, mesta, otvorene niti, sažetke poglavlja, najjače rečenice autora
 - **Šapuće:** pri ulasku, na kraju poglavlja, kad primeti obrazac (vrtenje u krug, pad u sredini, duga pauza), na kraju sesije
-- **Zapeo sam:** jedno pitanje za trenutnu scenu, na klik
+- **Pomozi mi:** jedno pitanje za trenutnu scenu, na klik
 - **Beleška za kasnije:** `Ctrl+Shift+L` — zapiši problem umesto da ga popravljaš (`Ctrl+Shift+N` Chrome/Edge zadržavaju za incognito prozor)
 - **Kraj nacrta:** tih ekran sa prvom i poslednjom rečenicom knjige (`···` → „Označi kraj nacrta”, uz potvrdu); pre toga, blizu planirane dužine, „Još oko N stranica do kraja nacrta” i otvorene niti sa kvačicama u sekciji Knjiga
 
@@ -112,7 +112,7 @@ Tiron: kratak, topao, više pita nego tvrdi, pohvaljuje konkretno, nikad ne ocen
 ```text
 ULAZAK    Resume: "Prošli put: Petar je našao kofer. Za danas: Šta je u koferu?"
    ↓
-PISANJE   ghost dopune · Zapeo sam · beleška za kasnije
+PISANJE   ghost dopune · Pomozi mi · beleška za kasnije
    ↓
 IZLAZAK   Tiron: šta se danas pomerilo u priči
    ↓

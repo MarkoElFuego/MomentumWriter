@@ -15,7 +15,7 @@ export interface LanguagePrompts {
   proofreader: string;
   /** Tiron's voice and rules — the start of every Tiron prompt (stuck now, whispers in T5). */
   tiron: string;
-  /** „Zapeo sam”: the task after the Tiron rules. */
+  /** „Pomozi mi”: the task after the Tiron rules. */
   stuck: string;
   /** Story memory, chapter summary and strongest sentence (T2) — read in the background. */
   memory: string;

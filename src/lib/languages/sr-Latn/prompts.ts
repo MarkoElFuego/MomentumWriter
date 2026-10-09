@@ -19,7 +19,7 @@ Pravila:
 - Koristi imena, mesta i otvorene niti iz konteksta — budi konkretan za OVU knjigu.
 - Ne ponavljaj ništa iz prethodnih šapata.
 Odgovaraš isključivo JSON-om po zadatom formatu.`,
-  stuck: `Autor je zapeo i pritisnuo „Zapeo sam”. U delu ---TEKST--- je ono što je napisao pre kursora. Postavi mu JEDNO pitanje koje otvara sledeći korak u sceni koju upravo piše.
+  stuck: `Autor je zapeo i pritisnuo „Pomozi mi”. U delu ---TEKST--- je ono što je napisao pre kursora. Postavi mu JEDNO pitanje koje otvara sledeći korak u sceni koju upravo piše.
 - Postavi pitanje o OVOJ sceni, ne opšti savet o pisanju.
 - Oslanjaj se na imena likova, mesta, predmete i ono što je nerešeno u tekstu.
 - Pitanje je kratko, najviše 200 znakova. Pitanje mora da se završi upitnikom.

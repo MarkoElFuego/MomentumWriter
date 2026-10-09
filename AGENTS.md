@@ -88,7 +88,7 @@ src/
 
 ## 7. AI pravila (tehnička)
 
-- Jedan endpoint: `POST /api/spark`. Modovi: `ghost` (sivi tekst), `proofread` (provera jezika), `resume` (Resume ekran), `stuck` („Zapeo sam”, desni panel); planirani Tironovi modovi iz `docs/ZADATAK_Tiron.md`.
+- Jedan endpoint: `POST /api/spark`. Modovi: `ghost` (sivi tekst), `proofread` (provera jezika), `resume` (Resume ekran), `stuck` („Pomozi mi”, desni panel); planirani Tironovi modovi iz `docs/ZADATAK_Tiron.md`.
 - `ghost` (sivi tekst) radi po stanju kursora — usred rečenice dovršetak, posle završene rečenice početak sledeće, u praznom pasusu **nema API poziva** (ni podsetnika); koristi `AI_GHOST_CONTEXT_WORDS` (~150 reči), 1 pokušaj i timeout 6 s; zahtev se otkazuje čim autor nastavi da kuca. Pauze su u `src/lib/timing.ts`. Radi dobro — ne optimizuj bez odluke autora.
 - `proofread` (v0.2): model vraća ceo ispravljen pasus kao čist tekst, ali on se **nikad ne ubacuje** — služi samo za diff po rečima (`lib/text/proofDiff.ts`), a autor prihvata ispravke reč po reč. Guardrail protiv proze za ovaj mode ne važi; umesto njega važe pravila iz `proofDiff` (sličnost reči, razlika u broju reči). Rezultat se čuva po pasusu u Dexie (`proofCache`, ključ `PROOF_CACHE_VERSION:jezik:hash`) — nepromenjen pasus se nikad ne šalje ponovo; promeni `PROOF_CACHE_VERSION` (`lib/ai/proofread.ts`) kad menjaš prompt ili model za proveru.
 - Kontekst: poslednjih ~400 reči pre kursora (vidi `lib/text/extractContext.ts`). Ne šalji celu knjigu.

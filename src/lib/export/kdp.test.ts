@@ -53,6 +53,10 @@ describe("KDP rules", () => {
     expect(bad.filter((c) => !c.ok)).toHaveLength(3);
     expect(bad[0]?.text).toContain("najmanje 24");
     expect(kdpChecks({ pages: 800, trim: trim("6x9"), title: "K", author: "A" })[0]?.text).toContain("krem");
+    // Serbian plural: 2–4 strane, 21 strana, 12 strana.
+    expect(kdpChecks({ pages: 2, trim: trim("6x9"), title: "K", author: "A" })[0]?.text).toMatch(/^2 strane —/);
+    expect(kdpChecks({ pages: 221, trim: trim("6x9"), title: "K", author: "A" })[0]?.text).toMatch(/^221 strana —/);
+    expect(kdpChecks({ pages: 234, trim: trim("6x9"), title: "K", author: "A" })[0]?.text).toMatch(/^234 strane —/);
   });
 });
 

@@ -49,7 +49,7 @@ interface TironPanelProps {
 }
 
 /**
- * The right panel: Tiron („Zapeo sam” and its question), Knjiga (Srce knjige —
+ * The right panel: Tiron („Pomozi mi” and its question), Knjiga (Srce knjige —
  * always there, it is how a skipped start screen gets filled in), Za kasnije
  * while the book has notes (T3) and Jezik once the book has a score.
  */

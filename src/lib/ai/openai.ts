@@ -29,7 +29,7 @@ export function createCompleter(): Completer {
   // Ghost text must arrive while the writer is still paused; a few words don't
   // need deep reasoning. Configurable because not every model supports every level.
   const ghostEffort = (process.env.AI_GHOST_REASONING_EFFORT || "none") as ReasoningEffort;
-  // „Zapeo sam”: the author waits with hands on the keyboard — a little thought, quickly. Never "none" for Tiron.
+  // „Pomozi mi”: the author waits with hands on the keyboard — a little thought, quickly. Never "none" for Tiron.
   const stuckEffort = (process.env.AI_EFFORT_STUCK || "low") as ReasoningEffort;
   // Memory reads a whole chapter in the background and must get names and threads right. Never "none".
   const memoryEffort = (process.env.AI_EFFORT_MEMORY || "medium") as ReasoningEffort;

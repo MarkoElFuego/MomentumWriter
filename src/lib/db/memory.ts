@@ -5,7 +5,7 @@ import { db, MEMORY_LISTS, type ID, type MemoryItem, type MemoryList, type Part,
 
 /** New words since Tiron last read a part before leaving it triggers a new read. */
 export const MEMORY_NEW_WORDS = 500;
-/** ~300 tokens: what „Zapeo sam” (and later the whispers) get, after the fixed system prompt. */
+/** ~300 tokens: what „Pomozi mi” (and later the whispers) get, after the fixed system prompt. */
 export const COMPACT_MEMORY_CHARS = 1200;
 
 export function emptyMemory(bookId: ID): StoryMemory {

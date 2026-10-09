@@ -4,7 +4,7 @@ import { endsMidSentence } from "@/lib/text/sentences";
 import { getLanguage, type Language, type LanguagePrompts } from "@/lib/languages";
 
 // "ghost" is the automatic gray completion while typing; "resume" the Resume screen's question;
-// "stuck" Tiron's one question for the scene („Zapeo sam”).
+// "stuck" Tiron's one question for the scene („Pomozi mi”).
 export const SPARK_MODES = ["resume", "ghost", "stuck"] as const;
 export type SparkMode = (typeof SPARK_MODES)[number];
 

@@ -80,7 +80,7 @@ export const copy = {
     tironModeHints: {
       present: "Šapće na ulasku, posle poglavlja i na kraju sesije",
       quiet: "Šapće samo na ulasku i na kraju sesije",
-      off: "Ne šapće (pamćenje knjige i „Zapeo sam” rade)",
+      off: "Ne šapće (pamćenje knjige i „Pomozi mi” rade)",
     },
     finishDraft: "Označi kraj nacrta",
     // Izvoz (ZADATAK_IZVOZ P4): prozor u aplikaciji.
@@ -97,10 +97,10 @@ export const copy = {
     quoteFrom: (label: string) => `— ${label}`,
     history: "Ranije",
     showAll: (n: number) => `Prikaži sve (${n})`,
-    stuck: "Zapeo sam",
+    stuck: "Pomozi mi",
     another: "Još jedno",
     thinking: "Tiron razmišlja…",
-    unavailable: "Tiron trenutno ne može da odgovori.",
+    unavailable: "Tiron trenutno ne može da odgovori. Pokušaj malo kasnije.",
     tooShort: "Napiši prvo par rečenica, pa ću imati šta da pitam.",
     close: "Zatvori",
     // Sekcija „Jezik” — nikad „ocena pisanja” ni „kvalitet”.
@@ -184,7 +184,7 @@ export const copy = {
     reading: "Tiron čita…",
     refreshUnchanged: "Ništa novo od poslednjeg čitanja.",
     refreshEmpty: "U ovom poglavlju još nema teksta.",
-    refreshFailed: "Tiron sada ne može da pročita poglavlje. Pokušaj malo kasnije.",
+    refreshFailed: "Tiron trenutno ne može da pročita poglavlje. Pokušaj malo kasnije.",
     // Put do kraja (T7): blizu planirane dužine, ispod Srca knjige.
     draftCountdown: (pages: number) =>
       pages <= 0 ? "Planirana dužina je dostignuta." : `Još oko ${count(pages, "stranica", "stranice", "stranica")} do kraja nacrta`,
@@ -229,9 +229,9 @@ export const copy = {
       otherSizes: "Ostale KDP veličine",
       checksLabel: "Provera za KDP",
       pagesOk: (n: number, overCream: boolean) =>
-        `${n} strana — u KDP opsegu (24–828)${overCream ? "; na krem papiru najviše 776" : ""}`,
-      pagesTooFew: (n: number) => `${n} strana — KDP traži najmanje 24`,
-      pagesTooMany: (n: number) => `${n} strana — KDP prima najviše 828`,
+        `${count(n, "strana", "strane", "strana")} — u KDP opsegu (24–828)${overCream ? "; na krem papiru najviše 776" : ""}`,
+      pagesTooFew: (n: number) => `${count(n, "strana", "strane", "strana")} — KDP traži najmanje 24`,
+      pagesTooMany: (n: number) => `${count(n, "strana", "strane", "strana")} — KDP prima najviše 828`,
       trimOk: (size: string) => `Veličina ${size} je sa KDP liste`,
       blankOk: "Bez dugih nizova praznih strana",
       titleOk: "Naslov je upisan",
@@ -268,7 +268,7 @@ export const copy = {
     downloading: "Slažem…",
     close: "Zatvori",
     preparing: "Pripremam slaganje…",
-    failed: "Izvoz trenutno nije uspeo.",
+    failed: "Izvoz trenutno nije uspeo. Tekst je sačuvan — pokušaj ponovo.",
     previewLabel: "Pregled strana",
     previousPage: "Prethodna strana",
     nextPage: "Sledeća strana",

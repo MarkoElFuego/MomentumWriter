@@ -81,9 +81,9 @@ User poruka: samo tekst pasusa (najviše 400 reči). Odgovor: ceo ispravljen pas
 - Log: `[proofread] 812ms in=486 cached=0 out=231`.
 - **Keš (U7):** rezultat se čuva po pasusu u Dexie `proofCache` — ključ `v1:sr-Latn:<FNV-1a hash teksta>` (tekst se čuva i proverava zbog sudara), `corrected` (ili `null` kad je server odbio pasus), odbačene ispravke `{from, to, start}` i `usedAt`. Redosled: memorija sesije → Dexie → API. Prihvati / „Prihvati sve kvačice” odmah upisuju zapis za **novi** tekst pasusa sa istim `corrected` i pomerenim odbačenim ispravkama, pa preostale podvlake ne traže novi poziv. Zapisi neupotrebljeni 90 dana (po `usedAt`) brišu se pri pokretanju. `PROOF_CACHE_VERSION` u `lib/ai/proofread.ts` — **promeni ga kad menjaš prompt ili model za proveru.**
 
-## mode: `stuck` — „Zapeo sam” (U5, desni panel)
+## mode: `stuck` — „Pomozi mi” (U5, desni panel)
 
-Klik na „Zapeo sam” (ili „Još jedno”). Klijent (`hooks/useStuck.ts`) šalje ~400 reči glavnog teksta pre kursora (bez fusnota); ako ih ima **manje od 30 — nema poziva**, prikaže se „Napiši prvo par rečenica, pa ću imati šta da pitam.”. „Još jedno” šalje poslednjih **najviše 5** pitanja u polju `avoid`, a korisnička poruka dobija `---NE PONAVLJAJ---` sa njima. Ako je u Srcu knjige upisan kraj (`heart.ending`, polje `ending`, najviše 1000 znakova; „ne znam…” se ne šalje), korisnička poruka posle `---TEKST---` dobija `---KAKO SE KNJIGA ZAVRŠAVA---` (T1). Kraj knjige se **nikad** ne šalje uz ghost. Od T2 i kompaktna memorija knjige (`compactMemory`, ≤ 1200 znakova ≈ 300 tokena, polje `memory`, najviše 1500) ide u `---ŠTA TIRON PAMTI---` posle kraja, pre `---NE PONAVLJAJ---` — takođe nikad uz ghost.
+Klik na „Pomozi mi” (ili „Još jedno”). Klijent (`hooks/useStuck.ts`) šalje ~400 reči glavnog teksta pre kursora (bez fusnota); ako ih ima **manje od 30 — nema poziva**, prikaže se „Napiši prvo par rečenica, pa ću imati šta da pitam.”. „Još jedno” šalje poslednjih **najviše 5** pitanja u polju `avoid`, a korisnička poruka dobija `---NE PONAVLJAJ---` sa njima. Ako je u Srcu knjige upisan kraj (`heart.ending`, polje `ending`, najviše 1000 znakova; „ne znam…” se ne šalje), korisnička poruka posle `---TEKST---` dobija `---KAKO SE KNJIGA ZAVRŠAVA---` (T1). Kraj knjige se **nikad** ne šalje uz ghost. Od T2 i kompaktna memorija knjige (`compactMemory`, ≤ 1200 znakova ≈ 300 tokena, polje `memory`, najviše 1500) ide u `---ŠTA TIRON PAMTI---` posle kraja, pre `---NE PONAVLJAJ---` — takođe nikad uz ghost.
 
 Sistem prompt **nema** urednički zajednički deo — to je Tiron: `tiron` + `stuck` iz `src/lib/languages/sr-Latn/prompts.ts`. Effort `AI_EFFORT_STUCK` (podrazumevano `low`), bez temperature, 2 pokušaja, timeout 15 s. Log: `[stuck] effort=low 1840ms in=… cached=… out=…`.
 
@@ -100,7 +100,7 @@ Pravila:
 - Ne ponavljaj ništa iz prethodnih šapata.
 Odgovaraš isključivo JSON-om po zadatom formatu.
 
-Autor je zapeo i pritisnuo „Zapeo sam”. U delu ---TEKST--- je ono što je napisao pre kursora. Postavi mu JEDNO pitanje koje otvara sledeći korak u sceni koju upravo piše.
+Autor je zapeo i pritisnuo „Pomozi mi”. U delu ---TEKST--- je ono što je napisao pre kursora. Postavi mu JEDNO pitanje koje otvara sledeći korak u sceni koju upravo piše.
 - Postavi pitanje o OVOJ sceni, ne opšti savet o pisanju.
 - Oslanjaj se na imena likova, mesta, predmete i ono što je nerešeno u tekstu.
 - Pitanje je kratko, najviše 200 znakova. Pitanje mora da se završi upitnikom.
@@ -136,7 +136,7 @@ Pozadinski poziv, nikad dok autor kuca. Klijent (`components/tiron/whisper.ts`) 
 
 Obrasci (redom): `longBreak` (≥ 4 dana) · `perfectionism` (`rewriteRatio > 0.5` i ≥ 3 ponovna početka) · `middleSlump` (sredina + pad) · `nearEnd` (kraj).
 
-Svoja šema iza istog `/api/spark` (kao `memory`): `{ mode: "tiron", moment, pattern?, bookTitle, language?, heart?, memory?, summaries?, signals?, text?, bestLines?, previous? }`. Sistem prompt: `tiron` + `whisper` iz `src/lib/languages/sr-Latn/prompts.ts` (isti početak kao „Zapeo sam”). Korisnička poruka ima samo delove koji postoje: `---TRENUTAK---`, `---OBRAZAC---`, `---SRCE KNJIGE---`, `---ŠTA TIRON PAMTI---`, `---SAŽECI---`, `---SIGNALI---` (rečima, npr. „Udeo obrisanih reči u poslednje 3 sesije: 25%”), `---TEKST---`, `---NAJJAČE REČENICE---`, `---PRETHODNI ŠAPATI---`.
+Svoja šema iza istog `/api/spark` (kao `memory`): `{ mode: "tiron", moment, pattern?, bookTitle, language?, heart?, memory?, summaries?, signals?, text?, bestLines?, previous? }`. Sistem prompt: `tiron` + `whisper` iz `src/lib/languages/sr-Latn/prompts.ts` (isti početak kao „Pomozi mi”). Korisnička poruka ima samo delove koji postoje: `---TRENUTAK---`, `---OBRAZAC---`, `---SRCE KNJIGE---`, `---ŠTA TIRON PAMTI---`, `---SAŽECI---`, `---SIGNALI---` (rečima, npr. „Udeo obrisanih reči u poslednje 3 sesije: 25%”), `---TEKST---`, `---NAJJAČE REČENICE---`, `---PRETHODNI ŠAPATI---`.
 
 **Kraj sesije = mala pobeda (T6):** za `sessionEnd` izlaz je `{"progress":"…","tomorrow":"…?"}` — `progress` jedna rečenica o tome šta se pomerilo u priči (ne broj reči, ne ocena), `tomorrow` jedno konkretno pitanje sa `?`, svako ≤ 160 znakova (`winProblem`: jedna rečenica, pitanje, bez crtice/navodnika, bez reči ocene → jedan ponovni pokušaj). Čuva se u `ResumeState.lastWin` i kao šapat `kind: "win"` u panelu; odmah zatim se pravi ulazni šapat za sledeći put (`entry`, `waiting: true` — bez obrasca). Na Resume-u: čekajući šapat se prikaže bez poziva; ako se poklopi obrazac, umesto njega se pravi šapat obrasca (čekajući se briše); ako čekajućeg nema, `entry` se pravi pri otvaranju (fallback). Kad postoji `lastWin`, Resume **ne šalje** mode `resume`.
 

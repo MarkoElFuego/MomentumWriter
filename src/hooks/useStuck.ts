@@ -28,7 +28,7 @@ interface Titles {
 }
 
 /**
- * „Zapeo sam”: one question from Tiron about the scene before the cursor.
+ * „Pomozi mi”: one question from Tiron about the scene before the cursor.
  * `ending` (Srce knjige) and `memory` (what Tiron remembers) are their own
  * arguments so they never ride along with ghost's titles.
  */

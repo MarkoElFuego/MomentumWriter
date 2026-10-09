@@ -2,7 +2,7 @@ import type { WhisperMoment } from "@/lib/db/schema";
 
 // „Tiron: prisutan / tih / isključen” in ···. A per-browser preference like
 // Dopune — not manuscript content, so localStorage. Only the whispers: memory
-// (T2) and „Zapeo sam” work in every mode (author's decision 2026-10-06).
+// (T2) and „Pomozi mi” work in every mode (author's decision 2026-10-06).
 
 export const TIRON_MODES = ["present", "quiet", "off"] as const;
 export type TironMode = (typeof TIRON_MODES)[number];

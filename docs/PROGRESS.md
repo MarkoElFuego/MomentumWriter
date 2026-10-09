@@ -6,7 +6,8 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
-**Sledeće:** Faza 5 (Polish) — redosled bira autor (ostaje: copy.ts ton · provera prečica po browserima · /review bez ❌; otvoreno: fusnota u pregledu izvoza). Jedna faza = jedan razgovor = jedan commit. Pre koda: plan i „ok” od autora.
+**Sledeće:** Faza 5 (Polish) — redosled bira autor (ostaje: provera prečica po browserima · /review bez ❌; otvoreno: fusnota u pregledu izvoza). Jedna faza = jedan razgovor = jedan commit. Pre koda: plan i „ok” od autora.
+- Stanje 2026-10-09: Faza 5 „Tipografija + prazna stanja” gotova, autor proverio („super radi”).
 - Stanje 2026-10-09: P7 gotov, autor proverio u Google Docs-u („radi”).
 - Stanje 2026-10-09: P6 gotov, autor ručno proverio („super radi”).
 - Stanje 2026-10-09: P5 gotov, autor ručno proverio („radi apsolutno sve”).
@@ -154,7 +155,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - [x] P8 — E-knjiga (EPUB 3)
 
 ## Faza 5 — Polish (redosled određuje autor; čeka posle ZADATAK_IZVOZ)
-- [ ] copy.ts ton
+- [x] copy.ts ton
 - [x] Tipografija + prazna stanja
 - [x] Export Markdown
 - [x] Export PDF (A5, za štampu)
@@ -263,6 +264,8 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - 2026-10-09: **ZADATAK_IZVOZ P8.** EPUB 3 pravimo sami (`lib/export/epub/`), bez EPUB biblioteke: JS biblioteke za EPUB rade samo u Node-u ili se ne održavaju, a EPUB je ZIP od nekoliko XML fajlova — **`jszip` prešao iz dev u obične zavisnosti**. `xhtml.ts`: TipTap → XHTML (escape `& < > "`; fusnote kao `<a epub:type="noteref">` + `<aside epub:type="footnote">` na kraju dela, sa vezom nazad, numerisane kroz knjigu; prelom scene `* * *` — fontovi čitača često nemaju ✱). `buildEpub.ts`: `mimetype` prvi i nekompresovan, `container.xml`, `content.opf` (naslov, autor, `sr-Latn`, `dc:date`, `dcterms:modified` bez milisekundi, id = `urn:uuid:` id-a knjige, `cover-image` + `meta name="cover"` za starije Kindle čitače), `nav.xhtml` (sadržaj bez posvete + skriveni landmarks: naslovnica, naslovna, početak), CSS bez fontova i veličina, naslovnica, naslovna (autor ili tekst „Naslovne”), svaki deo poseban XHTML (`chapter` / `frontmatter` / `backmatter` / `dedication`). **Naslovnica:** stil iz P5 na strani 5 × 8 in (odnos 1,6 : 1), `printTemplate({ coverOnly })` → SVG iz workera → `<canvas>` 1600 × 2560 → PNG (`epub/cover.ts`; SVG je bez `foreignObject`, pa platno ostaje čisto). **DOCX za Kindle** (`kindleDocx`): isti stilovi i prave fusnote, bez zaglavlja, brojeva strana i naslovne strane rukopisa, običan prored. Prozor: kartica „E-knjiga” (EPUB preporučeno / DOCX za Kindle, stil naslovnice, ime autora), pregled = naslovnica sa napomenom da tekst slaže čitač. Fajlovi `Naslov.epub` i `Naslov-Kindle.docx`. **epubcheck 5.4.0** (w3c, Java) u `tools/` (van git-a); `pnpm check:epub` pravi probnu knjigu sa svim vrstama čvorova i proverava je, `pnpm check:epub fajl.epub` proverava izvezen fajl — 0 grešaka, 0 upozorenja. Nije u `pnpm test` (traži Javu).
 
 - 2026-10-09: **Faza 5 — Tipografija + prazna stanja** (autor izabrao). Prazna biblioteka: „Još nema knjiga. Prva počinje jednim klikom.” (stari tekst „Kad budeš spreman…” je imao rod), naslov „Tvoje knjige” se ne prikazuje dok nema knjiga (prešao iz `app/page.tsx` u `BookList`), a „Nova knjiga” je tada glavno dugme (`book-start`). Tekst: kerning i ligature fonta, `text-wrap: pretty` za pasuse (bez jedne reči u poslednjem redu — Chrome/Edge, ostali zanemaruju), `text-wrap: balance` za naslove u tekstu i naslove ekrana; ispod 640 px slovo 17 px i prored 1,65 (veličina i prored na širem ekranu ostaju 19 px / 1,75 — odluka autora). Animacija rimskog broja 180 → 150 ms; bleđenje trake (300 ms) i prevlačenje (200 ms) ostaju jer ih propisuje ZADATAK_UI. Fokus: pregledan kod — sva dugmad i linkovi imaju vidljiv fokus, uklonjeni `outline` svuda ima zamenu; polje beleške za kasnije (jedino polje u svom prozorčiću, sa kursorom) ostaje bez okvira. Prazno poglavlje i prazne sekcije panela su već bili rešeni (placeholder; prazna sekcija se ne prikazuje).
+
+- 2026-10-09: **Faza 5 — copy.ts ton** (autor izabrao). Ceo `copy.ts` pregledan: bez uzvičnika i krivice već od ranije. **Odluka autora: dugme „Zapeo sam” → „Pomozi mi”** (jedini tekst sa rodom); promenjeno u UI-ju, komentarima, sistem promptu za `stuck` („…i pritisnuo „Pomozi mi””) i u važećoj dokumentaciji (AGENTS, PRODUCT, ARCHITECTURE, AI_PROMPTS); stari nazivi u PROGRESS i ZADATAK fajlovima ostaju kao istorija. Množina u KDP proveri („2 strane”, „21 strana”, preko `count`, + test). Greške dobijaju sledeći korak: „Izvoz trenutno nije uspeo. Tekst je sačuvan — pokušaj ponovo.”, „Tiron trenutno ne može da odgovori. Pokušaj malo kasnije.”; „sada” → „trenutno” kao svuda.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->
