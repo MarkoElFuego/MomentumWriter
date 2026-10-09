@@ -6,7 +6,7 @@ import { buildBook } from "../buildBook";
 import { runTypst } from "../nodeTypst";
 import { lines, surname, typstLang } from "./common";
 import { manuscriptTemplate } from "./manuscript.typ";
-import { PRINT_SIZES, printTemplate } from "./print.typ";
+import { COVER_STYLES, PRINT_SIZES, printTemplate } from "./print.typ";
 
 const t = (value: string, ...marks: string[]): JSONContent => ({
   type: "text",
@@ -99,6 +99,39 @@ describe("printTemplate", () => {
     expect(printTemplate(exportBook, { size: "a5" })).toContain("size: 10.5pt");
     expect(printTemplate(exportBook, { size: "6x9" })).toContain("size: 11pt");
     expect(printTemplate(exportBook, { size: "a4" })).toContain("margin: (inside: 30mm");
+  });
+
+  describe("title page (P5)", () => {
+    const longTitle = buildBook(
+      { ...book, title: "Pisma iz grada koji se nikad nije probudio posle duge zime # $ @ \"tri\"" },
+      [part("chapter", "", doc(p(t("Tekst."))))],
+    );
+
+    it.each(COVER_STYLES.flatMap((cover) => PRINT_SIZES.map((size) => ({ cover, size }))))(
+      "compiles with one title page and chapters on odd pages (%o)",
+      async ({ cover, size }) => {
+        const probe = `
+#context [#metadata(query(<section>).map(m => m.location().page())) <probe>]`;
+        const run = await runTypst(printTemplate(exportBook, { size, cover, author: "Ana Petrović" }) + probe, "<probe>", "value");
+        expect(run.errors).toEqual([]);
+        const starts = run.query?.[0] as number[];
+        expect(starts[0]).toBe(1);
+        expect(starts.slice(1).every((page) => page % 2 === 1)).toBe(true);
+      },
+    );
+
+    it.each(COVER_STYLES)("fits a long title with characters Typst would read as code, without an author (%s)", async (cover) => {
+      const run = await runTypst(printTemplate(longTitle, { size: "a5", cover }) + "\n#context [#metadata(counter(page).final().first()) <probe>]", "<probe>", "value");
+      expect(run.errors).toEqual([]);
+      // Title page, its blank back, the chapter: the title page did not spill over.
+      expect(run.query?.[0]).toBe(3);
+    });
+
+    it("puts the author under the title, or the text of „Naslovna” when there is no author", () => {
+      expect(printTemplate(exportBook, { size: "a5", author: " Marko #1 " })).toContain('#title-page("classic", [Marko \\#1])');
+      expect(printTemplate(exportBook, { size: "a5", cover: "modern" })).toContain('#title-page("modern", [Ana Petrović])');
+      expect(printTemplate(longTitle, { size: "a5", cover: "minimal" })).toContain('#title-page("minimal", none)');
+    });
   });
 
   it("hyphenates Serbian Latin text with the Croatian rules", () => {

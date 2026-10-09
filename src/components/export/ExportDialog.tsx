@@ -9,7 +9,13 @@ import { pdfFileName } from "@/lib/export/fileName";
 import { buildBook } from "@/lib/export/typst/buildBook";
 import { compilePdf, previewPage, typstLoaded } from "@/lib/export/typst/client";
 import { manuscriptTemplate } from "@/lib/export/typst/templates/manuscript.typ";
-import { PRINT_SIZES, printTemplate, type PrintSize } from "@/lib/export/typst/templates/print.typ";
+import {
+  COVER_STYLES,
+  PRINT_SIZES,
+  printTemplate,
+  type CoverStyle,
+  type PrintSize,
+} from "@/lib/export/typst/templates/print.typ";
 
 // Izvoz (ZADATAK_IZVOZ P4): the author picks where the book goes, sees its first
 // pages and downloads the PDF — all in the browser, no print dialog.
@@ -36,6 +42,7 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
   const [destination, setDestination] = useState<Destination>("print");
   const [size, setSize] = useState<PrintSize>("a5");
   const [toc, setToc] = useState(false);
+  const [cover, setCover] = useState<CoverStyle>("classic");
   const [spacing, setSpacing] = useState<1.5 | 2>(1.5);
   const [author, setAuthor] = useState("");
   const [contact, setContact] = useState("");
@@ -73,9 +80,9 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
   const source = useMemo(() => {
     if (!model) return undefined;
     return destination === "print"
-      ? printTemplate(model, { size, toc })
+      ? printTemplate(model, { size, toc, cover, author })
       : manuscriptTemplate(model, { author, contact, spacing });
-  }, [model, destination, size, toc, author, contact, spacing]);
+  }, [model, destination, size, toc, cover, author, contact, spacing]);
 
   // Preview: a changed setting waits for a pause in the changes; turning a page
   // does not wait (the worker keeps the compiled book). A newer request wins.
@@ -147,7 +154,8 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
 
   function onKeyDown(event: React.KeyboardEvent<HTMLDialogElement>) {
     const target = event.target as HTMLElement;
-    const typing = target instanceof HTMLInputElement && target.type === "text";
+    // In a text field the arrows move the cursor; among the cover styles they pick one.
+    const typing = target instanceof HTMLInputElement && (target.type === "text" || target.type === "radio");
     const inArea = target instanceof HTMLTextAreaElement;
     if (event.key === "Enter" && !inArea && !(target instanceof HTMLButtonElement) && !(target instanceof HTMLSelectElement)) {
       event.preventDefault();
@@ -209,6 +217,19 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
           </div>
 
           <div className="mt-6 space-y-4 text-sm">
+            {/* One name for both: the cover and the manuscript's title page. */}
+            <div>
+              <label htmlFor="export-author" className={label}>
+                {t.author}
+              </label>
+              <input
+                id="export-author"
+                type="text"
+                value={author}
+                onChange={(e) => saveAuthor(e.target.value)}
+                className="book-field mt-0.5"
+              />
+            </div>
             {destination === "print" ? (
               <>
                 <div>
@@ -223,6 +244,27 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
                     ))}
                   </select>
                 </div>
+                <fieldset>
+                  <legend className={label}>{t.cover}</legend>
+                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                    {COVER_STYLES.map((style) => (
+                      <label key={style} className="flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="export-cover"
+                          value={style}
+                          checked={cover === style}
+                          onChange={() => {
+                            setCover(style);
+                            // Show the result right away.
+                            setPage(0);
+                          }}
+                        />
+                        {t.covers[style]}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
                 <label className="flex items-center gap-2">
                   <input type="checkbox" checked={toc} onChange={(e) => setToc(e.target.checked)} />
                   {t.toc}
@@ -230,18 +272,6 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
               </>
             ) : (
               <>
-                <div>
-                  <label htmlFor="export-author" className={label}>
-                    {t.author}
-                  </label>
-                  <input
-                    id="export-author"
-                    type="text"
-                    value={author}
-                    onChange={(e) => saveAuthor(e.target.value)}
-                    className="book-field mt-0.5"
-                  />
-                </div>
                 <div>
                   <label htmlFor="export-contact" className={label}>
                     {t.contact}

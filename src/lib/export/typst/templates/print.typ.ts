@@ -3,17 +3,24 @@ import type { ExportBook, ExportSection } from "../buildBook";
 import { escapeMarkup, typstString } from "../escape";
 import { contentArg, sectionLabel, typstLang } from "./common";
 
-// „Knjiga za štampu” (ZADATAK_IZVOZ P2): the book as it would come from a printer —
+// „Knjiga za štampu” (ZADATAK_IZVOZ P2, title page P5): the book as it would come from a printer —
 // mirrored margins, every part on a right-hand page, running heads, page numbers
 // only where a reader expects them.
 
 export const PRINT_SIZES = ["a5", "13x20", "6x9", "a4"] as const;
 export type PrintSize = (typeof PRINT_SIZES)[number];
 
+export const COVER_STYLES = ["classic", "modern", "minimal"] as const;
+export type CoverStyle = (typeof COVER_STYLES)[number];
+
 export interface PrintOptions {
   size: PrintSize;
   /** A table of contents after the front matter. */
   toc?: boolean;
+  /** The typographic title page (P5); classic when not given. */
+  cover?: CoverStyle;
+  /** Under the title; without it, the text of „Naslovna” (the older way) if there is one. */
+  author?: string;
 }
 
 interface Layout {
@@ -93,13 +100,40 @@ export function printTemplate(book: ExportBook, options: PrintOptions): string {
 #let subheading(level, body) = block(width: 100%, above: 1.4em, below: 0.7em, sticky: true,
   align(center, if level == 1 { text(size: 1.1em, body) } else { emph(body) }))
 
-#let title-page(extra) = page(numbering: none)[
+// The title page (P5): title and author only, no picture. The title's size follows
+// the page width (\`w\` = 1% of it), so it looks the same on every page size;
+// a long title wraps.
+#let covers = (
+  classic: (author, w) => {
+    v(20%)
+    align(center)[
+      #text(size: 6.2 * w, hyphenate: false, book-title)
+      #v(1.6em)
+      #line(length: 18%, stroke: 0.5pt)
+      #if author != none { v(1.4em); text(size: 0.95em, tracking: 0.14em, upper(author)) }
+    ]
+  },
+  modern: (author, w) => {
+    if author != none { text(size: 0.95em, tracking: 0.06em, author) }
+    v(1fr)
+    line(length: 100%, stroke: 1.2pt)
+    v(0.8em)
+    text(size: 7.4 * w, weight: "bold", hyphenate: false, book-title)
+    v(16%)
+  },
+  minimal: (author, w) => {
+    v(1fr)
+    align(center)[
+      #text(size: 3.1 * w, hyphenate: false, book-title)
+      #if author != none { v(0.9em); text(size: 0.8em, author) }
+    ]
+    v(1.4fr)
+  },
+)
+#let title-page(style, author) = page(numbering: none)[
+  #set par(first-line-indent: 0em, justify: false)
   #section-mark("front", none)
-  #v(22%)
-  #align(center)[
-    #text(size: 2.1em, book-title)
-    #if extra != none { v(12mm); extra }
-  ]
+  #context (covers.at(style))(author, page.width / 100)
   #end-mark
 ]
 #let dedication(body) = {
@@ -123,12 +157,14 @@ export function printTemplate(book: ExportBook, options: PrintOptions): string {
 `;
 
   const titlePage = book.sections.find((s) => s.role === "titlePage");
+  const author = options.author?.trim();
+  const byline = author ? `[${escapeMarkup(author)}]` : titlePage ? `[${titlePage.body}]` : "none";
   const rest = book.sections.filter((s) => s.role !== "titlePage");
   const front = rest.filter((s) => s.kind === "front");
   const main = rest.filter((s) => s.kind !== "front");
   return [
     preamble,
-    `#title-page(${titlePage ? `[${titlePage.body}]` : "none"})`,
+    `#title-page("${options.cover ?? "classic"}", ${byline})`,
     ...front.map(section),
     ...(options.toc && main.length ? [contents(main)] : []),
     ...main.map(section),

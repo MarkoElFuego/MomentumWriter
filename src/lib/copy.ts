@@ -220,6 +220,8 @@ export const copy = {
     size: "Veličina",
     sizes: { a5: "A5", "13x20": "13 × 20 cm", "6x9": "6 × 9 in (Amazon KDP)", a4: "A4" },
     toc: "Uključi sadržaj",
+    cover: "Naslovnica",
+    covers: { classic: "Klasična", modern: "Moderna", minimal: "Minimalistička" },
     author: "Ime autora",
     contact: "Kontakt",
     contactPlaceholder: "Email, telefon — svako u svom redu",
