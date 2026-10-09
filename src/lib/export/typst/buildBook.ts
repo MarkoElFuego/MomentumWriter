@@ -20,6 +20,8 @@ export interface ExportSection {
   title: string;
   /** Typst markup of the text. */
   body: string;
+  /** The part's own document, for formats other than Typst (DOCX, P7). */
+  content: JSONContent;
 }
 
 export interface ExportBook {
@@ -63,6 +65,7 @@ export function buildBook(book: Book, allParts: Part[]): ExportBook {
       ...(part.kind === "chapter" ? { number: chapter } : {}),
       title: part.kind === "chapter" ? part.title.trim() : part.title.trim() || copy.structure.untitledPart,
       body: partToTypst(part.content),
+      content: part.content,
     });
   }
   return {

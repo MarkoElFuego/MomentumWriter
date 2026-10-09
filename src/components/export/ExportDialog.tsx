@@ -49,6 +49,8 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
   const [kdp, setKdp] = useState<{ key: string; source: string; pages: number }>();
   const [laying, setLaying] = useState(false);
   const [spacing, setSpacing] = useState<1.5 | 2>(1.5);
+  /** Rukopis: Word file (recommended) or PDF (P7). */
+  const [format, setFormat] = useState<"docx" | "pdf">("docx");
   const [author, setAuthor] = useState("");
   const [contact, setContact] = useState("");
   const [page, setPage] = useState(0);
@@ -158,18 +160,21 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
     if (!source || !data || downloading || (destination === "kdp" && !kdpReady)) return;
     setDownloading(true);
     try {
+      if (destination === "manuscript" && format === "docx") {
+        // Loaded only now: the Word library never slows down the editor.
+        const [{ Packer }, { manuscriptDocx }] = await Promise.all([import("docx"), import("@/lib/export/docx/manuscriptDocx")]);
+        if (!model) return;
+        const blob = await Packer.toBlob(manuscriptDocx(model, { author, contact, spacing }));
+        save(blob, pdfFileName(data.book.title, { author }).replace(/\.pdf$/, ".docx"));
+        setFailed(false);
+        return;
+      }
       const { pdf } = await compilePdf(source);
       const name =
         destination === "kdp"
           ? kdpFileName(data.book.title, kdpTrimId)
           : pdfFileName(data.book.title, destination === "manuscript" ? { author } : undefined);
-      const url = URL.createObjectURL(new Blob([pdf as BlobPart], { type: "application/pdf" }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = name;
-      link.click();
-      // Give the browser a moment to start the download before the URL goes away.
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      save(new Blob([pdf as BlobPart], { type: "application/pdf" }), name);
       setFailed(false);
     } catch (error) {
       console.error("[export] PDF failed", error);
@@ -177,7 +182,7 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
     } finally {
       setDownloading(false);
     }
-  }, [source, data, destination, author, downloading, kdpReady, kdpTrimId]);
+  }, [source, data, destination, author, downloading, kdpReady, kdpTrimId, format, model, contact, spacing]);
 
   // Author and contact belong to the book: the next manuscript remembers them.
   const saveAuthor = (value: string) => {
@@ -350,6 +355,17 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
               </>
             ) : (
               <>
+                <fieldset>
+                  <legend className={label}>{t.format}</legend>
+                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                    {(["docx", "pdf"] as const).map((f) => (
+                      <label key={f} className="flex items-center gap-1.5">
+                        <input type="radio" name="export-format" value={f} checked={format === f} onChange={() => setFormat(f)} />
+                        {t.formats[f]}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
                 <div>
                   <label htmlFor="export-contact" className={label}>
                     {t.contact}
@@ -388,7 +404,7 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
               disabled={!source || downloading || (destination === "kdp" && !kdpReady)}
               onClick={() => void download()}
             >
-              {downloading ? t.downloading : t.download}
+              {downloading ? t.downloading : destination === "manuscript" && format === "docx" ? t.downloadDocx : t.download}
             </button>
             <button type="button" className="ui-button text-sm" onClick={onClose}>
               {t.close}
@@ -404,6 +420,7 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
             {/* Typst's own SVG of the author's text (escaped by Typst): no scripts run from innerHTML. */}
             {preview && <div dangerouslySetInnerHTML={{ __html: preview.svg }} />}
           </div>
+          {destination === "manuscript" && format === "docx" && <p className="mt-3 text-xs text-muted">{t.docxPreviewNote}</p>}
           {preview && (
             <div className="mt-3 flex items-center gap-4 text-sm text-muted">
               <button type="button" className="ui-button px-2" aria-label={t.previousPage} disabled={page === 0} onClick={() => turn(-1)}>
@@ -425,4 +442,15 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
       </div>
     </dialog>
   );
+}
+
+/** Hands a file to the browser's downloads. */
+function save(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  // Give the browser a moment to start the download before the URL goes away.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
