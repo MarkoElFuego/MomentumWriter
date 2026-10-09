@@ -6,7 +6,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
-**Sledeće:** Faza 5 (Polish) — redosled bira autor (ostaje: provera prečica po browserima · /review bez ❌; otvoreno: fusnota u pregledu izvoza). Jedna faza = jedan razgovor = jedan commit. Pre koda: plan i „ok” od autora.
+**Sledeće:** Faza 5 (Polish) — redosled bira autor (ostaje: /review bez ❌; otvoreno: fusnota u pregledu izvoza). Jedna faza = jedan razgovor = jedan commit. Pre koda: plan i „ok” od autora.
 - Stanje 2026-10-09: Faza 5 „Tipografija + prazna stanja” gotova, autor proverio („super radi”).
 - Stanje 2026-10-09: P7 gotov, autor proverio u Google Docs-u („radi”).
 - Stanje 2026-10-09: P6 gotov, autor ručno proverio („super radi”).
@@ -159,7 +159,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - [x] Tipografija + prazna stanja
 - [x] Export Markdown
 - [x] Export PDF (A5, za štampu)
-- [ ] Provera prečica po browserima
+- [x] Provera prečica po browserima
 - [ ] /review bez ❌
 
 ## Odluke (agent upisuje)
@@ -266,6 +266,8 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - 2026-10-09: **Faza 5 — Tipografija + prazna stanja** (autor izabrao). Prazna biblioteka: „Još nema knjiga. Prva počinje jednim klikom.” (stari tekst „Kad budeš spreman…” je imao rod), naslov „Tvoje knjige” se ne prikazuje dok nema knjiga (prešao iz `app/page.tsx` u `BookList`), a „Nova knjiga” je tada glavno dugme (`book-start`). Tekst: kerning i ligature fonta, `text-wrap: pretty` za pasuse (bez jedne reči u poslednjem redu — Chrome/Edge, ostali zanemaruju), `text-wrap: balance` za naslove u tekstu i naslove ekrana; ispod 640 px slovo 17 px i prored 1,65 (veličina i prored na širem ekranu ostaju 19 px / 1,75 — odluka autora). Animacija rimskog broja 180 → 150 ms; bleđenje trake (300 ms) i prevlačenje (200 ms) ostaju jer ih propisuje ZADATAK_UI. Fokus: pregledan kod — sva dugmad i linkovi imaju vidljiv fokus, uklonjeni `outline` svuda ima zamenu; polje beleške za kasnije (jedino polje u svom prozorčiću, sa kursorom) ostaje bez okvira. Prazno poglavlje i prazne sekcije panela su već bili rešeni (placeholder; prazna sekcija se ne prikazuje).
 
 - 2026-10-09: **Faza 5 — copy.ts ton** (autor izabrao). Ceo `copy.ts` pregledan: bez uzvičnika i krivice već od ranije. **Odluka autora: dugme „Zapeo sam” → „Pomozi mi”** (jedini tekst sa rodom); promenjeno u UI-ju, komentarima, sistem promptu za `stuck` („…i pritisnuo „Pomozi mi””) i u važećoj dokumentaciji (AGENTS, PRODUCT, ARCHITECTURE, AI_PROMPTS); stari nazivi u PROGRESS i ZADATAK fajlovima ostaju kao istorija. Množina u KDP proveri („2 strane”, „21 strana”, preko `count`, + test). Greške dobijaju sledeći korak: „Izvoz trenutno nije uspeo. Tekst je sačuvan — pokušaj ponovo.”, „Tiron trenutno ne može da odgovori. Pokušaj malo kasnije.”; „sada” → „trenutno” kao svuda.
+
+- 2026-10-09: **Faza 5 — Provera prečica po browserima.** Agent nema alat za upravljanje browserom: pregled koda + ručna lista za autora (Chrome / Edge / Firefox). Nađeno i ispravljeno: (1) **AltGr na srpskom rasporedu** — `\` (AltGr+Q) i `|` (AltGr+W) nisu mogli da se otkucaju jer ih je prečica za panele hvatala kao `Ctrl+\` (Windows AltGr = Ctrl+Alt); sada `panelShortcut` ne reaguje uz Alt/AltGr (+ 4 testa), `Ctrl+ž` i dalje radi. (2) **Skrivene prečice StarterKit-a isključene** (odluka autora): `Ctrl+U`, `Ctrl+Shift+S` (Firefox: snimak ekrana), `Ctrl+Shift+7/8` — `NoHiddenShortcuts` sa prioritetom 1000 ih presreće i ne radi ništa; šema se ne menja. Pregledano bez nalaza: `Ctrl+Shift+F` / `Ctrl+Shift+L` (traže `!altKey`, hvataju i `event.code`), `Ctrl+Alt+0/1/2` (AltGr ima prednost, i ProseMirror keymap preskače Ctrl+Alt na Windows-u), `Alt+F10`, `Tab` / `Esc` / `Alt+Enter`. Poznato: `Ctrl+Shift+N` Chrome/Edge ne puštaju (zato `Ctrl+Shift+L`); na Mac Safari-ju `Cmd+Shift+\` je pregled tabova — Tiron panel tamo i dalje ima dugme `T`.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

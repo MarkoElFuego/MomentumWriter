@@ -11,6 +11,7 @@ import { UndoToast } from "@/components/structure/UndoToast";
 import { TironPanel } from "@/components/tiron/TironPanel";
 import { addLaterNoteTr, laterNoteAtCursor, laterNoteRangeAt, updateLaterNoteTr, type TextRange } from "./laterNote";
 import { LaterNotePopover } from "./LaterNotePopover";
+import { panelShortcut } from "./panelShortcut";
 import { updateStoryMemory } from "@/components/tiron/updateMemory";
 import { requestWhisper } from "@/components/tiron/whisper";
 import { dismissWhisper, markWhispersSeen } from "@/lib/db/whispers";
@@ -464,14 +465,11 @@ export function WriteScreen({ partId }: { partId: ID }) {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey)) return;
-      // event.code keeps the shortcut working where "\" needs AltGr (Serbian: "ž").
-      // With Shift it is the Tiron panel on the right; without, the contents on the left.
-      if (event.key === "\\" || event.key === "|" || event.code === "Backslash") {
-        event.preventDefault();
-        if (event.shiftKey) toggleTiron();
-        else togglePanel();
-      }
+      const panel = panelShortcut(event);
+      if (!panel) return;
+      event.preventDefault();
+      if (panel === "tiron") toggleTiron();
+      else togglePanel();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);

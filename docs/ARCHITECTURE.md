@@ -178,7 +178,9 @@ Resume ekran: „Knjiga te čeka.” · „Ovde je priča stala ranije danas / j
 | `Alt + F10` | Fokus na gornju traku (traka se vraća ako je izbledela) |
 | `Ctrl/Cmd + Shift + L` | Beleška za kasnije na selekciji ili reči kod kursora; u belešci → izmena njenog teksta (T3). `Ctrl+Shift+N` samo dodatno — Chrome/Edge ga ne puštaju stranici |
 
-`/` je običan znak. Na srpskom rasporedu `Ctrl+\` se hvata i po `event.code === "Backslash"` (taster „ž”).
+`/` je običan znak. Na srpskom rasporedu `Ctrl+\` se hvata i po `event.code === "Backslash"` (taster „ž”). Sa Alt/AltGr se **ne** hvata (`components/editor/panelShortcut.ts`): na srpskom rasporedu `\` i `|` se kucaju sa AltGr+Q/W, a Windows AltGr prijavljuje kao Ctrl+Alt.
+
+Isključene skrivene prečice StarterKit-a (`components/editor/hiddenShortcuts.ts`, odluka autora 2026-10-09): `Ctrl/Cmd+U` (podvučeno), `Ctrl/Cmd+Shift+S` (precrtano), `Ctrl/Cmd+Shift+7/8` (liste) ne rade ništa — oznake i liste ostaju u šemi, pa sačuvan i nalepljen tekst i dalje radi. `Ctrl/Cmd+Shift+B` (citat) ostaje.
 
 `Ctrl+Alt+cifra` se ne hvata kad je `AltGraph` aktivan ili kad raspored otkuca znak (srpski: AltGr+1 = `~`, često kao mrtav taster) — Windows prijavljuje AltGr kao Ctrl+Alt. Na Mac-u (`Cmd+Option`) odlučuje `event.code`. Poravnanje nema prečice (samo traka).
 

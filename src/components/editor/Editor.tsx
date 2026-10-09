@@ -9,6 +9,7 @@ import type { Language } from "@/lib/languages";
 import { blockStyleShortcut, setBlockStyle } from "./blockStyle";
 import { contentExtensions } from "./contentSchema";
 import { FocusMode } from "./focusMode";
+import { NoHiddenShortcuts } from "./hiddenShortcuts";
 import { closeProofTr, dispatchIf, openProofAtCursorTr, openProofMark, ProofMarks } from "./proofMarks";
 import { atFootnoteEdge, insertFootnoteTr, isInFootnote, leaveFootnoteTr } from "./footnotes";
 import {
@@ -83,6 +84,7 @@ export function Editor({
       sceneBreak,
       // Alignment lives in the toolbar only — no extra Ctrl+Shift+L/E/R/J shortcuts.
       textAlign.extend({ addKeyboardShortcuts: () => ({}) }),
+      NoHiddenShortcuts,
       laterNote,
     ],
     editorProps: {
