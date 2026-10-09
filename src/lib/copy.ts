@@ -212,6 +212,18 @@ export const copy = {
       return `oko ${new Intl.NumberFormat("sr-Latn").format(rounded)} reči`;
     },
     contents: "Sadržaj",
+    // Rukopis: vrsta knjige ispod naslova; „drugo” i knjiga bez žanra nemaju red.
+    manuscriptGenre: {
+      literarni: "roman",
+      istorijski: "istorijski roman",
+      ljubavni: "ljubavni roman",
+      triler: "triler",
+      misterija: "misterija",
+      horor: "horor",
+      fantastika: "fantastika",
+      "naučna fantastika": "naučna fantastika",
+      "za decu": "knjiga za decu",
+    } as Record<string, string | undefined>,
   },
   // Faza 5: knjiga složena za štampu (A5) — PDF pravi browser.
   print: {

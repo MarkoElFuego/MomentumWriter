@@ -4,8 +4,8 @@ import { escapeMarkup, typstString } from "../escape";
 import { contentArg, lines, sectionLabel, surname, typstLang } from "./common";
 
 // „Rukopis za izdavača” (ZADATAK_IZVOZ): the standard manuscript format — A4,
-// 12 pt, left aligned, no hyphenation, "Prezime / NASLOV / 12" in the header.
-// P1 lays the groundwork; P3 refines it.
+// 12 pt, left aligned, no hyphenation, "Prezime / NASLOV / 12" in the header,
+// every paragraph indented, no ornaments.
 
 export interface ManuscriptOptions {
   author?: string;
@@ -15,14 +15,17 @@ export interface ManuscriptOptions {
   spacing: 1.5 | 2;
 }
 
-/** Leading (space between lines) that gives 1,5 or double spacing for 12 pt text. */
-const LEADING = { 1.5: "1.05em", 2: "1.65em" } as const;
+/**
+ * Space between lines. With top-edge 1em the baselines are 1em + leading apart:
+ * 1.75 × and 2.3 × the text size, as Word's 1,5 and double spacing for 12 pt.
+ */
+const LEADING = { 1.5: "0.75em", 2: "1.3em" } as const;
 
 export function manuscriptTemplate(book: ExportBook, options: ManuscriptOptions): string {
   const author = options.author?.trim() ?? "";
   const runningHead = [surname(author), book.title.toLocaleUpperCase("sr")].filter(Boolean).map(escapeMarkup).join(" / ");
   const leading = LEADING[options.spacing];
-  const genre = book.genre ? copy.book.genres[book.genre] : undefined;
+  const genre = book.genre ? copy.export.manuscriptGenre[book.genre] : undefined;
 
   const preamble = `#set document(title: ${typstString(book.title)}${author ? `, author: ${typstString(author)}` : ""})
 #set page(
@@ -32,11 +35,16 @@ export function manuscriptTemplate(book: ExportBook, options: ManuscriptOptions)
     align(right, text(size: 10pt)[${runningHead} / #counter(page).display()])
   },
 )
-#set text(font: "Literata", size: 12pt, lang: "${typstLang(book.language)}", hyphenate: false)
-#set par(justify: false, leading: ${leading}, spacing: ${leading}, first-line-indent: 1.25cm)
+#set text(font: "Literata", size: 12pt, lang: "${typstLang(book.language)}", hyphenate: false,
+  top-edge: 1em, bottom-edge: 0em, costs: (widow: 1000%, orphan: 1000%))
+// all: true — a manuscript indents every paragraph, also the first after a heading.
+#set par(justify: false, leading: ${leading}, spacing: ${leading}, first-line-indent: (amount: 1.25cm, all: true))
+// …but nothing centered, and no footnote, is indented.
+#let flush(body) = { set par(first-line-indent: 0pt); body }
+#show footnote.entry: flush
 
-#let scenebreak() = block(width: 100%, above: ${leading}, below: ${leading}, align(center)[\\#])
-#let centered(body) = block(width: 100%, align(center, body))
+#let scenebreak() = block(width: 100%, above: ${leading}, below: ${leading}, flush(align(center)[\\#]))
+#let centered(body) = block(width: 100%, flush(align(center, body)))
 #let blockquote(body) = block(inset: (left: 1.25cm), above: ${leading}, below: ${leading}, body)
 #let subheading(level, body) = block(above: 2em, below: 1em, sticky: true,
   if level == 1 { strong(body) } else { emph(body) })
@@ -44,20 +52,22 @@ export function manuscriptTemplate(book: ExportBook, options: ManuscriptOptions)
 #let dedication(body) = {
   pagebreak(weak: true)
   v(7cm)
-  block(width: 100%, align(center, emph(body)))
+  block(width: 100%, flush(align(center, emph(body))))
 }
 #let part(label: none, title: none, body) = {
   pagebreak(weak: true)
-  v(6cm)
-  block(width: 100%, below: 2em, sticky: true, align(center)[
+  // The heading about a third down the page.
+  v(7cm)
+  block(width: 100%, below: 2em, sticky: true, flush(align(center)[
     #if label != none { label; linebreak() }
     #if title != none { title }
-  ])
+  ]))
   body
 }
 `;
 
   const titlePage = `#page(header: none)[
+  #set par(first-line-indent: 0pt)
   #grid(columns: (1fr, auto),
     [${[author, options.contact ?? ""].map(lines).filter(Boolean).join(" #linebreak(); ")}],
     [${escapeMarkup(copy.export.aboutWords(book.wordCount))}],

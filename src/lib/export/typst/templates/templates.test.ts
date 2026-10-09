@@ -117,6 +117,44 @@ describe("manuscriptTemplate", () => {
     expect(run.query).toHaveLength(1);
   });
 
+  it("starts every part on a new page, numbered from 1 after the title page", async () => {
+    const probe = `
+#context [#metadata((
+  numbers: query(<part-start>).map(m => counter(page).at(m.location()).first()),
+  physical: query(<part-start>).map(m => m.location().page()),
+)) <probe>]`;
+    // Mark each part start, so the test sees where it landed.
+    const source = manuscriptTemplate(exportBook, { spacing: 1.5 })
+      .replace("#let part(label: none, title: none, body) = {\n  pagebreak(weak: true)", "$&\n  [#metadata(none) <part-start>]")
+      .replace("#let dedication(body) = {\n  pagebreak(weak: true)", "$&\n  [#metadata(none) <part-start>]");
+    const run = await runTypst(source + probe, "<probe>", "value");
+    expect(run.errors).toEqual([]);
+    const { numbers, physical } = run.query?.[0] as { numbers: number[]; physical: number[] };
+    // Posveta, chapter I, chapter III, Zahvalnica — each alone from the second physical page on.
+    expect(physical).toHaveLength(4);
+    expect(physical[0]).toBe(2);
+    expect(new Set(physical).size).toBe(4);
+    expect(numbers[0]).toBe(1);
+  });
+
+  it("indents every paragraph, left aligned, without hyphenation", () => {
+    const source = manuscriptTemplate(exportBook, { spacing: 2 });
+    expect(source).toContain("justify: false");
+    expect(source).toContain("first-line-indent: (amount: 1.25cm, all: true)");
+    expect(source).toContain("leading: 1.3em");
+    expect(source).not.toContain(copy.export.contents);
+  });
+
+  it("names the kind of book under the title, and leaves out what is missing", () => {
+    expect(manuscriptTemplate(exportBook, { spacing: 1.5 })).toContain("#v(1em) triler");
+    const novel = buildBook({ ...book, genre: "literarni" }, []);
+    expect(manuscriptTemplate(novel, { spacing: 1.5 })).toContain("#v(1em) roman");
+    const other = manuscriptTemplate(buildBook({ ...book, genre: "drugo" }, []), { spacing: 1.5 });
+    expect(other).not.toMatch(/#v\(1em\) (roman|drugo)/i);
+    // No author, no contact: no empty line on the title page.
+    expect(other).not.toContain("#v(1em) \n");
+  });
+
   it("writes the running head and the word count on the title page", () => {
     const source = manuscriptTemplate(exportBook, { author: "Ana Petrović", spacing: 1.5 });
     expect(source).toContain("Petrović / KIŠA \\#1 \\\"NOĆU\\\" / #counter(page).display()");

@@ -30,6 +30,9 @@ export function TypstProbe() {
   const [bookId, setBookId] = useState("");
   const [size, setSize] = useState<PrintSize>("a5");
   const [toc, setToc] = useState(false);
+  const [author, setAuthor] = useState("");
+  const [contact, setContact] = useState("");
+  const [spacing, setSpacing] = useState<1.5 | 2>(1.5);
   const add = (line: string) => setLog((lines) => [...lines, line]);
 
   useEffect(() => {
@@ -39,12 +42,12 @@ export function TypstProbe() {
     });
   }, []);
 
-  // The author's own book through both templates (P2: every print size, optional contents).
+  // The author's own book through both templates (P2: every print size, optional contents; P3: author, contact, spacing).
   async function exportBook(kind: "print" | "manuscript") {
     const book = books.find((b) => b.id === bookId);
     if (!book) return;
     const model = buildBook(book, await listParts(book.id));
-    const source = kind === "print" ? printTemplate(model, { size, toc }) : manuscriptTemplate(model, { spacing: 1.5 });
+    const source = kind === "print" ? printTemplate(model, { size, toc }) : manuscriptTemplate(model, { author, contact, spacing });
     console.log(`[typst] ${kind}`, source);
     await run(`${book.title}-${kind === "print" ? size : "rukopis"}`, () => source);
   }
@@ -110,6 +113,12 @@ export function TypstProbe() {
           <button type="button" disabled={busy} className="ui-button rounded border border-muted/40 px-3 py-1" onClick={() => void exportBook("manuscript")}>
             Rukopis A4
           </button>
+          <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Ime autora" className="rounded border border-muted/40 bg-paper px-2 py-1" />
+          <textarea value={contact} onChange={(e) => setContact(e.target.value)} placeholder="Kontakt (red po red)" rows={2} className="rounded border border-muted/40 bg-paper px-2 py-1" />
+          <select value={spacing} onChange={(e) => setSpacing(Number(e.target.value) as 1.5 | 2)} className="rounded border border-muted/40 bg-paper px-2 py-1">
+            <option value={1.5}>prored 1,5</option>
+            <option value={2}>dupli prored</option>
+          </select>
         </div>
       )}
       <ul className="mt-6 space-y-1 font-mono text-xs">
