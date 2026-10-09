@@ -21,12 +21,16 @@ export interface PrintOptions {
   cover?: CoverStyle;
   /** Under the title; without it, the text of „Naslovna” (the older way) if there is one. */
   author?: string;
+  /** Page and margins from elsewhere (Amazon KDP, P6) instead of `size`. */
+  layout?: Layout;
 }
 
-interface Layout {
+export interface Layout {
+  /** Typst page size, e.g. "width: 6in, height: 9in". */
   page: string;
   /** inside, outside, top, bottom — the inside is wider for the binding. */
   margin: [string, string, string, string];
+  /** Text size, e.g. "11pt". */
   size: string;
 }
 
@@ -39,7 +43,7 @@ const LAYOUT: Record<PrintSize, Layout> = {
 };
 
 export function printTemplate(book: ExportBook, options: PrintOptions): string {
-  const { page, margin, size } = LAYOUT[options.size];
+  const { page, margin, size } = options.layout ?? LAYOUT[options.size];
   const [inside, outside, top, bottom] = margin;
   const preamble = `#set document(title: ${typstString(book.title)})
 #let book-title = [${escapeMarkup(book.title)}]

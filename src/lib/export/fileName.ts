@@ -18,3 +18,8 @@ export function pdfFileName(title: string, manuscript?: { author?: string }): st
   if (!manuscript) return `${name}.pdf`;
   return `${[slug(surname(manuscript.author)), name, copy.export.manuscriptSuffix].filter(Boolean).join("-")}.pdf`;
 }
+
+/** "Naslov-KDP-6x9.pdf". */
+export function kdpFileName(title: string, trimId: string): string {
+  return `${slug(title) || slug(copy.structure.defaultBookTitle)}-KDP-${trimId}.pdf`;
+}

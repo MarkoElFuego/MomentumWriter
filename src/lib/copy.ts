@@ -216,6 +216,30 @@ export const copy = {
     destinations: {
       print: { name: "Knjiga za štampu", hint: "PDF · štamparija, samostalno izdanje, poklon primerci" },
       manuscript: { name: "Rukopis za izdavača", hint: "PDF · izdavač, agent, konkurs, lektor" },
+      kdp: { name: "Amazon KDP — štampana", hint: "PDF · meki povez po KDP pravilima" },
+    },
+    // Amazon KDP (P6): provera pre preuzimanja i podsetnik za koricu.
+    kdp: {
+      trimName: (width: number, height: number) => {
+        const n = (x: number) => new Intl.NumberFormat("sr-Latn", { maximumFractionDigits: 2 }).format(x);
+        return `${n(width)} × ${n(height)} in`;
+      },
+      commonSizes: "Najčešće",
+      otherSizes: "Ostale KDP veličine",
+      checksLabel: "Provera za KDP",
+      pagesOk: (n: number, overCream: boolean) =>
+        `${n} strana — u KDP opsegu (24–828)${overCream ? "; na krem papiru najviše 776" : ""}`,
+      pagesTooFew: (n: number) => `${n} strana — KDP traži najmanje 24`,
+      pagesTooMany: (n: number) => `${n} strana — KDP prima najviše 828`,
+      trimOk: (size: string) => `Veličina ${size} je sa KDP liste`,
+      blankOk: "Bez dugih nizova praznih strana",
+      titleOk: "Naslov je upisan",
+      titleMissing: "Knjiga se zove „Nova knjiga” — naslov menjaš u vrhu levog panela",
+      authorOk: "Ime autora je upisano",
+      authorMissing: "Upiši ime autora",
+      cover: (pages: number) =>
+        `Koricu praviš posebno u KDP Cover Creator-u ili sa dizajnerom; za hrbat ti treba broj strana: ${pages}.`,
+      laying: "Slažem po KDP pravilima…",
     },
     size: "Veličina",
     sizes: { a5: "A5", "13x20": "13 × 20 cm", "6x9": "6 × 9 in (Amazon KDP)", a4: "A4" },

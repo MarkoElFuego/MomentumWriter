@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pdfFileName } from "./fileName";
+import { kdpFileName, pdfFileName } from "./fileName";
 
 describe("pdfFileName", () => {
   it("joins the words with hyphens and keeps Serbian letters", () => {
@@ -14,5 +14,12 @@ describe("pdfFileName", () => {
   it("names the manuscript after the author's surname", () => {
     expect(pdfFileName("Kiša", { author: "Ana Petrović" })).toBe("Petrović-Kiša-rukopis.pdf");
     expect(pdfFileName("Kiša", {})).toBe("Kiša-rukopis.pdf");
+  });
+});
+
+describe("kdpFileName", () => {
+  it("names the KDP file after the book and the trim size", () => {
+    expect(kdpFileName("Kiša nad stanicom", "6x9")).toBe("Kiša-nad-stanicom-KDP-6x9.pdf");
+    expect(kdpFileName("", "5.25x8")).toBe("Nova-knjiga-KDP-5.25x8.pdf");
   });
 });

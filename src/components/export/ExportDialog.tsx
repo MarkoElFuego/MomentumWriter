@@ -5,7 +5,8 @@ import { copy } from "@/lib/copy";
 import { getBook, updateBook } from "@/lib/db/books";
 import { listParts } from "@/lib/db/parts";
 import type { Book, ID, Part } from "@/lib/db/schema";
-import { pdfFileName } from "@/lib/export/fileName";
+import { kdpFileName, pdfFileName } from "@/lib/export/fileName";
+import { KDP_TRIMS, kdpChecks, layoutForKdp } from "@/lib/export/kdp";
 import { buildBook } from "@/lib/export/typst/buildBook";
 import { compilePdf, previewPage, typstLoaded } from "@/lib/export/typst/client";
 import { manuscriptTemplate } from "@/lib/export/typst/templates/manuscript.typ";
@@ -22,8 +23,8 @@ import {
 
 const PREVIEW_DELAY_MS = 400;
 
-type Destination = "print" | "manuscript";
-const DESTINATIONS: Destination[] = ["print", "manuscript"];
+type Destination = "print" | "kdp" | "manuscript";
+const DESTINATIONS: Destination[] = ["print", "kdp", "manuscript"];
 
 interface ExportDialogProps {
   bookId: ID;
@@ -43,6 +44,10 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
   const [size, setSize] = useState<PrintSize>("a5");
   const [toc, setToc] = useState(false);
   const [cover, setCover] = useState<CoverStyle>("classic");
+  const [kdpTrimId, setKdpTrimId] = useState("6x9");
+  /** KDP: the layout after the margin passes, and the settings it was made for. */
+  const [kdp, setKdp] = useState<{ key: string; source: string; pages: number }>();
+  const [laying, setLaying] = useState(false);
   const [spacing, setSpacing] = useState<1.5 | 2>(1.5);
   const [author, setAuthor] = useState("");
   const [contact, setContact] = useState("");
@@ -77,12 +82,45 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
 
   // The whole book once; typing the author's name only changes the template around it.
   const model = useMemo(() => (data ? buildBook(data.book, data.parts) : undefined), [data]);
-  const source = useMemo(() => {
-    if (!model) return undefined;
+  const fixedSource = useMemo(() => {
+    if (!model || destination === "kdp") return undefined;
     return destination === "print"
       ? printTemplate(model, { size, toc, cover, author })
       : manuscriptTemplate(model, { author, contact, spacing });
   }, [model, destination, size, toc, cover, author, contact, spacing]);
+
+  // KDP: the inside margin depends on the page count — lay out in passes (in the
+  // worker), after a pause in the changes. The last layout stays shown meanwhile.
+  const kdpTrim = KDP_TRIMS.find((trim) => trim.id === kdpTrimId) ?? KDP_TRIMS[3]!;
+  const kdpKey = JSON.stringify([kdpTrimId, toc, cover, author]);
+  useEffect(() => {
+    if (!model || destination !== "kdp") return;
+    let current = true;
+    setLaying(true);
+    const timer = setTimeout(() => {
+      layoutForKdp(
+        (layout) => printTemplate(model, { size: "a5", layout, toc, cover, author }),
+        kdpTrim,
+        async (candidate) => (await previewPage(candidate, 0)).pageCount,
+      )
+        .then((result) => {
+          if (current) setKdp({ key: kdpKey, source: result.source, pages: result.pages });
+        })
+        .catch((error) => {
+          console.error("[export] KDP layout failed", error);
+          if (current) setFailed(true);
+        })
+        .finally(() => {
+          if (current) setLaying(false);
+        });
+    }, PREVIEW_DELAY_MS);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [model, destination, kdpTrim, kdpKey, toc, cover, author]);
+  const source = destination === "kdp" ? kdp?.source : fixedSource;
+  const kdpReady = destination === "kdp" && kdp?.key === kdpKey && !laying;
 
   // Preview: a changed setting waits for a pause in the changes; turning a page
   // does not wait (the worker keeps the compiled book). A newer request wins.
@@ -91,7 +129,8 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
     if (!source) return;
     let current = true;
     setLoading(true);
-    const delay = source === shownSource.current ? 0 : PREVIEW_DELAY_MS;
+    // A KDP layout has already waited for its pause.
+    const delay = source === shownSource.current || destination === "kdp" ? 0 : PREVIEW_DELAY_MS;
     const timer = setTimeout(() => {
       shownSource.current = source;
       previewPage(source, page)
@@ -113,14 +152,17 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
       current = false;
       clearTimeout(timer);
     };
-  }, [source, page]);
+  }, [source, page, destination]);
 
   const download = useCallback(async () => {
-    if (!source || !data || downloading) return;
+    if (!source || !data || downloading || (destination === "kdp" && !kdpReady)) return;
     setDownloading(true);
     try {
       const { pdf } = await compilePdf(source);
-      const name = pdfFileName(data.book.title, destination === "manuscript" ? { author } : undefined);
+      const name =
+        destination === "kdp"
+          ? kdpFileName(data.book.title, kdpTrimId)
+          : pdfFileName(data.book.title, destination === "manuscript" ? { author } : undefined);
       const url = URL.createObjectURL(new Blob([pdf as BlobPart], { type: "application/pdf" }));
       const link = document.createElement("a");
       link.href = url;
@@ -135,7 +177,7 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
     } finally {
       setDownloading(false);
     }
-  }, [source, data, destination, author, downloading]);
+  }, [source, data, destination, author, downloading, kdpReady, kdpTrimId]);
 
   // Author and contact belong to the book: the next manuscript remembers them.
   const saveAuthor = (value: string) => {
@@ -178,7 +220,15 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
 
   const t = copy.export;
   const label = "block text-xs text-muted";
-  const status = failed ? t.failed : loading && !typstLoaded() ? t.preparing : "";
+  const status = failed
+    ? t.failed
+    : (loading || laying) && !typstLoaded()
+      ? t.preparing
+      : destination === "kdp" && laying
+        ? t.kdp.laying
+        : "";
+  const checks =
+    destination === "kdp" && kdp && data ? kdpChecks({ pages: kdp.pages, trim: kdpTrim, title: data.book.title, author }) : [];
 
   return (
     <dialog
@@ -230,19 +280,33 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
                 className="book-field mt-0.5"
               />
             </div>
-            {destination === "print" ? (
+            {destination !== "manuscript" ? (
               <>
                 <div>
                   <label htmlFor="export-size" className={label}>
                     {t.size}
                   </label>
-                  <select id="export-size" value={size} onChange={(e) => setSize(e.target.value as PrintSize)} className="book-select mt-1">
-                    {PRINT_SIZES.map((s) => (
-                      <option key={s} value={s}>
-                        {t.sizes[s]}
-                      </option>
-                    ))}
-                  </select>
+                  {destination === "print" ? (
+                    <select id="export-size" value={size} onChange={(e) => setSize(e.target.value as PrintSize)} className="book-select mt-1">
+                      {PRINT_SIZES.map((s) => (
+                        <option key={s} value={s}>
+                          {t.sizes[s]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select id="export-size" value={kdpTrimId} onChange={(e) => setKdpTrimId(e.target.value)} className="book-select mt-1">
+                      {[true, false].map((common) => (
+                        <optgroup key={String(common)} label={common ? t.kdp.commonSizes : t.kdp.otherSizes}>
+                          {KDP_TRIMS.filter((trim) => Boolean(trim.common) === common).map((trim) => (
+                            <option key={trim.id} value={trim.id}>
+                              {t.kdp.trimName(trim.width, trim.height)}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <fieldset>
                   <legend className={label}>{t.cover}</legend>
@@ -269,6 +333,20 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
                   <input type="checkbox" checked={toc} onChange={(e) => setToc(e.target.checked)} />
                   {t.toc}
                 </label>
+                {checks.length > 0 && kdp && (
+                  <div className={kdpReady ? "" : "opacity-60"}>
+                    <p className={label}>{t.kdp.checksLabel}</p>
+                    <ul className="mt-1 space-y-1 text-xs">
+                      {checks.map((check) => (
+                        <li key={check.text} className={`flex gap-1.5 ${check.ok ? "text-muted" : "text-ink"}`}>
+                          <span aria-hidden="true">{check.ok ? "✓" : "⚠"}</span>
+                          {check.text}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-3 text-xs text-muted">{t.kdp.cover(kdp.pages)}</p>
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -307,7 +385,7 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
             <button
               type="button"
               className="book-start px-4 py-2"
-              disabled={!source || downloading}
+              disabled={!source || downloading || (destination === "kdp" && !kdpReady)}
               onClick={() => void download()}
             >
               {downloading ? t.downloading : t.download}
