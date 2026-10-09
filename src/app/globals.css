@@ -8,6 +8,12 @@
   --font-serif: var(--font-text);
 }
 
+/* Naslovi ekrana (biblioteka, Resume, kraj nacrta): dugačak naslov se lomi u ravnomerne redove. */
+h1,
+h2 {
+  text-wrap: balance;
+}
+
 /* Editor: samo tekst i kursor. */
 .prose-editor {
   font-family: var(--font-text);
@@ -16,10 +22,24 @@
   caret-color: var(--ink);
   outline: none;
   min-height: 60vh;
+  /* Fine typesetting: kerning and the font's own ligatures (fi, fl). */
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures;
+  text-rendering: optimizeLegibility;
 }
 
 .prose-editor p {
   margin: 0 0 1em;
+  /* No single word alone on a paragraph's last line (Chrome/Edge; others ignore it). */
+  text-wrap: pretty;
+}
+
+/* Phone: a smaller size keeps a line long enough to read. */
+@media (max-width: 640px) {
+  .prose-editor {
+    font-size: 1.0625rem;
+    line-height: 1.65;
+  }
 }
 
 /* Naslovi i citat: font i boje teme, bez ičeg spolja. */
@@ -27,6 +47,8 @@
 .prose-editor h2 {
   font-weight: 600;
   line-height: 1.3;
+  /* A heading that wraps does so into even lines. */
+  text-wrap: balance;
 }
 
 .prose-editor h1 {
@@ -337,7 +359,7 @@
 }
 
 .part-label {
-  animation: part-label-in 180ms ease;
+  animation: part-label-in 150ms ease;
 }
 
 @keyframes part-label-in {

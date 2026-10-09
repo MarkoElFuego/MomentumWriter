@@ -304,7 +304,7 @@ export const copy = {
   library: {
     title: "Tvoje knjige",
     newBook: "Nova knjiga",
-    empty: "Još nema knjiga. Kad budeš spreman, počni jednu.",
+    empty: "Još nema knjiga. Prva počinje jednim klikom.",
     loadFailed: "Knjige trenutno ne mogu da se učitaju. Osveži stranicu.",
     bookMenu: (title: string) => `Opcije: ${title}`,
     delete: "Obriši",
