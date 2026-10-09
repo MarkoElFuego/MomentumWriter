@@ -83,10 +83,8 @@ export const copy = {
       off: "Ne šapće (pamćenje knjige i „Zapeo sam” rade)",
     },
     finishDraft: "Označi kraj nacrta",
-    // Faza 5: sigurnosna kopija cele knjige.
-    exportMarkdown: "Sačuvaj kopiju (.md)",
-    exportFailed: "Kopija nije napravljena. Tekst je i dalje sačuvan ovde — pokušaj ponovo.",
-    exportPdf: "Sačuvaj kao PDF (A5)",
+    // Izvoz (ZADATAK_IZVOZ P4): prozor u aplikaciji.
+    exportPdf: "Izvezi PDF…",
     allBooks: "Sve knjige",
   },
   tiron: {
@@ -212,6 +210,31 @@ export const copy = {
       return `oko ${new Intl.NumberFormat("sr-Latn").format(rounded)} reči`;
     },
     contents: "Sadržaj",
+    // Prozor za izvoz (P4).
+    title: "Izvoz",
+    destinationLabel: "Gde ova knjiga ide?",
+    destinations: {
+      print: { name: "Knjiga za štampu", hint: "PDF · štamparija, samostalno izdanje, poklon primerci" },
+      manuscript: { name: "Rukopis za izdavača", hint: "PDF · izdavač, agent, konkurs, lektor" },
+    },
+    size: "Veličina",
+    sizes: { a5: "A5", "13x20": "13 × 20 cm", "6x9": "6 × 9 in (Amazon KDP)", a4: "A4" },
+    toc: "Uključi sadržaj",
+    author: "Ime autora",
+    contact: "Kontakt",
+    contactPlaceholder: "Email, telefon — svako u svom redu",
+    spacing: "Prored",
+    spacings: { oneHalf: "1,5", double: "Dupli" },
+    download: "Preuzmi PDF",
+    downloading: "Slažem…",
+    close: "Zatvori",
+    preparing: "Pripremam slaganje…",
+    failed: "Izvoz trenutno nije uspeo.",
+    previewLabel: "Pregled strana",
+    previousPage: "Prethodna strana",
+    nextPage: "Sledeća strana",
+    pageOf: (n: number, total: number) => `${n} / ${total}`,
+    manuscriptSuffix: "rukopis",
     // Rukopis: vrsta knjige ispod naslova; „drugo” i knjiga bez žanra nemaju red.
     manuscriptGenre: {
       literarni: "roman",

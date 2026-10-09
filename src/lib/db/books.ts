@@ -70,8 +70,8 @@ export async function renameBook(id: ID, title: string): Promise<void> {
   await db.books.update(id, { title, updatedAt: Date.now() });
 }
 
-/** What the start screen and the Knjiga section change. */
-export type BookDetails = Partial<Pick<Book, "title" | "heart" | "targetWords" | "genre">>;
+/** What the start screen, the Knjiga section and the export dialog change. */
+export type BookDetails = Partial<Pick<Book, "title" | "heart" | "targetWords" | "genre" | "author" | "contact">>;
 
 /** Trimmed answers; blank ones are dropped, and no answers at all is no heart. */
 export function cleanHeart(heart: BookHeart | undefined): BookHeart | undefined {
@@ -95,6 +95,9 @@ export async function updateBook(id: ID, details: BookDetails): Promise<void> {
   const change: BookDetails = { ...details };
   if ("heart" in details) change.heart = cleanHeart(details.heart);
   if ("title" in details) change.title = details.title?.trim() || copy.structure.defaultBookTitle;
+  // Blank author or contact is none.
+  if ("author" in details) change.author = details.author?.trim() || undefined;
+  if ("contact" in details) change.contact = details.contact?.trim() || undefined;
   await db.books.update(id, { ...change, updatedAt: Date.now() });
 }
 

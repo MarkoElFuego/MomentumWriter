@@ -1,0 +1,20 @@
+import { copy } from "@/lib/copy";
+import { surname } from "./typst/templates/common";
+
+// Export file names (ZADATAK_IZVOZ P4): "Kisa-nad-stanicom.pdf" keeps the letters
+// as the author wrote them; only what Windows and macOS refuse goes, spaces become "-".
+
+function slug(text: string): string {
+  return text
+    .replace(/[\/:*?"<>|\u0000-\u001f]/g, " ")
+    .trim()
+    .replace(/[.\s]+$/, "")
+    .replace(/\s+/g, "-");
+}
+
+/** "Naslov-knjige.pdf"; the manuscript is "Prezime-Naslov-rukopis.pdf". */
+export function pdfFileName(title: string, manuscript?: { author?: string }): string {
+  const name = slug(title) || slug(copy.structure.defaultBookTitle);
+  if (!manuscript) return `${name}.pdf`;
+  return `${[slug(surname(manuscript.author)), name, copy.export.manuscriptSuffix].filter(Boolean).join("-")}.pdf`;
+}

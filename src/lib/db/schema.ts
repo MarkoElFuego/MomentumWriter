@@ -49,6 +49,10 @@ export interface Book {
   deletedAt?: number;
   /** „Označi kraj nacrta” (T7): from now on the book is no longer "Nacrt 1". */
   draftFinishedAt?: number;
+  /** Export (ZADATAK_IZVOZ P4): the manuscript's title page and running head. */
+  author?: string;
+  /** E-mail, phone… one item per line. */
+  contact?: string;
 }
 
 export interface BestLine {
@@ -290,6 +294,8 @@ export class MomentumDB extends Dexie {
     this.version(13).stores({});
     // v14: optional Book.draftFinishedAt (T7). No index, nothing to copy.
     this.version(14).stores({});
+    // v15: optional Book.author and Book.contact (export, P4). No index, nothing to copy.
+    this.version(15).stores({});
   }
 }
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditorState, type Editor as TiptapEditor, type JSONContent } from "@tiptap/react";
 import type { BookDetailsValue } from "@/components/book/BookDetailsFields";
+import { ExportDialog } from "@/components/export/ExportDialog";
 import { StructurePanel } from "@/components/structure/StructurePanel";
 import { UndoToast } from "@/components/structure/UndoToast";
 import { TironPanel } from "@/components/tiron/TironPanel";
@@ -41,7 +42,6 @@ import {
   saveLanguageScore,
   savePart,
 } from "@/lib/db/parts";
-import { bookToMarkdown } from "@/lib/db/exportBook";
 import { purgeProofCache } from "@/lib/db/proofCache";
 import { chapterLanguageScore } from "@/lib/text/languageScore";
 import type { ID, Part } from "@/lib/db/schema";
@@ -51,7 +51,6 @@ import { bookPosition } from "@/lib/process/signals";
 import { pagesLeft } from "@/lib/text/draftEnd";
 import { localDateKey, wordsDelta } from "@/lib/stats/today";
 import { countWords } from "@/lib/text/countWords";
-import { exportFileName } from "@/lib/text/toMarkdown";
 import { lastSentence } from "@/lib/text/lastSentence";
 import { ChapterTitle } from "./ChapterTitle";
 import { Editor } from "./Editor";
@@ -136,6 +135,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const [proofEnabled, setProofEnabled] = useState(true);
   const [hyphens, setHyphens] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const pendingDelete = useUndoDelete();
   // Bumped after an undo so the open panel shows the part again.
@@ -605,25 +605,11 @@ export function WriteScreen({ partId }: { partId: ID }) {
                     router.push(`/draft-end?book=${encodeURIComponent(data.book.id)}&from=${encodeURIComponent(partId)}`),
                   );
                 },
-            // The copy includes what was typed a moment ago: save first, then read the whole book.
+            // The export reads the book from Dexie: save what was typed a moment ago first.
             onExport: () => {
               void flush()
-                .then(() => downloadBook(data.book.id))
-                .catch((error) => {
-                  console.error("Failed to export the book", error);
-                  window.alert(copy.menu.exportFailed);
-                });
-            },
-            // Same tab, like the end of the draft: the print page has its own way back.
-            onExportPdf: () => {
-              void flush()
-                .then(() =>
-                  router.push(`/print?book=${encodeURIComponent(data.book.id)}&from=${encodeURIComponent(partId)}`),
-                )
-                .catch((error) => {
-                  console.error("Failed to save before print", error);
-                  window.alert(copy.menu.exportFailed);
-                });
+                .catch((error) => console.error("Failed to save before export", error))
+                .then(() => setExportOpen(true));
             },
           }}
           faded={toolbarFaded}
@@ -686,6 +672,15 @@ export function WriteScreen({ partId }: { partId: ID }) {
         )}
         <EditorFooter wordsToday={wordsToday} faded={toolbarFaded} />
         <UndoToast pending={pendingDelete} onUndo={() => void undoDelete()} />
+        {exportOpen && (
+          <ExportDialog
+            bookId={data.book.id}
+            onClose={() => {
+              setExportOpen(false);
+              editorRef.current?.commands.focus();
+            }}
+          />
+        )}
       </div>
       {tironOpen && (
         <div ref={rightPanelRef} className={overlay ? "panel-overlay panel-overlay-right" : "flex h-full shrink-0"}>
@@ -725,17 +720,4 @@ export function WriteScreen({ partId }: { partId: ID }) {
       )}
     </div>
   );
-}
-
-/** The whole book as a .md file in the browser's downloads. */
-async function downloadBook(bookId: ID): Promise<void> {
-  const result = await bookToMarkdown(bookId);
-  if (!result) throw new Error(`Book ${bookId} not found`);
-  const url = URL.createObjectURL(new Blob([result.markdown], { type: "text/markdown;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = exportFileName(result.title, new Date());
-  link.click();
-  // Give the browser a moment to start the download before the URL goes away.
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
