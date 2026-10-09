@@ -6,7 +6,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
-**Sledeće:** Faza 5 (Polish) — redosled bira autor (ostaje: /review bez ❌; otvoreno: fusnota u pregledu izvoza). Jedna faza = jedan razgovor = jedan commit. Pre koda: plan i „ok” od autora.
+**Sledeće:** Faza 5 je završena. Otvoreno: fusnota u pregledu izvoza (čeka autora). „Gotovo kada” iz PLAN-a: autor piše 7 dana zaredom i beleži utiske dole. Jedna faza = jedan razgovor = jedan commit. Pre koda: plan i „ok” od autora.
 - Stanje 2026-10-09: Faza 5 „Tipografija + prazna stanja” gotova, autor proverio („super radi”).
 - Stanje 2026-10-09: P7 gotov, autor proverio u Google Docs-u („radi”).
 - Stanje 2026-10-09: P6 gotov, autor ručno proverio („super radi”).
@@ -160,7 +160,7 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - [x] Export Markdown
 - [x] Export PDF (A5, za štampu)
 - [x] Provera prečica po browserima
-- [ ] /review bez ❌
+- [x] /review bez ❌
 
 ## Odluke (agent upisuje)
 <!-- npr. 2026-09-26: font Literata preko next/font jer... -->
@@ -268,6 +268,8 @@ _v0.2 · Faza 8 (troškovi sivog teksta) je odložena — dopune rade dobro, ne 
 - 2026-10-09: **Faza 5 — copy.ts ton** (autor izabrao). Ceo `copy.ts` pregledan: bez uzvičnika i krivice već od ranije. **Odluka autora: dugme „Zapeo sam” → „Pomozi mi”** (jedini tekst sa rodom); promenjeno u UI-ju, komentarima, sistem promptu za `stuck` („…i pritisnuo „Pomozi mi””) i u važećoj dokumentaciji (AGENTS, PRODUCT, ARCHITECTURE, AI_PROMPTS); stari nazivi u PROGRESS i ZADATAK fajlovima ostaju kao istorija. Množina u KDP proveri („2 strane”, „21 strana”, preko `count`, + test). Greške dobijaju sledeći korak: „Izvoz trenutno nije uspeo. Tekst je sačuvan — pokušaj ponovo.”, „Tiron trenutno ne može da odgovori. Pokušaj malo kasnije.”; „sada” → „trenutno” kao svuda.
 
 - 2026-10-09: **Faza 5 — Provera prečica po browserima.** Agent nema alat za upravljanje browserom: pregled koda + ručna lista za autora (Chrome / Edge / Firefox). Nađeno i ispravljeno: (1) **AltGr na srpskom rasporedu** — `\` (AltGr+Q) i `|` (AltGr+W) nisu mogli da se otkucaju jer ih je prečica za panele hvatala kao `Ctrl+\` (Windows AltGr = Ctrl+Alt); sada `panelShortcut` ne reaguje uz Alt/AltGr (+ 4 testa), `Ctrl+ž` i dalje radi. (2) **Skrivene prečice StarterKit-a isključene** (odluka autora): `Ctrl+U`, `Ctrl+Shift+S` (Firefox: snimak ekrana), `Ctrl+Shift+7/8` — `NoHiddenShortcuts` sa prioritetom 1000 ih presreće i ne radi ništa; šema se ne menja. Pregledano bez nalaza: `Ctrl+Shift+F` / `Ctrl+Shift+L` (traže `!altKey`, hvataju i `event.code`), `Ctrl+Alt+0/1/2` (AltGr ima prednost, i ProseMirror keymap preskače Ctrl+Alt na Windows-u), `Alt+F10`, `Tab` / `Esc` / `Alt+Enter`. Poznato: `Ctrl+Shift+N` Chrome/Edge ne puštaju (zato `Ctrl+Shift+L`); na Mac Safari-ju `Cmd+Shift+\` je pregled tabova — Tiron panel tamo i dalje ima dugme `T`.
+
+- 2026-10-09: **Faza 5 — /review bez ❌.** Ceo `src/` (radna kopija čista) protiv AGENTS.md: nijedna stavka ❌ (AI u tekst samo uz Tab/Ctrl+→ i „Prihvati”; ocena jezika samo u panelu; server kod samo u `api/spark`; UI tekst samo u `copy.ts`; provere prolaze). Popravljene napomene: (1) upisi u levom panelu (preimenovanje, dodavanje, premeštanje, brisanje dela) i ime/kontakt u prozoru za izvoz više ne bacaju neuhvaćenu grešku — greška ide u konzolu, a panel se ponovo učitava iz baze (bez nove poruke na ekranu — to bi bio novi element); (2) `.claude/commands/review.md` više ne pominje ukinut Urednik režim — „van provere jezika ili bez Prihvati/Odbaci” i „ili igde ocenjuju kvalitet nacrta”.
 
 ## Utisci iz korišćenja (ti upisuješ)
 <!-- šta smeta, šta fali, šta nikad ne koristiš -->

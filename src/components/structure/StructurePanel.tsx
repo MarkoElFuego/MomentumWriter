@@ -89,18 +89,33 @@ export function StructurePanel({
     setRefocusId(null);
   }, [parts, refocusId]);
 
+  // A failed write is logged and the panel reloads from the database, so it shows
+  // what is really saved. The manuscript itself is never touched here.
+  const failed = (what: string) => (error: unknown) => {
+    console.error(`[structure] ${what} failed`, error);
+    void reload().catch((reloadError) => console.error("[structure] reload failed", reloadError));
+  };
+
   const rename = async (fn: (id: ID, title: string) => Promise<void>, id: ID, title: string) => {
     setEditing(null);
-    await fn(id, title);
-    await reload();
-    onChanged();
+    try {
+      await fn(id, title);
+      await reload();
+      onChanged();
+    } catch (error) {
+      failed("rename")(error);
+    }
   };
 
   const add = async (kind: PartKind, title?: string) => {
     setAddingPart(false);
-    const part = await createPart(bookId, kind, title);
-    await reload();
-    onNavigate(part.id);
+    try {
+      const part = await createPart(bookId, kind, title);
+      await reload();
+      onNavigate(part.id);
+    } catch (error) {
+      failed("add")(error);
+    }
   };
 
   // Parts only move within their own kind; chapters renumber themselves.
@@ -113,10 +128,14 @@ export function StructurePanel({
     // Show the new order right away, so the dropped row doesn't jump back first.
     let next = 0;
     setParts(parts.map((p) => (p.kind === part.kind ? group[next++]! : p)));
-    await reorderParts(group.map((p) => p.id));
-    await reload();
-    setRefocusId(part.id);
-    onChanged();
+    try {
+      await reorderParts(group.map((p) => p.id));
+      await reload();
+      setRefocusId(part.id);
+      onChanged();
+    } catch (error) {
+      failed("reorder")(error);
+    }
   };
 
   const remove = async (part: Part) => {
@@ -124,9 +143,13 @@ export function StructurePanel({
     // Focus lands on a neighbour in the list instead of getting lost.
     const index = parts.indexOf(part);
     const neighbour = parts[index - 1] ?? parts[index + 1];
-    await onDelete(part);
-    await reload();
-    if (neighbour) setRefocusId(neighbour.id);
+    try {
+      await onDelete(part);
+      await reload();
+      if (neighbour) setRefocusId(neighbour.id);
+    } catch (error) {
+      failed("delete")(error);
+    }
   };
 
   const requestDelete = (part: Part) => {

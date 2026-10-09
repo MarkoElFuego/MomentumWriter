@@ -205,11 +205,11 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
   // Author and contact belong to the book: the next manuscript remembers them.
   const saveAuthor = (value: string) => {
     setAuthor(value);
-    void updateBook(bookId, { author: value });
+    updateBook(bookId, { author: value }).catch((error) => console.error("[export] saving the author failed", error));
   };
   const saveContact = (value: string) => {
     setContact(value);
-    void updateBook(bookId, { contact: value });
+    updateBook(bookId, { contact: value }).catch((error) => console.error("[export] saving the contact failed", error));
   };
 
   const turn = (delta: number) => {
