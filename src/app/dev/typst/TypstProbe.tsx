@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { listBooks } from "@/lib/db/books";
+import { listParts } from "@/lib/db/parts";
+import type { Book } from "@/lib/db/schema";
+import { buildBook } from "@/lib/export/typst/buildBook";
 import { compilePdf } from "@/lib/export/typst/client";
 import { bookSource, probeSource } from "@/lib/export/typst/probe";
+import { manuscriptTemplate } from "@/lib/export/typst/templates/manuscript.typ";
+import { PRINT_SIZES, printTemplate, type PrintSize } from "@/lib/export/typst/templates/print.typ";
 
 // Dev-only measuring page (P0); its text is for the developer, so it stays out of copy.ts.
 
@@ -20,7 +26,28 @@ function download(pdf: Uint8Array, name: string) {
 export function TypstProbe() {
   const [log, setLog] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [bookId, setBookId] = useState("");
+  const [size, setSize] = useState<PrintSize>("a5");
+  const [toc, setToc] = useState(false);
   const add = (line: string) => setLog((lines) => [...lines, line]);
+
+  useEffect(() => {
+    void listBooks().then((list) => {
+      setBooks(list);
+      setBookId((id) => id || list[0]?.id || "");
+    });
+  }, []);
+
+  // The author's own book through both templates (P2: every print size, optional contents).
+  async function exportBook(kind: "print" | "manuscript") {
+    const book = books.find((b) => b.id === bookId);
+    if (!book) return;
+    const model = buildBook(book, await listParts(book.id));
+    const source = kind === "print" ? printTemplate(model, { size, toc }) : manuscriptTemplate(model, { spacing: 1.5 });
+    console.log(`[typst] ${kind}`, source);
+    await run(`${book.title}-${kind === "print" ? size : "rukopis"}`, () => source);
+  }
 
   async function run(name: string, source: () => string) {
     setBusy(true);
@@ -57,6 +84,34 @@ export function TypstProbe() {
           Knjiga 80.000 reči
         </button>
       </div>
+      {books.length > 0 && (
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <select value={bookId} onChange={(e) => setBookId(e.target.value)} className="rounded border border-muted/40 bg-paper px-2 py-1">
+            {books.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.title}
+              </option>
+            ))}
+          </select>
+          <select value={size} onChange={(e) => setSize(e.target.value as PrintSize)} className="rounded border border-muted/40 bg-paper px-2 py-1">
+            {PRINT_SIZES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <label className="flex items-center gap-1">
+            <input type="checkbox" checked={toc} onChange={(e) => setToc(e.target.checked)} />
+            Sadržaj
+          </label>
+          <button type="button" disabled={busy} className="ui-button rounded border border-muted/40 px-3 py-1" onClick={() => void exportBook("print")}>
+            Knjiga za štampu
+          </button>
+          <button type="button" disabled={busy} className="ui-button rounded border border-muted/40 px-3 py-1" onClick={() => void exportBook("manuscript")}>
+            Rukopis A4
+          </button>
+        </div>
+      )}
       <ul className="mt-6 space-y-1 font-mono text-xs">
         {busy && <li className="text-muted">Slažem…</li>}
         {log.map((line, i) => (

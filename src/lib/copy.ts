@@ -204,6 +204,15 @@ export const copy = {
     tickOff: (note: string) => `Urađeno: ${note}`,
   },
   // Kraj nacrta (T7): tih ekran, bez konfeta.
+  // ZADATAK_IZVOZ: tekst koji ide u izvezenu knjigu.
+  export: {
+    // Rukopis: „oko 82.000 reči” — na hiljadu, kraći tekst na stotinu.
+    aboutWords: (n: number) => {
+      const rounded = n >= 1000 ? Math.round(n / 1000) * 1000 : Math.max(100, Math.round(n / 100) * 100);
+      return `oko ${new Intl.NumberFormat("sr-Latn").format(rounded)} reči`;
+    },
+    contents: "Sadržaj",
+  },
   // Faza 5: knjiga složena za štampu (A5) — PDF pravi browser.
   print: {
     chapter: (n: number) => `Poglavlje ${toRoman(n)}`,

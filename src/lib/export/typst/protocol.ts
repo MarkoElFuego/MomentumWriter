@@ -19,6 +19,12 @@ export type TypstResponse =
       /** Only on the first compile: bytes over the network (0 when cached or unknown). */
       bytes?: number;
     }
-  | { id: number; ok: false; error: string };
+  | {
+      id: number;
+      ok: false;
+      error: string;
+      /** The compiler crashed (a Typst panic); the worker must be replaced. */
+      fatal: boolean;
+    };
 
 export type TypstResult = Omit<Extract<TypstResponse, { ok: true }>, "id" | "ok">;

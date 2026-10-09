@@ -73,6 +73,7 @@ src/
     db/                      # Dexie šema, migracije, repo funkcije
     ai/                      # promptovi, zod šeme, klijent
     text/                    # brojanje reči, izvlačenje konteksta
+    export/typst/            # izvoz: TipTap → Typst, šabloni, Typst worker (ZADATAK_IZVOZ)
   hooks/
 ```
 

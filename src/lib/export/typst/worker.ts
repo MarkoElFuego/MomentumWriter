@@ -53,6 +53,8 @@ scope.onmessage = async ({ data }) => {
   } catch (error) {
     // A failed init is retried on the next request.
     if (error instanceof Error && error.message.includes("/typst/")) ready = undefined;
-    scope.postMessage({ id: data.id, ok: false, error: error instanceof Error ? error.message : String(error) });
+    // A Rust panic leaves the WASM instance unusable: only a new worker helps.
+    const fatal = error instanceof WebAssembly.RuntimeError;
+    scope.postMessage({ id: data.id, ok: false, fatal, error: error instanceof Error ? error.message : String(error) });
   }
 };
