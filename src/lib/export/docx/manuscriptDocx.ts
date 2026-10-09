@@ -76,6 +76,31 @@ export function manuscriptDocx(book: ExportBook, options: ManuscriptOptions): Do
   });
 }
 
+/**
+ * „DOCX za Kindle” (P8): the same styles and real footnotes, but a book, not a
+ * manuscript — no header, no page numbers (the reader flows the text), single
+ * spacing, and a plain title page with the title and the author.
+ */
+export function kindleDocx(book: ExportBook, options: { author?: string }): Document {
+  const author = options.author?.trim() ?? "";
+  const notes = new Footnotes();
+  const parts = book.sections.filter((s) => s.role !== "titlePage");
+  const flush = { indent: { firstLine: 0 }, alignment: AlignmentType.CENTER };
+  const children: Paragraph[] = [
+    new Paragraph({ ...flush, spacing: { before: Math.round(5 * CM) }, children: [new TextRun({ text: book.title, size: 40 })] }),
+    ...(author ? [new Paragraph({ ...flush, spacing: { before: 480 }, children: [new TextRun(author)] })] : []),
+  ];
+  // Every part on a new page, the first one too: the title page comes before it.
+  parts.forEach((section) => children.push(...sectionParagraphs(section, notes, true)));
+  return new Document({
+    title: book.title,
+    creator: author || undefined,
+    styles: styles(240),
+    footnotes: notes.all(),
+    sections: [{ properties: { page: pageSetup() }, children }],
+  });
+}
+
 function pageSetup() {
   const margin = Math.round(2.5 * CM);
   return {

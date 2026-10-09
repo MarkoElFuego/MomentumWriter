@@ -4,6 +4,7 @@ import { copy } from "@/lib/copy";
 import type { Book, Part, PartKind } from "@/lib/db/schema";
 import { buildBook } from "../buildBook";
 import { runTypst } from "../nodeTypst";
+import { EBOOK_COVER_LAYOUT } from "../../epub/cover";
 import { lines, surname, typstLang } from "./common";
 import { manuscriptTemplate } from "./manuscript.typ";
 import { COVER_STYLES, PRINT_SIZES, printTemplate } from "./print.typ";
@@ -125,6 +126,14 @@ describe("printTemplate", () => {
       expect(run.errors).toEqual([]);
       // Title page, its blank back, the chapter: the title page did not spill over.
       expect(run.query?.[0]).toBe(3);
+    });
+
+    it.each(COVER_STYLES)("lays out only the cover for the e-book, on one 5 × 8 in page (%s)", async (cover) => {
+      const source = printTemplate(longTitle, { size: "a5", layout: EBOOK_COVER_LAYOUT, cover, author: "Ana Petrović", coverOnly: true });
+      const run = await runTypst(source + "\n#context [#metadata((counter(page).final().first(), page.width.inches(), page.height.inches())) <probe>]", "<probe>", "value");
+      expect(run.errors).toEqual([]);
+      expect(run.query?.[0]).toEqual([1, 5, 8]);
+      expect(source).not.toContain("Tekst");
     });
 
     it("puts the author under the title, or the text of „Naslovna” when there is no author", () => {

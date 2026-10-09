@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "eval:proofread": "tsx scripts/eval-proofread.ts",
-    "measure:typst": "tsx scripts/measure-typst.ts"
+    "measure:typst": "tsx scripts/measure-typst.ts",
+    "check:epub": "tsx scripts/check-epub.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -29,6 +30,7 @@
     "@tiptap/starter-kit": "^3.31.3",
     "dexie": "^4.4.6",
     "docx": "^9.9.0",
+    "jszip": "^3.10.2",
     "next": "15",
     "openai": "^7.23.0",
     "react": "19",
@@ -44,7 +46,6 @@
     "eslint": "9",
     "eslint-config-next": "15",
     "fake-indexeddb": "^6.2.5",
-    "jszip": "^3.10.2",
     "tailwindcss": "4",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",

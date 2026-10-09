@@ -19,3 +19,4 @@ momentum.zip
 
 # Typst WASM (27 MB) — kopira ga scripts/copy-typst-assets.mjs pre dev/build
 public/typst/
+tools/

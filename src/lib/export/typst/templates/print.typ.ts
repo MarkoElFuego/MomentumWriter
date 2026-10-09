@@ -23,6 +23,8 @@ export interface PrintOptions {
   author?: string;
   /** Page and margins from elsewhere (Amazon KDP, P6) instead of `size`. */
   layout?: Layout;
+  /** Only the title page — the e-book's cover image (P8). */
+  coverOnly?: boolean;
 }
 
 export interface Layout {
@@ -166,9 +168,11 @@ export function printTemplate(book: ExportBook, options: PrintOptions): string {
   const rest = book.sections.filter((s) => s.role !== "titlePage");
   const front = rest.filter((s) => s.kind === "front");
   const main = rest.filter((s) => s.kind !== "front");
+  const cover = `#title-page("${options.cover ?? "classic"}", ${byline})`;
+  if (options.coverOnly) return [preamble, cover].join("\n\n");
   return [
     preamble,
-    `#title-page("${options.cover ?? "classic"}", ${byline})`,
+    cover,
     ...front.map(section),
     ...(options.toc && main.length ? [contents(main)] : []),
     ...main.map(section),

@@ -23,3 +23,9 @@ export function pdfFileName(title: string, manuscript?: { author?: string }): st
 export function kdpFileName(title: string, trimId: string): string {
   return `${slug(title) || slug(copy.structure.defaultBookTitle)}-KDP-${trimId}.pdf`;
 }
+
+/** "Naslov.epub"; the plain Word file for Kindle is "Naslov-Kindle.docx". */
+export function ebookFileName(title: string, format: "epub" | "docx"): string {
+  const name = slug(title) || slug(copy.structure.defaultBookTitle);
+  return format === "epub" ? `${name}.epub` : `${name}-Kindle.docx`;
+}

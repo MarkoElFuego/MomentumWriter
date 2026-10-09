@@ -5,7 +5,8 @@ import { copy } from "@/lib/copy";
 import { getBook, updateBook } from "@/lib/db/books";
 import { listParts } from "@/lib/db/parts";
 import type { Book, ID, Part } from "@/lib/db/schema";
-import { kdpFileName, pdfFileName } from "@/lib/export/fileName";
+import { ebookFileName, kdpFileName, pdfFileName } from "@/lib/export/fileName";
+import { EBOOK_COVER_LAYOUT, svgToPng } from "@/lib/export/epub/cover";
 import { KDP_TRIMS, kdpChecks, layoutForKdp } from "@/lib/export/kdp";
 import { buildBook } from "@/lib/export/typst/buildBook";
 import { compilePdf, previewPage, typstLoaded } from "@/lib/export/typst/client";
@@ -23,8 +24,8 @@ import {
 
 const PREVIEW_DELAY_MS = 400;
 
-type Destination = "print" | "kdp" | "manuscript";
-const DESTINATIONS: Destination[] = ["print", "kdp", "manuscript"];
+type Destination = "print" | "kdp" | "ebook" | "manuscript";
+const DESTINATIONS: Destination[] = ["print", "kdp", "ebook", "manuscript"];
 
 interface ExportDialogProps {
   bookId: ID;
@@ -51,6 +52,8 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
   const [spacing, setSpacing] = useState<1.5 | 2>(1.5);
   /** Rukopis: Word file (recommended) or PDF (P7). */
   const [format, setFormat] = useState<"docx" | "pdf">("docx");
+  /** E-knjiga: EPUB (recommended) or a plain DOCX for Kindle (P8). */
+  const [ebookFormat, setEbookFormat] = useState<"epub" | "docx">("epub");
   const [author, setAuthor] = useState("");
   const [contact, setContact] = useState("");
   const [page, setPage] = useState(0);
@@ -86,6 +89,8 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
   const model = useMemo(() => (data ? buildBook(data.book, data.parts) : undefined), [data]);
   const fixedSource = useMemo(() => {
     if (!model || destination === "kdp") return undefined;
+    // E-knjiga: the preview is the cover — the reader lays out the text itself.
+    if (destination === "ebook") return printTemplate(model, { size: "a5", layout: EBOOK_COVER_LAYOUT, cover, author, coverOnly: true });
     return destination === "print"
       ? printTemplate(model, { size, toc, cover, author })
       : manuscriptTemplate(model, { author, contact, spacing });
@@ -160,6 +165,19 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
     if (!source || !data || downloading || (destination === "kdp" && !kdpReady)) return;
     setDownloading(true);
     try {
+      if (destination === "ebook") {
+        if (!model) return;
+        if (ebookFormat === "docx") {
+          const [{ Packer }, { kindleDocx }] = await Promise.all([import("docx"), import("@/lib/export/docx/manuscriptDocx")]);
+          save(await Packer.toBlob(kindleDocx(model, { author })), ebookFileName(data.book.title, "docx"));
+        } else {
+          const [{ buildEpub }, { svg }] = await Promise.all([import("@/lib/export/epub/buildEpub"), previewPage(source, 0)]);
+          const epub = await buildEpub(model, { id: data.book.id, author, cover: await svgToPng(svg), now: new Date() });
+          save(new Blob([epub as BlobPart], { type: "application/epub+zip" }), ebookFileName(data.book.title, "epub"));
+        }
+        setFailed(false);
+        return;
+      }
       if (destination === "manuscript" && format === "docx") {
         // Loaded only now: the Word library never slows down the editor.
         const [{ Packer }, { manuscriptDocx }] = await Promise.all([import("docx"), import("@/lib/export/docx/manuscriptDocx")]);
@@ -182,7 +200,7 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
     } finally {
       setDownloading(false);
     }
-  }, [source, data, destination, author, downloading, kdpReady, kdpTrimId, format, model, contact, spacing]);
+  }, [source, data, destination, author, downloading, kdpReady, kdpTrimId, format, ebookFormat, model, contact, spacing]);
 
   // Author and contact belong to the book: the next manuscript remembers them.
   const saveAuthor = (value: string) => {
@@ -285,7 +303,34 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
                 className="book-field mt-0.5"
               />
             </div>
-            {destination !== "manuscript" ? (
+            {destination === "ebook" ? (
+              <>
+                <fieldset>
+                  <legend className={label}>{t.format}</legend>
+                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                    {(["epub", "docx"] as const).map((f) => (
+                      <label key={f} className="flex items-center gap-1.5">
+                        <input type="radio" name="export-ebook-format" value={f} checked={ebookFormat === f} onChange={() => setEbookFormat(f)} />
+                        {t.epub.formats[f]}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                {ebookFormat === "epub" && (
+                  <fieldset>
+                    <legend className={label}>{t.cover}</legend>
+                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                      {COVER_STYLES.map((style) => (
+                        <label key={style} className="flex items-center gap-1.5">
+                          <input type="radio" name="export-ebook-cover" value={style} checked={cover === style} onChange={() => setCover(style)} />
+                          {t.covers[style]}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
+              </>
+            ) : destination !== "manuscript" ? (
               <>
                 <div>
                   <label htmlFor="export-size" className={label}>
@@ -404,7 +449,15 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
               disabled={!source || downloading || (destination === "kdp" && !kdpReady)}
               onClick={() => void download()}
             >
-              {downloading ? t.downloading : destination === "manuscript" && format === "docx" ? t.downloadDocx : t.download}
+              {downloading
+                ? t.downloading
+                : destination === "ebook"
+                  ? ebookFormat === "epub"
+                    ? t.epub.downloadEpub
+                    : t.downloadDocx
+                  : destination === "manuscript" && format === "docx"
+                    ? t.downloadDocx
+                    : t.download}
             </button>
             <button type="button" className="ui-button text-sm" onClick={onClose}>
               {t.close}
@@ -421,6 +474,7 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
             {preview && <div dangerouslySetInnerHTML={{ __html: preview.svg }} />}
           </div>
           {destination === "manuscript" && format === "docx" && <p className="mt-3 text-xs text-muted">{t.docxPreviewNote}</p>}
+          {destination === "ebook" && <p className="mt-3 max-w-[26rem] text-center text-xs text-muted">{t.epub.previewNote}</p>}
           {preview && (
             <div className="mt-3 flex items-center gap-4 text-sm text-muted">
               <button type="button" className="ui-button px-2" aria-label={t.previousPage} disabled={page === 0} onClick={() => turn(-1)}>

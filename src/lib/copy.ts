@@ -217,6 +217,7 @@ export const copy = {
       print: { name: "Knjiga za štampu", hint: "PDF · štamparija, samostalno izdanje, poklon primerci" },
       manuscript: { name: "Rukopis za izdavača", hint: "PDF · izdavač, agent, konkurs, lektor" },
       kdp: { name: "Amazon KDP — štampana", hint: "PDF · meki povez po KDP pravilima" },
+      ebook: { name: "E-knjiga", hint: "EPUB · Kindle, Apple Books, Kobo, Google Play" },
     },
     // Amazon KDP (P6): provera pre preuzimanja i podsetnik za koricu.
     kdp: {
@@ -256,6 +257,14 @@ export const copy = {
     format: "Format",
     formats: { docx: "DOCX (preporučeno)", pdf: "PDF" },
     docxPreviewNote: "Pregled je PDF; Word fajl ima isti raspored.",
+    // E-knjiga (P8).
+    epub: {
+      cover: "Naslovnica",
+      start: "Početak",
+      formats: { epub: "EPUB (preporučeno)", docx: "DOCX za Kindle" },
+      previewNote: "Pregled pokazuje naslovnicu; tekst slaže čitač, prema podešavanjima čitaoca.",
+      downloadEpub: "Preuzmi EPUB",
+    },
     downloading: "Slažem…",
     close: "Zatvori",
     preparing: "Pripremam slaganje…",
