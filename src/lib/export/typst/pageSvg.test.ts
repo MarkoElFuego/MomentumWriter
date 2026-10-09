@@ -9,6 +9,15 @@ describe("pageSvg", () => {
     );
   });
 
+  it("drops the text layer for mouse selection, which would show as a second copy", () => {
+    const svg =
+      '<svg class="typst-doc" viewBox="0 0 1 2" width="1" height="2"><g><use href="#g1"/><g transform="scale(16,-16)"><foreignObject x="0" y="-73.56" width="1923.51" height="62.50"><h5:div class="tsel" style="font-size: 62px">Kiša </h5:div></foreignObject></g></g><foreignObject x="1"><h5:div class="tsel">i opet</h5:div></foreignObject></svg>';
+    const page = pageSvg(svg, 0, 1, 1);
+    expect(page).not.toContain("foreignObject");
+    expect(page).not.toContain("Kiša");
+    expect(page).toContain('<use href="#g1"/>');
+  });
+
   it("refuses an SVG it does not recognize", () => {
     expect(() => pageSvg("<svg></svg>", 0, 1, 1)).toThrow();
   });

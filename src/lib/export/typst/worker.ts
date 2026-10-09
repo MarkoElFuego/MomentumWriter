@@ -86,7 +86,9 @@ scope.onmessage = async ({ data }) => {
       // Pages are stacked top to bottom; the window picks one of them.
       const top = pages.slice(0, page).reduce((sum, p) => sum + p.height, 0);
       const { width, height } = pages[page]!;
-      const svg = await r.renderSvg({
+      // renderSvgDiff, not renderSvg: only it draws just the window — renderSvg
+      // draws the whole book every time (27 MB of SVG for 300 pages).
+      const svg = r.renderSvgDiff({
         renderSession: session,
         window: { lo: { x: 0, y: top }, hi: { x: width, y: top + height } },
       });

@@ -68,20 +68,25 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
     };
   }, [bookId]);
 
+  // The whole book once; typing the author's name only changes the template around it.
+  const model = useMemo(() => (data ? buildBook(data.book, data.parts) : undefined), [data]);
   const source = useMemo(() => {
-    if (!data) return undefined;
-    const model = buildBook(data.book, data.parts);
+    if (!model) return undefined;
     return destination === "print"
       ? printTemplate(model, { size, toc })
       : manuscriptTemplate(model, { author, contact, spacing });
-  }, [data, destination, size, toc, author, contact, spacing]);
+  }, [model, destination, size, toc, author, contact, spacing]);
 
-  // Preview: waits for a pause in the changes; a newer request wins.
+  // Preview: a changed setting waits for a pause in the changes; turning a page
+  // does not wait (the worker keeps the compiled book). A newer request wins.
+  const shownSource = useRef<string>(undefined);
   useEffect(() => {
     if (!source) return;
     let current = true;
     setLoading(true);
+    const delay = source === shownSource.current ? 0 : PREVIEW_DELAY_MS;
     const timer = setTimeout(() => {
+      shownSource.current = source;
       previewPage(source, page)
         .then((result) => {
           if (!current) return;
@@ -96,7 +101,7 @@ export function ExportDialog({ bookId, onClose }: ExportDialogProps) {
         .finally(() => {
           if (current) setLoading(false);
         });
-    }, PREVIEW_DELAY_MS);
+    }, delay);
     return () => {
       current = false;
       clearTimeout(timer);

@@ -248,16 +248,6 @@ export const copy = {
       "za decu": "knjiga za decu",
     } as Record<string, string | undefined>,
   },
-  // Faza 5: knjiga složena za štampu (A5) — PDF pravi browser.
-  print: {
-    chapter: (n: number) => `Poglavlje ${toRoman(n)}`,
-    savePdf: "Sačuvaj kao PDF",
-    hint: "U prozoru za štampu izaberi „Sačuvaj kao PDF” i isključi „Zaglavlja i podnožja”.",
-    back: "Nazad u knjigu",
-    notFound: "Ova knjiga ne postoji.",
-    loadFailed: "Knjiga trenutno ne može da se učita. Osveži stranicu.",
-    empty: "Knjiga još nema teksta za štampu.",
-  },
   draftEnd: {
     confirm: "Označiti kraj nacrta?",
     confirmHint: "Knjiga posle toga više nije „Nacrt 1”. Tekst se ne menja.",
