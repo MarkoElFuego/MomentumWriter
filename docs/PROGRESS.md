@@ -7,6 +7,7 @@ Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen za
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
 **Sledeće:** ZADATAK_IZVOZ P6 — Amazon KDP, štampana knjiga (PDF). Jedna faza = jedan razgovor = jedan commit. Pre koda: plan i „ok” od autora.
+- Stanje 2026-10-09: P5 gotov, autor ručno proverio („radi apsolutno sve”).
 - Stanje 2026-10-09: P4 gotov, autor proverio („radi bolje”). **Otvoreno (za kasnije, odluka autora):** u pregledu rukopisa nešto nije u redu oko fusnote (na dnu strane, pored broja fusnote) — pogledati pre ili u P5.
 - Stanje 2026-10-09: P3 gotov, autor ručno proverio („radi”).
 - Stanje 2026-10-09: P2 gotov, autor ručno proverio („vrh radi”).
