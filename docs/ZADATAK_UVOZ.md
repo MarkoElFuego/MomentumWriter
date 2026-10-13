@@ -15,7 +15,7 @@ Momentum sam sređuje **raspored** (poglavlja, uvodni i završni delovi, naslovi
 | **DOCX** (Word, LibreOffice, Google Docs → „Preuzmi kao .docx") | najbolji | naslovi, kurziv, bold, centriran red, prave fusnote |
 | **Nalepi tekst** (iz Worda, Google Docs-a…) | dobar | kurziv, bold, naslovi; fusnote samo ako su prepoznatljive |
 | **TXT** | osnovni | samo tekst; poglavlja po oznakama („Poglavlje 3", „III") |
-| **PDF** (Faza I4) | najslabiji | samo PDF sa tekstom (ne sken); kurziv delimično; fusnote kao običan tekst |
+| **PDF** (Faza I4) | najslabiji | samo PDF sa tekstom (ne sken); kurziv delimično; fusnote se povezuju po broju (odluka autora 2026-10-13) |
 
 Sve se dešava lokalno u browseru — fajl i tekst ne napuštaju računar (osim ako autor uključi „Neka Tiron pročita knjigu", Faza I3).
 
@@ -140,7 +140,7 @@ Sve se dešava lokalno u browseru — fajl i tekst ne napuštaju računar (osim 
 - Redovi → pasusi: po razmaku između redova i uvlačenju prvog reda; rastavljene reči na kraju reda se spajaju (pravilo iz „Sredi tekst").
 - Uklanjaju se brojevi strana i tekuća zaglavlja/podnožja: red koji se ponavlja na ≥ 30% strana, ili red koji je samo broj.
 - Kurziv i bold iz imena fonta, kad postoji; naslovi po veličini slova (veće od teksta → kandidat za naslov dela, dalje važe pravila iz I1).
-- Fusnote ostaju kao običan tekst na mestu gde su na strani; upozorenje u pregledu: „Fusnote iz PDF-a su uvezene kao običan tekst."
+- ~~Fusnote ostaju kao običan tekst~~ — **izmena 2026-10-13 (odluka autora):** broj u tekstu i beleška na dnu strane se povezuju u pravu fusnotu, kao i „[1]” u TXT-u; samo nepovezane ostaju tekst, uz upozorenje.
 - PDF bez teksta (sken): „Ovaj PDF je slika strana — nema teksta za uvoz."
 
 **Testovi:** povratni put — probna knjiga → izvoz „Knjiga za štampu" (A5) i „Rukopis (PDF)" → uvoz → isti broj poglavlja i nazivi, reči ±1% (fusnote), u tekstu nema brojeva strana ni tekućih zaglavlja.

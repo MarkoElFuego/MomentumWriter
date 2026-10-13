@@ -3,6 +3,7 @@ import { countWords } from "@/lib/text/countWords";
 import { blocksToLatin, cyrillicShare, toLatin } from "./cyrillic";
 import { htmlToBlocks, type ImportWarnings } from "./fromHtml";
 import { textToBlocks } from "./fromText";
+import { linkPlainNotes } from "./plainNotes";
 import { splitBook, type FootnoteNotes, type SplitBook } from "./splitBook";
 
 // Uvoz (I2): a file or a paste → one source the preview splits into parts.
@@ -52,11 +53,20 @@ const NO_WARNINGS: ImportWarnings = { images: 0, tables: 0, plainFootnotes: 0 };
 function source(kind: SourceKind, parts: Omit<ImportSource, "kind" | "words" | "warnings"> & { warnings?: Partial<SourceWarnings> }): ImportSource {
   const words = countWords(parts.sourceText);
   if (!words) throw new ImportError("empty");
+  // Footnotes written as text ("[1]" in the text, "[1] …" below) become real ones, from any source.
+  const linked = linkPlainNotes(parts.blocks);
+  const warnings = { ...NO_WARNINGS, cyrillic: cyrillicShare(parts.sourceText) > 0.5, ...parts.warnings };
+  warnings.plainFootnotes += linked.unlinked;
+  // A PDF whose notes all found their marks needs no word about notes as text.
+  if (warnings.pdfFootnotes && linked.notes.size && !linked.unlinked) warnings.pdfFootnotes = false;
   return {
     kind,
     ...parts,
+    blocks: linked.blocks,
+    notes: new Map([...parts.notes, ...linked.notes]),
+    dropped: [...parts.dropped, ...linked.dropped],
     words,
-    warnings: { ...NO_WARNINGS, cyrillic: cyrillicShare(parts.sourceText) > 0.5, ...parts.warnings },
+    warnings,
   };
 }
 
@@ -84,11 +94,11 @@ interface Names {
 
 const names = ({ title, fileName }: Names = {}) => ({ ...(title ? { title } : {}), ...(fileName ? { fileName } : {}) });
 
-function fromPlainText(kind: SourceKind, text: string, from?: Names): ImportSource {
+export function fromPlainText(kind: SourceKind, text: string, from?: Names): ImportSource {
   return source(kind, { blocks: textToBlocks(text), notes: new Map(), sourceText: text, dropped: [], ...names(from) });
 }
 
-function fromHtmlText(kind: SourceKind, html: string, from?: Names, warnings?: Partial<SourceWarnings>): ImportSource {
+export function fromHtmlText(kind: SourceKind, html: string, from?: Names, warnings?: Partial<SourceWarnings>): ImportSource {
   const result = htmlToBlocks(html);
   return source(kind, { ...result, warnings: { ...result.warnings, ...warnings }, ...names(from) });
 }

@@ -17,6 +17,8 @@ export interface WordAudit {
 /** Lower case, letters and digits only: "Kofer," and "kofer" are the same word, "crno-beli" is "crnobeli". */
 export function wordsOf(text: string): string[] {
   return text
+    // "Svetonije[1]": a word and a footnote number.
+    .replace(/\[(\d{1,4})\]/gu, " $1 ")
     .split(/\s+/u)
     .filter((token) => HAS_WORD_CHAR.test(token))
     .map((token) => token.toLowerCase().replace(/[^\p{L}\p{N}]/gu, ""));

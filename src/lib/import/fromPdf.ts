@@ -25,6 +25,8 @@ export interface PdfLine {
   /** The type size most of the line is set in. */
   size: number;
   runs: Run[];
+  /** Begins with a footnote number ("[1] Svetonije…"). */
+  noteStart?: boolean;
 }
 
 export interface PdfPage {
@@ -140,16 +142,30 @@ function toLines(items: Item[], names: Map<string, string>, page: number): PdfLi
   return groups.map((group) => {
     const ordered = group.sort((a, b) => a.x - b.x);
     const size = mode(ordered.flatMap((item) => Array<number>(item.text.length).fill(item.size)))!;
+    // The line's baseline: the lowest item — a superscript sits above it.
+    const baseline = Math.max(...ordered.map((item) => item.top));
+    // A footnote number: a small or raised number (Word, LibreOffice), or a narrow
+    // superscript figure of the same size (Typst sets it with the font's own superscripts).
+    const footnoteNumber = (item: Item) =>
+      /^\d{1,3}$/u.test(item.text) &&
+      (baseline - item.top > 0.15 * size || item.size < 0.8 * size || item.width / item.text.length < 0.45 * item.size);
     const runs: Run[] = [];
+    let noteStart = false;
     let previous: Item | undefined;
-    for (const item of ordered) {
+    for (const [i, item] of ordered.entries()) {
       const name = names.get(item.font) ?? "";
       let text = item.text;
       const gap = previous ? item.x - (previous.x + previous.width) : 0;
-      // A footnote number set in superscript, right after a word: kept, but apart — "čekao [1]".
-      const isNote = previous && /^\d{1,3}$/u.test(text) && gap < 0.1 * size && /[\p{L}.,;:!?…”"’)]$/u.test(previous.text) && item.width / text.length < 0.45 * item.size;
-      if (isNote) text = ` [${text}]`;
-      else if (previous && gap > 0.15 * size && !/\s$/u.test(previous.text) && !/^\s/u.test(text)) text = ` ${text}`;
+      if (previous && footnoteNumber(item) && gap < 0.15 * size && /[\p{L}.,;:!?…”"’)]$/u.test(previous.text)) {
+        // Right after a word: the mark in the text — kept apart, "čekao [1]", and linked to its note later.
+        text = ` [${text}]`;
+      } else if (!previous && i + 1 < ordered.length && footnoteNumber(item) && item.size <= ordered[i + 1]!.size) {
+        // At the start of a line, before its text: the number of a footnote at the foot of the page.
+        text = `[${text}] `;
+        noteStart = true;
+      } else if (previous && gap > 0.15 * size && !/\s$/u.test(previous.text) && !/^\s/u.test(text)) {
+        text = ` ${text}`;
+      }
       runs.push({ text, italic: /italic|oblique/iu.test(name), bold: /bold|black|heavy/iu.test(name) });
       previous = item;
     }
@@ -157,7 +173,7 @@ function toLines(items: Item[], names: Map<string, string>, page: number): PdfLi
     if (ordered.at(-1)!.hyphen) runs.at(-1)!.text += "-";
     const first = ordered[0]!;
     const last = ordered.at(-1)!;
-    return { page, top: first.top, left: first.x, right: last.x + last.width, size, runs };
+    return { page, top: baseline, left: first.x, right: last.x + last.width, size, runs, ...(noteStart ? { noteStart } : {}) };
   });
 }
 
@@ -295,6 +311,11 @@ export function pagesToHtml(pages: PdfPage[]): string {
     const endsParagraph = (line: PdfLine) => line.right < right - 2 * body && /[.!?…"”»:]$/u.test(lineText(line).trim());
     const lastBody = lines.findLastIndex(isBody);
     const words = wordCount(lines.map(lineText).join(" "));
+    const firstNote = lines.findIndex(
+      (line, i) => i > 0 && line.noteStart && (line.top - lines[i - 1]!.top > 1.6 * pitch || line.size < body * 0.9),
+    );
+    const smaller = lines.findIndex((line, i) => i > lastBody && line.size < body * 0.9);
+    const notesFrom = firstNote !== -1 ? firstNote : smaller !== -1 ? smaller : lines.length;
 
     // The first page, if short, is the title page: its lines as they are.
     if (page.number === 1 && words <= 60) {
@@ -307,11 +328,11 @@ export function pagesToHtml(pages: PdfPage[]): string {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]!;
       const text = lineText(line);
-      // Smaller type under the last line of text: the page's footnotes, their number kept apart.
-      if (i > lastBody && line.size < body * 0.9) {
-        const [first, ...rest] = line.runs;
-        const numbered = first && /^\d{1,3}$/u.test(first.text.trim()) ? [{ ...first, text: `[${first.text.trim()}] ` }, ...rest] : line.runs;
-        notes.push(runsHtml(numbered));
+      // The page's footnotes: from the first numbered note under a gap (or in smaller type) to the
+      // foot of the page. A note's own next lines join it; a new number starts the next note.
+      if (i >= notesFrom) {
+        if (line.noteStart || !notes.length) notes.push(runsHtml(line.runs));
+        else notes[notes.length - 1] += `<br>${runsHtml(line.runs)}`;
         continue;
       }
       const previous = lines[i - 1];
