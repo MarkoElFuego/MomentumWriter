@@ -9,6 +9,11 @@ function count(n: number, one: string, few: string, many: string): string {
   return `${n} ${many}`;
 }
 
+/** "82.314 reči", "1 reč", "21 reč". */
+function wordsOf(n: number): string {
+  return `${new Intl.NumberFormat("sr-Latn").format(n)} ${n % 10 === 1 && n % 100 !== 11 ? "reč" : "reči"}`;
+}
+
 // Sav UI tekst na jednom mestu — ton se menja ovde, ne po komponentama.
 export const copy = {
   appName: "Momentum",
@@ -185,6 +190,8 @@ export const copy = {
     refreshUnchanged: "Ništa novo od poslednjeg čitanja.",
     refreshEmpty: "U ovom poglavlju još nema teksta.",
     refreshFailed: "Tiron trenutno ne može da pročita poglavlje. Pokušaj malo kasnije.",
+    // Uvoz (I3): Tiron reads an imported book in the background.
+    importReading: (done: number, total: number) => `Tiron čita knjigu · ${done} od ${total}`,
     // Put do kraja (T7): blizu planirane dužine, ispod Srca knjige.
     draftCountdown: (pages: number) =>
       pages <= 0 ? "Planirana dužina je dostignuta." : `Još oko ${count(pages, "stranica", "stranice", "stranica")} do kraja nacrta`,
@@ -316,6 +323,53 @@ export const copy = {
       })?`,
     bookDeleted: "Knjiga obrisana",
     undo: "Poništi",
+    // Uvoz (ZADATAK_UVOZ I3): next to „Nova knjiga”, and under it while there are no books.
+    importBook: "Uvezi knjigu",
+    importFromEmpty: "ili uvezi rukopis koji već imaš",
+  },
+  import: {
+    title: "Uvezi knjigu",
+    intro: "Momentum sređuje raspored — poglavlja, naslove, kurziv, fusnote. Reči ostaju tvoje.",
+    chooseFile: "Izaberi fajl",
+    fileTypes: "DOCX, PDF ili TXT — ili prevuci fajl ovde",
+    pasteLabel: "Nalepi tekst",
+    pastePlaceholder: "Klikni ovde i nalepi tekst (Ctrl/Cmd+V)",
+    reading: "Čitam rukopis…",
+    pasted: (words: number) => `Nalepljeno: ${wordsOf(words)}`,
+    fromFile: (name: string, words: number) => `${name} · ${wordsOf(words)}`,
+    otherSource: "Drugi fajl ili tekst",
+    bookTitle: "Naslov knjige",
+    // "24 poglavlja · posveta · epilog · 82.314 reči"
+    summary: (chapters: number, others: string[], words: number) =>
+      [count(chapters, "poglavlje", "poglavlja", "poglavlja"), ...others.map((name) => name.toLocaleLowerCase("sr")), wordsOf(words)].join(" · "),
+    partsLabel: "Delovi knjige",
+    partWords: (words: number) => wordsOf(words),
+    nothingFound: "Poglavlja nisu pronađena — ceo tekst ide u jedno poglavlje.",
+    merge: "Spoji sa prethodnim",
+    mergeLabel: (name: string) => `Spoji „${name}” sa prethodnim delom`,
+    undoMerge: "Vrati",
+    keepTitlePage: "Zadrži naslovnu stranu kao deo „Naslovna”",
+    latin: "Preslovi na latinicu",
+    cyrillicNote: "Provera jezika i dopune rade za latinicu.",
+    tironReads: "Neka Tiron pročita knjigu",
+    tironReadsHint: "Tekst se šalje AI-ju, kao i kad pišeš. Tiron će znati likove, mesta i otvorene niti.",
+    warnings: {
+      images: (n: number) => `${count(n, "slika je izostavljena", "slike su izostavljene", "slika je izostavljeno")} — Momentum čuva samo tekst.`,
+      tables: "Tabele su pretvorene u običan tekst.",
+      plainFootnotes: (n: number) => `${count(n, "fusnota nije prepoznata", "fusnote nisu prepoznate", "fusnota nije prepoznato")} — ostaju kao običan tekst.`,
+      pdfFootnotes: "Fusnote iz PDF-a su uvezene kao običan tekst.",
+    },
+    import: "Uvezi knjigu",
+    importing: "Uvozim…",
+    cancel: "Odustani",
+    failed: "Uvoz nije uspeo. Tvoj fajl nije promenjen.",
+    readFailed: "Ovaj fajl trenutno ne može da se pročita. Pokušaj ponovo.",
+    errors: {
+      encoding: "Ovaj fajl nije čitljiv kao tekst. Sačuvaj ga kao UTF-8 i pokušaj ponovo.",
+      unsupported: "Ovakav fajl ne može da se uveze — izaberi DOCX, PDF ili TXT.",
+      empty: "U ovome nema teksta za uvoz.",
+      scan: "Ovaj PDF je slika strana — nema teksta za uvoz.",
+    },
   },
   structure: {
     panelLabel: "Struktura knjige",

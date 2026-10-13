@@ -121,8 +121,7 @@ Redosled (status u `docs/PROGRESS.md`): `docs/ZADATAK_UI.md` U0 → U1 → ostat
 1. **Stranice umesto reči** — „+ 1 stranica” svakih 300 reči, mala animacija papira na gomilu
 2. **Kalendar** na početnom ekranu (tačkice po danima, „6 dana pisanja · 4.280 novih reči · 12 stranica”)
 3. **`[[likovi]]`** — TipTap mention ekstenzija, kartica lika, AI dobija listu likova u kontekstu
-4. **Export u DOCX**
-5. **Optimizacija troškova sivog teksta** (v0.2 Faza 8) — samo ako autor odluči
+4. **Optimizacija troškova sivog teksta** (v0.2 Faza 8) — samo ako autor odluči
 
 ## v0.3 (cloud + povratak mejlom)
 

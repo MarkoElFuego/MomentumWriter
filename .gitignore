@@ -20,3 +20,9 @@ momentum.zip
 # Typst WASM (27 MB) — kopira ga scripts/copy-typst-assets.mjs pre dev/build
 public/typst/
 tools/
+
+# autorovi probni rukopisi za uvoz — privatno
+scripts/import-samples/
+
+# pdf.js worker — kopira ga scripts/copy-typst-assets.mjs pre dev/build
+public/pdfjs/

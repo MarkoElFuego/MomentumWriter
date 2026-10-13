@@ -593,3 +593,22 @@ h2 {
     transition: none;
   }
 }
+
+/* Uvoz (I3): isti prozor kao izvoz, uži — nema pregleda strana. */
+.import-dialog {
+  width: min(40rem, calc(100vw - 2rem));
+}
+
+.import-source {
+  display: block;
+  border: 1px dashed color-mix(in srgb, var(--ink-muted) 40%, transparent);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+}
+
+.import-parts {
+  max-height: 16rem;
+  overflow-y: auto;
+  border-top: 1px solid color-mix(in srgb, var(--ink-muted) 20%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink-muted) 20%, transparent);
+}

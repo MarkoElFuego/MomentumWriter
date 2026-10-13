@@ -7,7 +7,8 @@ const compat = new FlatCompat({ baseDirectory: __dirname });
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
-  { ignores: [".next/**", "node_modules/**", "next-env.d.ts"] },
+  // public/pdfjs: the pdf.js worker copied from node_modules (scripts/copy-typst-assets.mjs).
+  { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "public/pdfjs/**"] },
 ];
 
 export default eslintConfig;

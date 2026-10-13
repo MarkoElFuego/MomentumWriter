@@ -53,6 +53,11 @@ export interface Book {
   author?: string;
   /** E-mail, phone… one item per line. */
   contact?: string;
+  /**
+   * Uvoz (I3): Tiron reads an imported book part by part in the background;
+   * `done` of `partIds` are read. Gone when he is through — a closed tab goes on next time.
+   */
+  importReading?: { partIds: ID[]; done: number };
 }
 
 export interface BestLine {
@@ -296,6 +301,8 @@ export class MomentumDB extends Dexie {
     this.version(14).stores({});
     // v15: optional Book.author and Book.contact (export, P4). No index, nothing to copy.
     this.version(15).stores({});
+    // v16: optional Book.importReading (import, I3). No index, nothing to copy.
+    this.version(16).stores({});
   }
 }
 

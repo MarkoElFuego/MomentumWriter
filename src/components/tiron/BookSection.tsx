@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { liveQuery } from "dexie";
 import { BookDetailsFields, handleFieldKeys, type BookDetailsValue } from "@/components/book/BookDetailsFields";
 import { copy } from "@/lib/copy";
-import { cleanHeart } from "@/lib/db/books";
+import { cleanHeart, getBook } from "@/lib/db/books";
 import type { ID, StoryMemory } from "@/lib/db/schema";
 import { removeMemoryItem } from "@/lib/db/memory";
 import { getOpenSections, setSectionOpen } from "@/lib/db/settings";
@@ -41,6 +42,7 @@ export function BookSection({
   // null until the remembered state is read — drawn collapsed meanwhile.
   const [open, setOpen] = useState<boolean | null>(null);
   const [editing, setEditing] = useState(false);
+  const reading = useImportReading(bookId);
   const summaryRef = useRef<HTMLButtonElement>(null);
   const backToSummary = useRef(false);
 
@@ -91,6 +93,12 @@ export function BookSection({
           ›
         </span>
       </button>
+      {/* Uvoz (I3): while Tiron reads an imported book — one quiet line, open or not. */}
+      {reading && (
+        <p role="status" className="mt-1 text-xs text-muted">
+          {copy.book.importReading(reading.done, reading.total)}
+        </p>
+      )}
 
       {open && (
         <div className="mt-3">
@@ -174,6 +182,22 @@ export function BookSection({
       )}
     </section>
   );
+}
+
+/** How far Tiron is with an imported book, live: null when he isn't reading one. */
+function useImportReading(bookId: ID): { done: number; total: number } | null {
+  const [reading, setReading] = useState<{ done: number; total: number } | null>(null);
+  useEffect(() => {
+    const subscription = liveQuery(() => getBook(bookId)).subscribe({
+      next: (book) => {
+        const state = book?.importReading;
+        setReading(state ? { done: state.done, total: state.partIds.length } : null);
+      },
+      error: (error) => console.error("Failed to follow the import reading", error),
+    });
+    return () => subscription.unsubscribe();
+  }, [bookId]);
+  return reading;
 }
 
 function HeartLine({ label, text }: { label: string; text: string }) {

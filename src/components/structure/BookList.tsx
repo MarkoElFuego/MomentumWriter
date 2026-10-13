@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ToolbarMenu } from "@/components/editor/ToolbarMenu";
@@ -11,6 +12,9 @@ import { bookEntryHref } from "@/lib/db/resume";
 import type { Book, ID } from "@/lib/db/schema";
 import { UndoToast } from "./UndoToast";
 
+// The import reads Word, PDF and the editor's schema: loaded only when the author opens it.
+const ImportDialog = dynamic(() => import("@/components/import/ImportDialog").then((m) => m.ImportDialog), { ssr: false });
+
 export function BookList() {
   const router = useRouter();
   const [books, setBooks] = useState<Book[] | null>(null);
@@ -18,6 +22,7 @@ export function BookList() {
   const [busy, setBusy] = useState(false);
   const [menuFor, setMenuFor] = useState<ID | null>(null);
   const [confirming, setConfirming] = useState<{ id: ID; words: number } | null>(null);
+  const [importing, setImporting] = useState(false);
   const pendingDelete = useUndoDelete();
   const rowButtons = useRef(new Map<ID, HTMLButtonElement>());
 
@@ -160,15 +165,25 @@ export function BookList() {
           </ul>
         </>
       )}
-      {/* With no books it is the only thing to do: the main button. */}
-      <button
-        type="button"
-        disabled={busy}
-        className={books.length === 0 ? "book-start mt-8" : "ui-button mt-8 border border-muted/40 px-4 py-2"}
-        onClick={() => void create()}
-      >
-        {copy.library.newBook}
-      </button>
+      {/* With no books it is the only thing to do: the main button, the import a quiet link under it. */}
+      <div className={books.length === 0 ? "mt-8" : "mt-8 flex flex-wrap items-center gap-4"}>
+        <button
+          type="button"
+          disabled={busy}
+          className={books.length === 0 ? "book-start" : "ui-button border border-muted/40 px-4 py-2"}
+          onClick={() => void create()}
+        >
+          {copy.library.newBook}
+        </button>
+        <button
+          type="button"
+          className={books.length === 0 ? "ui-button mt-3 block text-sm text-muted underline" : "ui-button px-2 py-2 text-muted"}
+          onClick={() => setImporting(true)}
+        >
+          {books.length === 0 ? copy.library.importFromEmpty : copy.library.importBook}
+        </button>
+      </div>
+      {importing && <ImportDialog onClose={() => setImporting(false)} />}
       <UndoToast pending={pendingDelete?.kind === "book" ? pendingDelete : null} onUndo={() => void undoDelete()} />
     </>
   );

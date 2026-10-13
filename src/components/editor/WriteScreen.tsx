@@ -12,6 +12,7 @@ import { TironPanel } from "@/components/tiron/TironPanel";
 import { addLaterNoteTr, laterNoteAtCursor, laterNoteRangeAt, updateLaterNoteTr, type TextRange } from "./laterNote";
 import { LaterNotePopover } from "./LaterNotePopover";
 import { panelShortcut } from "./panelShortcut";
+import { continueImportReading } from "@/components/tiron/importReading";
 import { updateStoryMemory } from "@/components/tiron/updateMemory";
 import { requestWhisper } from "@/components/tiron/whisper";
 import { dismissWhisper, markWhispersSeen } from "@/lib/db/whispers";
@@ -320,6 +321,10 @@ export function WriteScreen({ partId }: { partId: ID }) {
   const laterNotes = useLaterNotes(editor, bookId, partId, flush);
   const whispers = useWhispers(bookId);
   useSessionEnd(bookId);
+  // An imported book Tiron hasn't finished reading (I3): he goes on in the background.
+  useEffect(() => {
+    if (bookId) void continueImportReading(bookId);
+  }, [bookId]);
   const [tironMode, setTironMode] = useState<TironMode>("present");
   useEffect(() => setTironMode(readTironMode()), []);
   const changeTironMode = useCallback((mode: TironMode) => {

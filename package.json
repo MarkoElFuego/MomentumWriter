@@ -33,6 +33,7 @@
     "jszip": "^3.10.2",
     "next": "15",
     "openai": "^7.23.0",
+    "pdfjs-dist": "^6.4.299",
     "react": "19",
     "react-dom": "19",
     "zod": "^4.6.5"
@@ -46,6 +47,7 @@
     "eslint": "9",
     "eslint-config-next": "15",
     "fake-indexeddb": "^6.2.5",
+    "happy-dom": "^21.0.1",
     "tailwindcss": "4",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",

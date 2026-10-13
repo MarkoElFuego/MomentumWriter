@@ -25,7 +25,7 @@ Svaka faza ima svoju zamku — i svoju Tironovu pomoć:
 
 | Faza | Zamka | Tiron |
 |---|---|---|
-| **Početak** | prazna strana, „ne znam odakle” | Srce knjige (o čemu je, kako se završava, zašto je pišeš) i „Nacrt 1 · ovo niko ne čita” |
+| **Početak** | prazna strana, „ne znam odakle” | Srce knjige (o čemu je, kako se završava, zašto je pišeš) i „Nacrt 1 · ovo niko ne čita”; već imaš početak u Wordu → Uvezi knjigu |
 | **Perfekcionizam** | ista scena po peti put | beleška za kasnije umesto popravke; ohrabrenje da ide napred |
 | **Sredina** | izgubljenost, nestalo oduševljenje | podseti na „zašto je pišeš” i pokaži autorovu najjaču rečenicu |
 | **Blokada** | ne zna šta dalje u sceni | „Pomozi mi” — jedno pitanje o ovoj sceni |
@@ -46,7 +46,7 @@ Kad nisi siguran: **„Da li bi Tiron ovo uradio?"** (vidi dole)
 
 ```text
 ┌──────────────────────────────────────────────────────────────────┐
-│ ☰  Tekst ▾  B  I  ≡▾        Sačuvano        ◐  ⌨  ◎  ⛶   T•     │
+│ ☰  Tekst ▾  B  I  ≡▾  ¶   Nacrt 1 · Sačuvano   ◐ ⌨ ◎ ⛶  T•  ··· │
 ├───────────┬───────────────────────────────────┬──────────────────┤
 │ SADRŽAJ   │          II · Kofer               │ TIRON            │
 │           │                                   │  šapat           │
@@ -65,8 +65,9 @@ Oba panela su podrazumevano zatvorena. Gornja traka bledi dok kucaš.
 - **B**, **I**
 - **≡▾** — poravnanje: levo (podrazumevano), centar, obostrano
 - **¶** — „Sredi tekst": razmaci i uvlačenje, prazni redovi, pasusi iscepani pri lepljenju, strano formatiranje; označeno ili celo poglavlje, jedan `Ctrl+Z` vraća (odluka autora 2026-10-06)
-- „Sačuvano" — bledo, u sredini
+- „Nacrt 1 · Sačuvano" — bledo, u sredini (posle kraja nacrta samo „Sačuvano")
 - **◐** teme · **⌨** pisaća mašina · **◎** fokus · **⛶** ceo ekran · **T** Tiron panel (tačkica = novi šapat)
+- **···** — podešavanja (Dopune, Provera jezika, Rastavljanje reči, Tiron), izvoz, kraj nacrta, sve knjige
 
 ### Levo — sadržaj knjige
 Uvodni delovi, poglavlja (automatski I, II, III), završni delovi. Prevlačenje sa animacijom, brisanje sa potvrdom i „Poništi", preimenovanje.
@@ -104,6 +105,13 @@ Tiron je bio Ciceronov sekretar: zapisivao, pamtio i savetovao — ali govore je
 
 Tiron: kratak, topao, više pita nego tvrdi, pohvaljuje konkretno, nikad ne ocenjuje kvalitet nacrta, nikad ne piše tekst umesto autora, nikad ne šapuće dok autor kuca.
 
+### Uvoz
+Knjiga započeta negde drugde prelazi u Momentum jednim prozorom: izaberi fajl ili nalepi tekst → pregled podele na delove → „Uvezi knjigu” → Srce knjige → pišeš dalje (`docs/ZADATAK_UVOZ.md`).
+- **Izvori:** DOCX (najbolje — naslovi, kurziv, bold, centriran red, prave fusnote) · nalepljen tekst iz Worda ili Google Docs-a · TXT (poglavlja po oznakama „Poglavlje 3”, „III”) · PDF sa tekstom (najslabije; ne sken)
+- **Raspored da, reči ne:** Momentum prepoznaje poglavlja, uvodne i završne delove, naslove, prelome scena i fusnote; reči ostaju autorove. Šta ne može da se prepozna ostaje kao običan tekst — ništa ne nestaje (osim slika, uz napomenu).
+- Bez AI-ja i lokalno; tekst ide AI-ju samo ako autor uključi „Neka Tiron pročita knjigu”.
+- Uvoz nije pisanje: „reči danas” ostaju 0.
+
 ### Povratak
 **Resume ekran:** gde si stao, šta si prošli put pomerio u priči, jedno pitanje za danas.
 
@@ -129,7 +137,7 @@ AI paleta i svi njeni alati (Treba mi impuls, Poguraj me, Zakomplikuj, Šta mi n
 
 ## Posle verzije 1.0 (tek kad zatreba)
 
-Urednik (otključava se posle kraja nacrta) · čitanje naglas · izvoz DOCX/EPUB/PDF · nalozi i sync · email podsetnici · ijekavica i ćirilica · engleski.
+Urednik (otključava se posle kraja nacrta) · čitanje naglas · nalozi i sync · email podsetnici · ijekavica i ćirilica · engleski.
 
 ## Rizici koje pratimo
 

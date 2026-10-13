@@ -23,6 +23,8 @@ export function StartScreen({ bookId }: { bookId: ID }) {
     Promise.all([getBook(bookId), firstPartId(bookId)])
       .then(([book, partId]) => {
         if (cancelled) return;
+        // An imported book (I3) comes with its title already filled in.
+        if (book && book.title !== copy.structure.defaultBookTitle) setTitle(book.title);
         setState(book && partId ? { kind: "ready", partId } : { kind: "missing" });
       })
       .catch((error) => {

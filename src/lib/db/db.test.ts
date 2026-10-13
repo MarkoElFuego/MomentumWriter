@@ -501,7 +501,7 @@ describe("migrations", () => {
     v3.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await db.settings.count()).toBe(0);
     expect(await getAppearance()).toEqual({ key: "appearance", focusMode: false, typewriter: false });
@@ -540,7 +540,7 @@ describe("migrations", () => {
     v4.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     const blocks = async (id: string) => (await getPart(id))!.content.content;
     expect(await blocks("front")).toEqual([p("Mami.")]);
     expect((await getPart("front"))!.wordCount).toBe(1);
@@ -579,7 +579,7 @@ describe("migrations", () => {
     v5.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     expect((await listParts("b1")).map((p) => p.id)).toEqual(["p1", "p2"]);
     expect((await getPart("p2"))?.content).toEqual(doc("Tekst p2."));
     expect(await bookWordTotal("b1")).toBe(4);
@@ -605,7 +605,7 @@ describe("migrations", () => {
     v6.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect((await getPart("p1"))?.languageScore).toBeUndefined();
     expect(await db.proofCache.count()).toBe(0);
@@ -639,7 +639,7 @@ describe("migrations", () => {
     v7.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     const book = await getBook("b1");
     expect(book).toMatchObject({ title: "Knjiga", language: "sr-Latn" });
     expect(book?.heart).toBeUndefined();
@@ -685,7 +685,7 @@ describe("migrations", () => {
     v8.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     const book = await getBook("b1");
     expect(book).toMatchObject({ title: "Knjiga", heart: { about: "O kiši." }, genre: "misterija" });
     expect(book?.bestLines).toBeUndefined();
@@ -714,7 +714,7 @@ describe("migrations", () => {
     v9.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     expect((await listBooks()).map((book) => book.title)).toEqual(["Sneg", "Kiša"]);
     expect((await getBook("b1"))?.deletedAt).toBeUndefined();
   });
@@ -747,7 +747,7 @@ describe("migrations", () => {
     v10.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     expect((await getPart("p1"))?.content).toEqual(doc("Tekst ostaje."));
     expect(await listSessions("b1")).toEqual([]);
   });
@@ -771,7 +771,7 @@ describe("migrations", () => {
     v11.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     expect(await getBook("b1")).toMatchObject({ title: "Kiša" });
     expect(await listSessions("b1")).toHaveLength(1);
     expect(await listWhispers("b1")).toEqual([]);
@@ -798,7 +798,7 @@ describe("migrations", () => {
     v12.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     const resume = await getResumeState("b1");
     expect(resume).toMatchObject({ partId: "p1", lastSentence: "Kiša." });
     expect(resume?.lastWin).toBeUndefined();
@@ -824,7 +824,7 @@ describe("migrations", () => {
     v13.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     const book = await getBook("b1");
     expect(book).toMatchObject({ title: "Kiša", targetWords: 40_000 });
     expect(book?.draftFinishedAt).toBeUndefined();
@@ -849,7 +849,7 @@ describe("migrations", () => {
     v14.close();
     await db.open();
 
-    expect(db.verno).toBe(15);
+    expect(db.verno).toBe(16);
     const book = await getBook("b1");
     expect(book).toMatchObject({ title: "Kiša", draftFinishedAt: 7 });
     expect(book?.author).toBeUndefined();
@@ -861,6 +861,31 @@ describe("migrations", () => {
     const cleared = await getBook("b1");
     expect(cleared?.author).toBeUndefined();
     expect(cleared?.contact).toBeUndefined();
+  });
+
+  it("v15 → v16: books written in Momentum have no import reading", async () => {
+    db.close();
+    await Dexie.delete("momentum");
+    const v15 = new Dexie("momentum");
+    v15.version(15).stores({
+      ...V1_STORES,
+      parts: "id, bookId",
+      chapters: null,
+      scenes: null,
+      settings: "key",
+      proofCache: "key, usedAt",
+      storyMemory: "bookId",
+      sessions: "id, bookId",
+      whispers: "id, bookId",
+    });
+    await v15.table("books").add({ id: "b1", title: "Kiša", language: "sr-Latn", createdAt: 1, updatedAt: 1, author: "Ana" });
+    v15.close();
+    await db.open();
+
+    expect(db.verno).toBe(16);
+    const book = await getBook("b1");
+    expect(book).toMatchObject({ title: "Kiša", author: "Ana" });
+    expect(book?.importReading).toBeUndefined();
   });
 });
 
