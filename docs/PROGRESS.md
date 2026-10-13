@@ -2,11 +2,12 @@
 
 Agent: ažuriraj ovaj fajl na kraju svakog zadatka. Radi SAMO prvi nezavršen zadatak.
 
-**Trenutna faza:** ZADATAK_UVOZ (`docs/ZADATAK_UVOZ.md`, odluka autora 2026-10-13) — I0–I4 urađeni, čeka ručnu proveru autora sa sopstvenim rukopisima; posle njega ZADATAK_POLISH (`docs/ZADATAK_POLISH.md` — još ne postoji). ZADATAK_UI, ZADATAK_Tiron, ZADATAK_IZVOZ i Faza 5 su završeni. Izvor istine za raspored i funkcije: `docs/PRODUCT.md`.
+**Trenutna faza:** ZADATAK_UVOZ je **završen** (I0–I4, autor proverio 2026-10-13: „sve radi”). Sledeći je ZADATAK_POLISH (`docs/ZADATAK_POLISH.md` — **još ne postoji**, autor ga piše). ZADATAK_UI, ZADATAK_Tiron, ZADATAK_IZVOZ i Faza 5 su završeni. Izvor istine za raspored i funkcije: `docs/PRODUCT.md`.
 
 **Redosled (odluka autora 2026-10-01):** U0 → U1 → ostatak Faze 4 (Resume, **bez** 4. alata) → U2–U6 → U7 → ZADATAK_Tiron (T0–T7). v0.2 je završena (Faza 6 sinonimi izbačena, Faza 8 odložena).
 
-**Sledeće:** autor proverava uvoz sa svojim uzorcima (`scripts/import-samples/`: Word, Google Docs fajl i lepljenje, PDF) — „Gotovo kada” iz I2–I4. Faza 5 je završena. Otvoreno: fusnota u pregledu izvoza (čeka autora). „Gotovo kada” iz PLAN-a: autor piše 7 dana zaredom i beleži utiske dole. Jedna faza = jedan razgovor = jedan commit. Pre koda: plan i „ok” od autora.
+**Sledeće:** autor piše `docs/ZADATAK_POLISH.md` — dok ga nema, agent nema sledeći zadatak. Uvoz je commitovan (`6b16074`, `8b02fd1`). Faza 5 je završena. Otvoreno: fusnota u pregledu izvoza (čeka autora). „Gotovo kada” iz PLAN-a: autor piše 7 dana zaredom i beleži utiske dole. Jedna faza = jedan razgovor = jedan commit. Pre koda: plan i „ok” od autora.
+- Stanje 2026-10-13: **ZADATAK_UVOZ gotov, autor proverio („sve radi”).** Uvoz knjige iz DOCX-a (Word, LibreOffice, Google Docs), PDF-a, TXT-a (UTF-8, Windows-1250) i nalepljenog teksta: poglavlja, uvodni/završni delovi, posveta, naslovi, kurziv/bold, prelomi scena i prave fusnote iz svih izvora; pregled sa spajanjem delova; ćirilica → latinica; „reči danas” = 0; Tiron čita knjigu u pozadini. Prva proba autora: fusnote iz PDF-a i TXT-a nisu bile prave fusnote — ispravljeno istog dana, autor potvrdio. Autorovi uzorci („Deset trovača”, 5 fajlova) su u `scripts/import-samples/` (van git-a) i proveravaju se u `samples.test.ts`.
 - Stanje 2026-10-09: Faza 5 „Tipografija + prazna stanja” gotova, autor proverio („super radi”).
 - Stanje 2026-10-09: P7 gotov, autor proverio u Google Docs-u („radi”).
 - Stanje 2026-10-09: P6 gotov, autor ručno proverio („super radi”).
