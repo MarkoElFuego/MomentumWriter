@@ -88,7 +88,7 @@ export function Editor({
       laterNote,
     ],
     editorProps: {
-      attributes: { class: "prose-editor", spellcheck: "true", lang: "sr-Latn" },
+      attributes: { class: "prose-editor", spellcheck: "false", lang: "sr-Latn" },
       handleKeyDown: (view, event) => {
         const mod = event.ctrlKey || event.metaKey;
         const plainTab = event.key === "Tab" && !event.shiftKey && !mod && !event.altKey;

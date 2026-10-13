@@ -31,7 +31,7 @@ export const ChapterTitle = forwardRef<HTMLInputElement, ChapterTitleProps>(func
         value={title}
         placeholder={copy.structure.titlePlaceholder}
         aria-label={number !== undefined ? copy.structure.chapterTitleLabel(number) : copy.structure.titlePlaceholder}
-        spellCheck
+        spellCheck={false}
         lang="sr-Latn"
         className="chapter-title-input"
         onChange={(event) => onChange(event.target.value)}
