@@ -13,6 +13,8 @@ interface ToolbarMenuProps {
   onOpenChange: (open: boolean) => void;
   disabled?: boolean;
   align?: "left" | "right";
+  /** Extra classes for the popup (a wider menu). */
+  menuClassName?: string;
   children: ReactNode;
 }
 
@@ -30,6 +32,7 @@ export function ToolbarMenu({
   onOpenChange,
   disabled = false,
   align = "left",
+  menuClassName,
   children,
 }: ToolbarMenuProps) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -101,9 +104,9 @@ export function ToolbarMenu({
           ref={popupRef}
           role="menu"
           aria-label={label}
-          className={`absolute top-full z-20 mt-2 min-w-44 rounded-md border border-muted/30 bg-paper p-1 text-sm shadow-sm ${
+          className={`toolbar-popup absolute top-full z-20 mt-2 rounded-md border border-rule bg-paper p-1 text-sm shadow-sm ${
             align === "right" ? "right-0" : "left-0"
-          }`}
+          } ${menuClassName || "min-w-44"}`}
         >
           {children}
         </div>

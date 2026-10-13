@@ -46,10 +46,11 @@ export const copy = {
     structureShortcut: "Ctrl/Cmd+\\",
     blockStyle: "Stil pasusa",
     blockStyles: {
-      paragraph: { name: "Tekst", shortcut: "Ctrl/Cmd+Alt+0" },
-      heading1: { name: "Naslov 1", shortcut: "Ctrl/Cmd+Alt+1 · # " },
-      heading2: { name: "Naslov 2", shortcut: "Ctrl/Cmd+Alt+2 · ## " },
-      quote: { name: "Citat", shortcut: "> " },
+      // Prečica i Markdown oznaka na početku reda — u meniju desno, sitno (POL3).
+      paragraph: { name: "Tekst", shortcut: "Ctrl/Cmd+Alt+0", markdown: "" },
+      heading1: { name: "Naslov 1", shortcut: "Ctrl/Cmd+Alt+1", markdown: "#" },
+      heading2: { name: "Naslov 2", shortcut: "Ctrl/Cmd+Alt+2", markdown: "##" },
+      quote: { name: "Citat", shortcut: "", markdown: ">" },
     },
     bold: "Podebljano",
     boldShortcut: "Ctrl/Cmd+B",
@@ -69,13 +70,14 @@ export const copy = {
     withShortcut: (name: string, shortcut: string) => `${name} (${shortcut})`,
   },
   menu: {
-    ghostOn: "Dopune: uključene",
-    ghostOff: "Dopune: isključene",
-    proofOn: "Provera jezika: uključena",
-    proofOff: "Provera jezika: isključena",
+    // Prekidači: kvačica desno pokazuje da je uključeno (POL3).
+    ghost: "Dopune",
+    proof: "Provera jezika",
     // Samo za obostrano poravnat tekst.
-    hyphensOn: "Rastavljanje reči: uključeno",
-    hyphensOff: "Rastavljanje reči: isključeno",
+    hyphens: "Rastavljanje reči",
+    tiron: "Tiron",
+    // Tri dugmeta u jednom redu, ovim redom.
+    tironModesShort: { quiet: "tih", present: "prisutan", off: "isključen" },
     // Tiron T5: tri režima šapata.
     tironModes: {
       present: "Tiron: prisutan",
@@ -89,13 +91,16 @@ export const copy = {
     },
     finishDraft: "Označi kraj nacrta",
     // Izvoz (ZADATAK_IZVOZ P4): prozor u aplikaciji.
-    exportPdf: "Izvezi PDF…",
+    // Prozor nudi PDF, DOCX i EPUB.
+    exportBook: "Izvezi knjigu…",
     allBooks: "Sve knjige",
   },
   tiron: {
     panelLabel: "Tiron",
     toggle: "Tiron",
     toggleNew: "Tiron — novi šapat",
+    // Reč u traci umesto „T” (POL3).
+    toolbarWord: "Tiron",
     shortcut: "Ctrl/Cmd+Shift+\\",
     // Šapati (T5).
     dismiss: "Skloni šapat",
@@ -113,14 +118,17 @@ export const copy = {
     languageUp: (n: number) => `↑${n}`,
     languageDown: (n: number) => `↓${n}`,
     languageHere: (diacritics: number, grammar: number) =>
-      [
+      `${[
         diacritics > 0 ? count(diacritics, "kvačica", "kvačice", "kvačica") : null,
         grammar > 0 ? count(grammar, "gramatika", "gramatike", "gramatika") : null,
       ]
         .filter(Boolean)
-        .join(" · ")
-        .replace(/^/, "ovde: "),
+        .join(" · ")} u ovom poglavlju`,
+    languageShow: "pokaži",
+    languageRing: (n: number) => `Jezik ${n}`,
     languageNext: "Sledeća podvlaka",
+    // Odakle je šapat (POL2), sitno ispod njega.
+    whisperFrom: { entry: "pri ulasku", pattern: "pri ulasku", chapterEnd: "posle poglavlja", sessionEnd: "kraj sesije" },
   },
   save: {
     saved: "Sačuvano",
@@ -133,11 +141,14 @@ export const copy = {
   // Srce knjige: ekran sa pitanjima pri pravljenju knjige i sekcija „Knjiga” u desnom panelu.
   book: {
     startLabel: "Nova knjiga",
-    titlePlaceholder: "Naslov (može i kasnije)",
+    // Ekran Srce knjige (POL4): jedna tiha rečenica na vrhu, naslov bez objašnjenja u polju.
+    intro: "Pre prve reči — par pitanja. Sve može i kasnije.",
+    titlePlaceholder: "Naslov",
+    titleHint: "može i kasnije",
     titleLabel: "Naslov knjige",
     about: "O čemu je ova knjiga, u jednoj rečenici?",
     ending: "Kako se završava?",
-    endingPlaceholder: "može i ‚ne znam još’",
+    endingPlaceholder: "može i „ne znam još“",
     why: "Zašto je pišeš?",
     genre: "Žanr",
     noGenre: "—",
@@ -155,6 +166,9 @@ export const copy = {
     },
     length: "Okvirna dužina",
     lengthUnknown: "Ne znam",
+    // Oznake na ekranu Srce knjige (POL4).
+    lengthChips: { 40000: "kratak roman ~40.000", 80000: "roman ~80.000", 120000: "dug ~120.000" } as Record<number, string>,
+    lengthUnknownChip: "ne znam",
     lengths: {
       40000: "Kratak roman, ~40.000 reči",
       80000: "Roman, ~80.000 reči",
@@ -179,6 +193,11 @@ export const copy = {
       openThreads: "Otvorene niti",
     },
     addItem: "+ dodaj",
+    // "LIKOVI · 8" (verzal je u CSS-u); prazna lista bez broja.
+    listCaption: (label: string, n: number) => (n ? `${label} · ${n}` : label),
+    showMore: (n: number) => `još ${n}`,
+    showLess: "manje",
+    closeThreadHint: "Zatvori nit",
     addItemLabel: (list: string) => `Dodaj: ${list}`,
     editItem: (text: string) => `Izmeni: ${text}`,
     removeItem: (text: string) => `Obriši: ${text}`,
@@ -195,7 +214,7 @@ export const copy = {
     // Put do kraja (T7): blizu planirane dužine, ispod Srca knjige.
     draftCountdown: (pages: number) =>
       pages <= 0 ? "Planirana dužina je dostignuta." : `Još oko ${count(pages, "stranica", "stranice", "stranica")} do kraja nacrta`,
-    closeThread: (text: string) => `Zatvorena nit: ${text}`,
+    closeThread: (text: string) => `Zatvori nit: ${text}`,
     notFound: "Ova knjiga ne postoji.",
     loadFailed: "Knjiga trenutno ne može da se učita. Osveži stranicu.",
   },
@@ -385,7 +404,8 @@ export const copy = {
     chapters: "Poglavlja",
     backMatter: "Završni delovi",
     addChapter: "+ Novo poglavlje",
-    addPart: "+ Dodaj deo",
+    addPart: "+ Posveta, predgovor…",
+    bookTitleHint: "Dupli klik za promenu naslova",
     partPresets: {
       front: ["Naslovna", "Posveta", "Predgovor"],
       back: ["Epilog", "Zahvalnica", "Beleška o autoru"],

@@ -7,12 +7,13 @@ import { copy } from "@/lib/copy";
 /** The history shows this many before „Prikaži sve”. */
 const HISTORY_SHOWN = 10;
 
-/** The newest whisper, large, with its quote and × (no × on Resume). */
+/** The newest whisper in the book's font, a thin accent line on its left, where it came from under it; × (not on Resume). */
 export function TopWhisper({ whisper, onDismiss }: { whisper: ShownWhisper; onDismiss?: () => void }) {
   return (
-    <div className="mb-4 flex items-start gap-2">
-      <div className="min-w-0 flex-1">
-        <p className="tiron-whisper font-serif text-base text-ink">{whisper.text}</p>
+    <div className="mb-1 flex items-start gap-2">
+      <div className="tiron-whisper-box min-w-0 flex-1">
+        <p className="tiron-whisper text-ink">{whisper.text}</p>
+        <p className="mt-1 text-[0.6875rem] text-muted">{copy.tiron.whisperFrom[whisper.moment]}</p>
         {whisper.quote && (
           <figure className="mt-2">
             <blockquote className="font-serif italic text-ink">{whisper.quote}</blockquote>
@@ -38,7 +39,7 @@ export function WhisperHistory({ history }: { history: WhisperList["history"] })
   const shown = all ? history : history.slice(0, HISTORY_SHOWN);
   return (
     <div className="mt-6">
-      <h3 className="text-xs text-muted">{copy.tiron.history}</h3>
+      <h3 className="panel-caption">{copy.tiron.history}</h3>
       <ul className="mt-1 space-y-1.5 text-xs text-muted">
         {shown.map((whisper) => (
           <li key={whisper.id}>{whisper.text}</li>

@@ -6,7 +6,7 @@ import type { AppearanceControls } from "@/hooks/useAppearance";
 import type { FullscreenControls } from "@/hooks/useFullscreen";
 import type { SaveStatus } from "@/hooks/useAutosave";
 import { copy } from "@/lib/copy";
-import { THEME_PAPER, THEMES } from "@/lib/themes";
+import { THEME_SWATCH, THEMES } from "@/lib/themes";
 import { BLOCK_STYLES, blockStyleAt, setBlockStyle, type BlockStyle } from "./blockStyle";
 import { TEXT_ALIGNMENTS, type TextAlignment } from "./contentSchema";
 import { EditorMenu, type EditorMenuProps } from "./EditorMenu";
@@ -83,6 +83,18 @@ function Toggle({
     >
       {children}
     </button>
+  );
+}
+
+/** „Sredi tekst”: a broom — ¶ means "show hidden marks" in Word. */
+function BroomIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 3 12.5 9.5" />
+      <path d="M10.2 8.6 15.4 13.8" />
+      <path d="M10.2 8.6c-2.6 1.1-4.6 3.3-5.7 6.4L3.5 18l2.3 2.3 3-1c3.1-1.1 5.3-3.1 6.4-5.7" />
+      <path d="M6.6 16.4 8.3 14.7" />
+    </svg>
   );
 }
 
@@ -163,6 +175,7 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
           title={t.blockStyle}
           disabled={noBlockStyle}
           button={<span className="whitespace-nowrap">{styleName} <span aria-hidden="true">▾</span></span>}
+          menuClassName="min-w-60"
           {...menuProps("style")}
         >
           {BLOCK_STYLES.map((style) => (
@@ -171,11 +184,16 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
               type="button"
               role="menuitemradio"
               aria-checked={state?.style === style}
-              className="ui-button flex w-full justify-between gap-6 px-3 py-2 text-left"
+              className="ui-button flex w-full items-baseline gap-6 whitespace-nowrap px-3 py-2 text-left"
               onClick={() => chooseStyle(style)}
             >
-              <span>{t.blockStyles[style].name}</span>
-              <span className="opacity-70">{t.blockStyles[style].shortcut}</span>
+              <span className="flex-1">{t.blockStyles[style].name}</span>
+              <span className="text-xs text-muted">
+                {t.blockStyles[style].shortcut}
+                {t.blockStyles[style].markdown && (
+                  <span className="ml-2 font-mono opacity-60">{t.blockStyles[style].markdown}</span>
+                )}
+              </span>
             </button>
           ))}
         </ToolbarMenu>
@@ -217,11 +235,14 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
               type="button"
               role="menuitemradio"
               aria-checked={state?.align === align}
-              className="ui-button flex w-full items-center gap-3 px-3 py-2 text-left"
+              className="ui-button flex w-full items-center gap-3 whitespace-nowrap px-3 py-2 text-left"
               onClick={() => chooseAlign(align)}
             >
               <AlignIcon align={align} />
-              <span>{t.alignments[align]}</span>
+              <span className="flex-1">{t.alignments[align]}</span>
+              <span aria-hidden="true" className={`text-accent ${state?.align === align ? "" : "invisible"}`}>
+                ✓
+              </span>
             </button>
           ))}
         </ToolbarMenu>
@@ -241,7 +262,7 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
             editor.commands.focus();
           }}
         >
-          <span aria-hidden="true">¶</span>
+          <BroomIcon />
         </button>
       </div>
 
@@ -256,8 +277,8 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
 
       <div className="flex items-center justify-end gap-1">
         <ToolbarMenu label={t.themes} title={t.themes} align="right" button={<span aria-hidden="true">◐</span>} {...menuProps("theme")}>
-          <div className="flex gap-2 px-2 py-1">
-            {THEMES.map((theme) => (
+          <div className="flex gap-2.5 px-2 py-1.5">
+            {THEMES.map((theme, i) => (
               <button
                 key={theme}
                 type="button"
@@ -266,9 +287,29 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
                 aria-label={t.themeNames[theme]}
                 aria-checked={appearance.theme === theme}
                 className="theme-swatch"
-                style={{ backgroundColor: THEME_PAPER[theme] }}
-                onClick={() => appearance.onTheme(theme)}
-              />
+                style={{ backgroundColor: THEME_SWATCH[theme].paper, color: THEME_SWATCH[theme].ink }}
+                // Enter (a click) keeps the theme and closes; Esc closes too.
+                onClick={() => {
+                  appearance.onTheme(theme);
+                  setOpenMenu(null);
+                }}
+                onKeyDown={(event) => {
+                  // ←/→ pick the neighbouring theme right away, like a radio group.
+                  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                  event.preventDefault();
+                  const next = THEMES[(i + (event.key === "ArrowLeft" ? -1 : 1) + THEMES.length) % THEMES.length]!;
+                  appearance.onTheme(next);
+                  const siblings = event.currentTarget.parentElement?.querySelectorAll<HTMLElement>(".theme-swatch");
+                  siblings?.[THEMES.indexOf(next)]?.focus();
+                }}
+              >
+                <span aria-hidden="true" className="theme-swatch-aa" style={{ fontFamily: THEME_SWATCH[theme].font }}>
+                  Aa
+                </span>
+                <span aria-hidden="true" className="theme-swatch-name">
+                  {t.themeNames[theme]}
+                </span>
+              </button>
             ))}
           </div>
         </ToolbarMenu>
@@ -287,15 +328,16 @@ export const EditorToolbar = forwardRef<HTMLDivElement, EditorToolbarProps>(func
         >
           <span aria-hidden="true">⛶</span>
         </Toggle>
-        {/* No dot yet: whispers come with Tiron T5. */}
+        {/* The word, quiet; the dot (in the accent) when a whisper came while the panel was closed. */}
         <Toggle
           label={tironDot ? copy.tiron.toggleNew : copy.tiron.toggle}
           shortcut={copy.tiron.shortcut}
           pressed={tironOpen}
           onPress={onToggleTiron}
         >
-          <span aria-hidden="true" className="relative font-serif">
-            T{tironDot && <span className="tiron-dot" />}
+          <span aria-hidden="true" className="tiron-word relative">
+            {copy.tiron.toolbarWord}
+            {tironDot && <span className="tiron-dot" />}
           </span>
         </Toggle>
         <EditorMenu {...settings} {...menuProps("more")} />

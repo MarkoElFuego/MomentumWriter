@@ -9,6 +9,7 @@ import { copy } from "@/lib/copy";
 import type { ID, StoryMemory } from "@/lib/db/schema";
 import { BookSection } from "./BookSection";
 import { LaterSection } from "./LaterSection";
+import { ScoreRing } from "./ScoreRing";
 import { TopWhisper, WhisperHistory } from "./Whispers";
 
 export interface LanguageRow {
@@ -35,6 +36,8 @@ interface TironPanelProps {
   onRefresh: () => void;
   /** Pages left near the end of the draft (T7); null → no countdown. */
   countdown: number | null;
+  /** The book has at least one word (POL2: an empty book shows only Srce knjige). */
+  hasText: boolean;
   /** Za kasnije (T3): every note in the book; no notes → no section. */
   laterNotes: BookLaterNote[];
   onGoToNote: (note: BookLaterNote) => void;
@@ -65,6 +68,7 @@ export function TironPanel({
   refreshState,
   onRefresh,
   countdown,
+  hasText,
   laterNotes,
   onGoToNote,
   onTickOffNote,
@@ -81,7 +85,7 @@ export function TironPanel({
   return (
     <aside
       aria-label={copy.tiron.panelLabel}
-      className="flex h-full w-72 shrink-0 flex-col overflow-y-auto border-l border-muted/20 px-4 py-4 text-sm"
+      className="flex h-full w-72 shrink-0 flex-col overflow-y-auto border-l border-rule px-[1.125rem] pb-8 pt-4 text-[0.8125rem]"
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.preventDefault();
@@ -89,9 +93,9 @@ export function TironPanel({
         }
       }}
     >
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xs uppercase tracking-wider text-muted">{copy.tiron.panelLabel}</h2>
-        <button type="button" aria-label={copy.tiron.close} className="ui-button px-1" onClick={onClose}>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="panel-caption m-0">{copy.tiron.panelLabel}</h2>
+        <button type="button" aria-label={copy.tiron.close} title={copy.tiron.close} className="ui-button px-1 text-muted" onClick={onClose}>
           ×
         </button>
       </div>
@@ -143,6 +147,7 @@ export function TironPanel({
         refreshState={refreshState}
         onRefresh={onRefresh}
         countdown={countdown}
+        hasText={hasText}
       />
 
       <LaterSection notes={laterNotes} onGoTo={onGoToNote} onTickOff={onTickOffNote} />
@@ -152,31 +157,33 @@ export function TironPanel({
   );
 }
 
+/** Jezik (POL2): the score as a ring, the change since last time (↑ and ↓ — odluka autora), what is open here. */
 function LanguageSection({ row, onNextMark }: { row: LanguageRow; onNextMark: () => void }) {
   const change = row.previous === undefined ? 0 : row.value - row.previous;
   const content = (
-    <>
-      <span className="flex items-baseline gap-3">
-        <span className="text-xs uppercase tracking-wider text-muted">{copy.tiron.language}</span>
-        <span className="tabular-nums text-ink">{row.value}</span>
-        {change !== 0 && (
-          <span className="tabular-nums text-xs text-muted">
-            {change > 0 ? copy.tiron.languageUp(change) : copy.tiron.languageDown(-change)}
+    <span className="flex items-center gap-3">
+      <ScoreRing value={row.value} />
+      <span className="min-w-0">
+        <span className="block text-[0.8125rem] text-ink">
+          {copy.tiron.language}
+          {change !== 0 && (
+            <span className="ml-1 tabular-nums text-xs text-muted">
+              {change > 0 ? copy.tiron.languageUp(change) : copy.tiron.languageDown(-change)}
+            </span>
+          )}
+        </span>
+        {row.here && (
+          <span className="mt-0.5 block text-xs text-muted">
+            {copy.tiron.languageHere(row.here.diacritics, row.here.grammar)} · <span className="text-accent">{copy.tiron.languageShow}</span>
           </span>
         )}
       </span>
-      {row.here && <span className="mt-0.5 block text-xs text-muted">{copy.tiron.languageHere(row.here.diacritics, row.here.grammar)}</span>}
-    </>
+    </span>
   );
   return (
-    <section className="mt-8 border-t border-muted/20 pt-4">
+    <section className="panel-section">
       {row.here ? (
-        <button
-          type="button"
-          title={copy.tiron.languageNext}
-          className="ui-button block w-full text-left"
-          onClick={onNextMark}
-        >
+        <button type="button" title={copy.tiron.languageNext} className="ui-button block w-full text-left" onClick={onNextMark}>
           {content}
         </button>
       ) : (

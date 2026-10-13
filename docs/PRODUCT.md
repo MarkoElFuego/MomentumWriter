@@ -46,7 +46,7 @@ Kad nisi siguran: **„Da li bi Tiron ovo uradio?"** (vidi dole)
 
 ```text
 ┌──────────────────────────────────────────────────────────────────┐
-│ ☰  Tekst ▾  B  I  ≡▾  ¶   Nacrt 1 · Sačuvano   ◐ ⌨ ◎ ⛶  T•  ··· │
+│ ☰ Tekst ▾ B I ≡▾ 🧹  Nacrt 1 · Sačuvano   ◐ ⌨ ◎ ⛶ Tiron• ··· │
 ├───────────┬───────────────────────────────────┬──────────────────┤
 │ SADRŽAJ   │          II · Kofer               │ TIRON            │
 │           │                                   │  šapat           │
@@ -64,9 +64,9 @@ Oba panela su podrazumevano zatvorena. Gornja traka bledi dok kucaš.
 - **Tekst ▾** — stil pasusa: Tekst, Naslov 1, Naslov 2, Citat
 - **B**, **I**
 - **≡▾** — poravnanje: levo (podrazumevano), centar, obostrano
-- **¶** — „Sredi tekst": razmaci i uvlačenje, prazni redovi, pasusi iscepani pri lepljenju, strano formatiranje; označeno ili celo poglavlje, jedan `Ctrl+Z` vraća (odluka autora 2026-10-06)
+- **metlica** — „Sredi tekst": razmaci i uvlačenje, prazni redovi, pasusi iscepani pri lepljenju, strano formatiranje; označeno ili celo poglavlje, jedan `Ctrl+Z` vraća (odluka autora 2026-10-06)
 - „Nacrt 1 · Sačuvano" — bledo, u sredini (posle kraja nacrta samo „Sačuvano")
-- **◐** teme · **⌨** pisaća mašina · **◎** fokus · **⛶** ceo ekran · **T** Tiron panel (tačkica = novi šapat)
+- **◐** teme · **⌨** pisaća mašina · **◎** fokus · **⛶** ceo ekran · **Tiron** (reč) Tiron panel (tačkica u boji naglaska = novi šapat)
 - **···** — podešavanja (Dopune, Provera jezika, Rastavljanje reči, Tiron), izvoz, kraj nacrta, sve knjige
 
 ### Levo — sadržaj knjige

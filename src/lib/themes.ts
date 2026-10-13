@@ -1,15 +1,23 @@
-// Visual themes (v0.2 Faza 7). Colors live in src/styles/themes.css; only the
-// paper color is repeated here for the swatches in the ··· menu (themes.test.ts
-// keeps the two in sync).
+// Visual themes (v0.2 Faza 7, POL1). Colors live in src/styles/themes.css; the
+// few the theme picker draws ("Aa" in each theme's paper, ink and font) are
+// repeated here — themes.test.ts keeps the two in sync.
 
 export const THEMES = ["papir", "noc", "masina", "magla"] as const;
 export type ThemeName = (typeof THEMES)[number];
 
-export const THEME_PAPER: Record<ThemeName, string> = {
-  papir: "#f7f3ea",
-  noc: "#1b1c1f",
-  masina: "#ede8dc",
-  magla: "#e8ebed",
+export interface ThemeSwatch {
+  paper: string;
+  ink: string;
+  accent: string;
+  /** The theme's text font (CSS, from next/font). */
+  font: string;
+}
+
+export const THEME_SWATCH: Record<ThemeName, ThemeSwatch> = {
+  papir: { paper: "#f4f4f2", ink: "#26272a", accent: "#2a6763", font: "var(--font-literata), Georgia, serif" },
+  noc: { paper: "#1b1c1f", ink: "#d9d6ce", accent: "#d4a35a", font: "var(--font-literata), Georgia, serif" },
+  masina: { paper: "#ede8dc", ink: "#2f2d29", accent: "#2e4a7a", font: "var(--font-courier-prime), monospace" },
+  magla: { paper: "#e3e8ec", ink: "#263038", accent: "#365b7a", font: "var(--font-inter), sans-serif" },
 };
 
 export function isTheme(value: unknown): value is ThemeName {

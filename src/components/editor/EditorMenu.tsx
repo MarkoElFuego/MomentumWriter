@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { copy } from "@/lib/copy";
-import { TIRON_MODES, type TironMode } from "@/lib/tironMode";
+import type { TironMode } from "@/lib/tironMode";
 import { ToolbarMenu } from "./ToolbarMenu";
 
 export interface EditorMenuProps {
@@ -24,7 +24,22 @@ export interface EditorMenuProps {
   onExport: () => void;
 }
 
-/** ··· — the settings that don't have their own icon in the toolbar. */
+/** Tih · prisutan · isključen — one row of three in the menu (POL3). */
+const MODE_ORDER: TironMode[] = ["quiet", "present", "off"];
+
+/** On/off item: the name, and a tick on the right while it is on. */
+function Check({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
+  return (
+    <button type="button" role="menuitemcheckbox" aria-checked={on} className="ui-button flex w-full items-center gap-6 whitespace-nowrap px-3 py-2 text-left" onClick={onClick}>
+      <span className="flex-1">{label}</span>
+      <span aria-hidden="true" className={`text-accent ${on ? "" : "invisible"}`}>
+        ✓
+      </span>
+    </button>
+  );
+}
+
+/** ··· — the settings that don't have their own icon in the toolbar, in groups. */
 export function EditorMenu({
   open,
   onOpenChange,
@@ -40,48 +55,50 @@ export function EditorMenu({
   onExport,
 }: EditorMenuProps) {
   const item = "ui-button block w-full whitespace-nowrap px-3 py-2 text-left";
+  const rule = "my-1 border-t border-rule";
   return (
     <ToolbarMenu
       label={copy.editor.menuLabel}
       title={copy.editor.menuLabel}
       align="right"
       button={<span aria-hidden="true">···</span>}
+      menuClassName="min-w-64"
       open={open}
       onOpenChange={onOpenChange}
     >
-      <button type="button" role="menuitemcheckbox" aria-checked={ghostEnabled} className={item} onClick={onToggleGhost}>
-        {ghostEnabled ? copy.menu.ghostOn : copy.menu.ghostOff}
-      </button>
-      <button type="button" role="menuitemcheckbox" aria-checked={proofEnabled} className={item} onClick={onToggleProof}>
-        {proofEnabled ? copy.menu.proofOn : copy.menu.proofOff}
-      </button>
-      <button type="button" role="menuitemcheckbox" aria-checked={hyphens} className={item} onClick={onToggleHyphens}>
-        {hyphens ? copy.menu.hyphensOn : copy.menu.hyphensOff}
-      </button>
-      <div role="group" aria-label={copy.tiron.toggle} className="border-t border-muted/20">
-        {TIRON_MODES.map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            role="menuitemradio"
-            aria-checked={tironMode === mode}
-            title={copy.menu.tironModeHints[mode]}
-            className={`${item}${tironMode === mode ? " text-ink" : " text-muted"}`}
-            onClick={() => onTironMode(mode)}
-          >
-            {copy.menu.tironModes[mode]}
-          </button>
-        ))}
+      <Check on={ghostEnabled} label={copy.menu.ghost} onClick={onToggleGhost} />
+      <Check on={proofEnabled} label={copy.menu.proof} onClick={onToggleProof} />
+      <Check on={hyphens} label={copy.menu.hyphens} onClick={onToggleHyphens} />
+      <div className={rule} role="separator" />
+      <div role="group" aria-label={copy.menu.tiron} className="flex items-center gap-3 whitespace-nowrap px-3 py-1.5">
+        <span className="flex-1">{copy.menu.tiron}</span>
+        <span className="flex rounded-md border border-rule p-0.5 text-xs">
+          {MODE_ORDER.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              role="menuitemradio"
+              aria-checked={tironMode === mode}
+              title={`${copy.menu.tironModes[mode]} — ${copy.menu.tironModeHints[mode]}`}
+              className={`tiron-mode ui-button rounded px-2 py-1${tironMode === mode ? " tiron-mode-on" : ""}`}
+              onClick={() => onTironMode(mode)}
+            >
+              {copy.menu.tironModesShort[mode]}
+            </button>
+          ))}
+        </span>
       </div>
+      <div className={rule} role="separator" />
+      <button type="button" role="menuitem" className={item} onClick={onExport}>
+        {copy.menu.exportBook}
+      </button>
       {onFinishDraft && (
-        <button type="button" role="menuitem" className={`${item} border-t border-muted/20`} onClick={onFinishDraft}>
+        <button type="button" role="menuitem" className={item} onClick={onFinishDraft}>
           {copy.menu.finishDraft}
         </button>
       )}
-      <button type="button" role="menuitem" className={`${item} border-t border-muted/20`} onClick={onExport}>
-        {copy.menu.exportPdf}
-      </button>
-      <Link href="/" role="menuitem" className="ui-button block border-t border-muted/20 px-3 py-2">
+      <div className={rule} role="separator" />
+      <Link href="/" role="menuitem" className="ui-button block px-3 py-2">
         {copy.menu.allBooks}
       </Link>
     </ToolbarMenu>

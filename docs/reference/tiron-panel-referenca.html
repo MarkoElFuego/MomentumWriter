@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="sr-Latn" data-theme="papir">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Momentum — referenca za POL1–POL2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,400;0,500;1,400&family=Courier+Prime:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Boje tema — PREDLOG. Prave vrednosti su u src/styles/themes.css; ove su polazna tačka (vidi ZADATAK_POLISH POL1). */
+  html[data-theme="papir"]  { --paper:#F4F4F2; --ink:#26272A; --ink-muted:#67686C; --accent:#2F6E6A; --font-text:"Literata", Georgia, serif; color-scheme: light; }
+  html[data-theme="noc"]    { --paper:#1B1C1F; --ink:#D9D6CE; --ink-muted:#8F8C85; --accent:#D4A35A; --font-text:"Literata", Georgia, serif; color-scheme: dark; }
+  html[data-theme="masina"] { --paper:#EDE8DC; --ink:#2F2D29; --ink-muted:#6F685C; --accent:#2E4A7A; --font-text:"Courier Prime", monospace; color-scheme: light; }
+  html[data-theme="magla"]  { --paper:#E3E8EC; --ink:#263038; --ink-muted:#5E6A73; --accent:#3F6788; --font-text:"Inter", system-ui, sans-serif; color-scheme: light; }
+
+  :root {
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--paper));
+    --rule: color-mix(in srgb, var(--ink) 12%, transparent);
+    --hover: color-mix(in srgb, var(--ink) 6%, transparent);
+    --font-ui: "Inter", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ink) 25%, transparent) transparent; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 25%, transparent); border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-ui); transition: background .15s, color .15s; }
+  @media (prefers-reduced-motion: reduce) { body, .ring-fill { transition: none !important; } }
+
+  /* ---- Izbor teme: kvadrati „Aa" ---- */
+  .themes { display: flex; gap: 10px; padding: 16px 24px; border-bottom: 1px solid var(--rule); align-items: center; }
+  .themes span { font-size: 12px; color: var(--ink-muted); margin-right: 6px; }
+  .swatch { width: 52px; border: 1px solid var(--rule); border-radius: 8px; padding: 6px 0 4px; cursor: pointer; text-align: center; background: var(--sw-paper); color: var(--sw-ink); }
+  .swatch b { display: block; font-weight: 400; font-size: 17px; line-height: 1.2; font-family: var(--sw-font); }
+  .swatch small { display: block; font-size: 10px; font-family: var(--font-ui); opacity: .75; }
+  .swatch[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- Raspored: tekst + desni panel ---- */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 288px; min-height: calc(100vh - 70px); }
+  .page { padding: 48px 24px; }
+  .page article { max-width: 34rem; margin: 0 auto; font-family: var(--font-text); font-size: 19px; line-height: 1.75; }
+  .page .num { text-align: center; font-size: 14px; color: var(--ink-muted); margin: 0; }
+  .page h1 { text-align: center; font-weight: 400; font-size: 1.9rem; margin: .2em 0 1.2em; }
+  .page p { margin: 0 0 .8em; }
+
+  /* ---- Desni panel ---- */
+  .panel { border-left: 1px solid var(--rule); padding: 16px 18px 32px; font-size: 13px; overflow-y: auto; }
+  .ph { display: flex; justify-content: space-between; align-items: center; font-size: 11px; letter-spacing: .08em; color: var(--ink-muted); }
+  .whisper { border-left: 2px solid var(--accent); padding: 2px 0 2px 12px; margin: 14px 0 0; }
+  .whisper p { margin: 0; font-family: var(--font-text); font-style: italic; font-size: 14.5px; line-height: 1.5; }
+  .whisper small { display: block; margin-top: 4px; font-size: 11px; color: var(--ink-muted); }
+  .btn { width: 100%; margin-top: 14px; padding: 8px 0; font: inherit; font-size: 13px; color: var(--ink); background: transparent; border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent); border-radius: 8px; cursor: pointer; }
+  .btn:hover { background: var(--hover); }
+  .sec { margin-top: 22px; }
+  .sec > summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; font-size: 11px; letter-spacing: .08em; color: var(--ink-muted); padding: 4px 0; border-top: 1px solid var(--rule); padding-top: 12px; }
+  .cap { font-size: 11px; letter-spacing: .08em; color: var(--ink-muted); margin: 16px 0 4px; }
+  .heart { color: var(--ink-muted); font-size: 12.5px; line-height: 1.45; margin: 8px 0 0; }
+
+  /* Likovi */
+  .person { display: flex; gap: 10px; align-items: flex-start; padding: 6px 6px; margin: 0 -6px; border-radius: 6px; cursor: pointer; }
+  .person:hover { background: var(--hover); }
+  .avatar { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 12px; font-weight: 500; }
+  .name { margin: 0; font-family: var(--font-text); font-size: 14px; line-height: 1.3; }
+  .desc { margin: 1px 0 0; font-size: 12px; line-height: 1.4; color: var(--ink-muted); }
+  .more { background: none; border: 0; padding: 4px 0 0 38px; font: inherit; font-size: 12px; color: var(--ink-muted); cursor: pointer; }
+  .more:hover { color: var(--ink); }
+  .add { background: none; border: 0; padding: 4px 0 0; font: inherit; font-size: 12px; color: var(--ink-muted); cursor: pointer; }
+
+  /* Mesta */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--rule); border-radius: 999px; padding: 3px 10px; font-size: 12px; cursor: pointer; }
+  .chip:hover { background: var(--hover); }
+  .chip svg { width: 11px; height: 11px; stroke: var(--ink-muted); }
+
+  /* Otvorene niti */
+  .thread { display: flex; gap: 10px; align-items: flex-start; padding: 5px 0; }
+  .check { flex: none; width: 16px; height: 16px; margin-top: 1px; border: 1.5px solid color-mix(in srgb, var(--ink) 35%, transparent); border-radius: 50%; background: transparent; cursor: pointer; padding: 0; }
+  .check:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .thread p { margin: 0; font-size: 12.5px; line-height: 1.45; }
+
+  /* Poglavlja (sažeci) */
+  .chap { display: flex; gap: 8px; padding: 4px 0; font-size: 12.5px; }
+  .chap b { font-weight: 500; color: var(--ink-muted); min-width: 22px; }
+
+  /* Jezik */
+  .lang { display: flex; align-items: center; gap: 12px; margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--rule); }
+  .ring-fill { transition: stroke-dasharray .4s ease; }
+  .lang .title { margin: 0; font-size: 13px; }
+  .lang .title .trend { color: var(--ink-muted); font-size: 12px; margin-left: 4px; }
+  .lang .line { margin: 2px 0 0; font-size: 12px; color: var(--ink-muted); }
+  .link { color: var(--accent); background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="themes" role="group" aria-label="Tema">
+  <span>Tema</span>
+  <button class="swatch" data-t="papir"  style="--sw-paper:#F4F4F2;--sw-ink:#26272A;--sw-font:Literata,serif" aria-pressed="true"  title="Papir"><b>Aa</b><small>Papir</small></button>
+  <button class="swatch" data-t="noc"    style="--sw-paper:#1B1C1F;--sw-ink:#D9D6CE;--sw-font:Literata,serif" aria-pressed="false" title="Noć"><b>Aa</b><small>Noć</small></button>
+  <button class="swatch" data-t="masina" style="--sw-paper:#EDE8DC;--sw-ink:#2F2D29;--sw-font:'Courier Prime',monospace" aria-pressed="false" title="Mašina"><b>Aa</b><small>Mašina</small></button>
+  <button class="swatch" data-t="magla"  style="--sw-paper:#E3E8EC;--sw-ink:#263038;--sw-font:Inter,sans-serif" aria-pressed="false" title="Magla"><b>Aa</b><small>Magla</small></button>
+</div>
+
+<div class="layout">
+  <main class="page">
+    <article>
+      <p class="num">I</p>
+      <h1>Carski Rim</h1>
+      <p>Rimski istoričari pisali su o otrovima sa mešavinom gađenja i divljenja. Za njih je trovanje bilo zločin kukavica, ali i umetnost dvora, gde se o nasledstvu često odlučivalo za trpezom, a ne na bojnom polju.</p>
+      <p>Lokusta je, prema rimskim izvorima, poreklom bila iz Galije. O njenom detinjstvu ne znamo gotovo ništa; u istoriji se pojavljuje tek kao žena koju je dvor zvao kad je trebalo da neko umre, a da to izgleda kao bolest.</p>
+    </article>
+  </main>
+
+  <aside class="panel" aria-label="Tiron">
+    <div class="ph"><span>TIRON</span><span aria-hidden="true">×</span></div>
+
+    <div class="whisper">
+      <p>Agripina je otvorila put sinu koji će je ubiti. Da li čitalac to sluti od prve stranice?</p>
+      <small>posle poglavlja I</small>
+    </div>
+    <button class="btn">Pomozi mi</button>
+
+    <details class="sec" open>
+      <summary><span>KNJIGA</span><span aria-hidden="true">▾</span></summary>
+
+      <p class="heart">Dodaj srce knjige — o čemu je, kako se završava, zašto je pišeš.</p>
+
+      <div class="cap">LIKOVI · 8</div>
+      <div id="people"></div>
+      <button class="more" id="morePeople"></button>
+
+      <div class="cap">MESTA · 2</div>
+      <div class="chips">
+        <span class="chip" title="Carski Rim — mesto borbi za vlast i dvorskih trovanja"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 21s-6-5.6-6-11a6 6 0 1 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></svg>Carski Rim</span>
+        <span class="chip" title="Galija — Lokustino poreklo"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 21s-6-5.6-6-11a6 6 0 1 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></svg>Galija</span>
+      </div>
+      <button class="add">+ dodaj</button>
+
+      <div class="cap">OTVORENE NITI · 2</div>
+      <div class="thread"><button class="check" aria-label="Zatvori nit"></button><p>Da li je Klaudije zaista otrovan po Agripininom nalogu?</p></div>
+      <div class="thread"><button class="check" aria-label="Zatvori nit"></button><p>Kako je Neron pokušao da otruje Agripinu?</p></div>
+
+      <div class="cap">POGLAVLJA</div>
+      <div class="chap"><b>I</b><span>Lokusta i Agripina: otrov kao oruđe nasledstva na Neronovom dvoru.</span></div>
+    </details>
+
+    <div class="lang">
+      <svg width="44" height="44" viewBox="0 0 44 44" role="img" aria-label="Jezik 95">
+        <circle cx="22" cy="22" r="18" fill="none" stroke="var(--rule)" stroke-width="4"/>
+        <circle class="ring-fill" id="ring" cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 113.1" transform="rotate(-90 22 22)"/>
+        <text x="22" y="26.5" text-anchor="middle" font-size="13" font-weight="500" fill="var(--ink)" font-family="Inter, sans-serif">95</text>
+      </svg>
+      <div>
+        <p class="title">Jezik <span class="trend">↓3</span></p>
+        <p class="line">1 kvačica u ovom poglavlju · <button class="link">pokaži</button></p>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+  // Inicijal: srpski dvoslovi Lj, Nj, Dž su jedno slovo.
+  function initialOf(name) {
+    const t = name.trim();
+    const two = t.slice(0, 2);
+    if (["Lj", "Nj", "Dž", "LJ", "NJ", "DŽ"].includes(two)) return two[0].toUpperCase() + two[1].toLowerCase();
+    return t.charAt(0).toUpperCase();
+  }
+  // Stavka memorije je jedan tekst („Ime — opis”): ime je do prve crte ili dve tačke.
+  function splitItem(text) {
+    const m = text.match(/^(.+?)\s+[—–-]\s+(.+)$/) || text.match(/^(.+?):\s+(.+)$/);
+    return m ? { name: m[1], desc: m[2] } : { name: text, desc: "" };
+  }
+  const people = [
+    "Lokusta — otrovačica iz Galije, služila Neronu",
+    "Agripina Mlađa — Klaudijeva žena i Neronova majka",
+    "Neron — car, naredio ubistvo Agripine",
+    "Klaudije — car, umro posle večere 54. godine",
+    "Britanik — Klaudijev sin i Neronov polubrat",
+    "Galba — car koji je naredio Lokustino pogubljenje",
+    "Tacit — rimski istoričar koji piše o Lokusti",
+    "Svetonije — rimski istoričar koji je pisao o Lokusti",
+  ];
+  const SHOW = 4;
+  let open = false;
+  const box = document.getElementById("people");
+  const more = document.getElementById("morePeople");
+  function render() {
+    box.innerHTML = "";
+    (open ? people : people.slice(0, SHOW)).forEach((t) => {
+      const { name, desc } = splitItem(t);
+      const row = document.createElement("div");
+      row.className = "person";
+      row.title = "Klik za izmenu";
+      row.innerHTML = `<div class="avatar" aria-hidden="true">${initialOf(name)}</div><div><p class="name"></p><p class="desc"></p></div>`;
+      row.querySelector(".name").textContent = name;
+      row.querySelector(".desc").textContent = desc;
+      box.appendChild(row);
+    });
+    more.textContent = open ? "manje" : `još ${people.length - SHOW}`;
+    more.hidden = people.length <= SHOW;
+  }
+  more.onclick = () => { open = !open; render(); };
+  render();
+
+  // Prsten: dužina luka = ocena / 100 obima.
+  const C = 2 * Math.PI * 18;
+  requestAnimationFrame(() => document.getElementById("ring").setAttribute("stroke-dasharray", `${(95 / 100) * C} ${C}`));
+
+  // Izbor teme
+  document.querySelectorAll(".swatch").forEach((b) => b.onclick = () => {
+    document.documentElement.dataset.theme = b.dataset.t;
+    document.querySelectorAll(".swatch").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  });
+</script>
+</body>
+</html>

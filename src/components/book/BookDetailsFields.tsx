@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useRef } from "react";
 import { copy } from "@/lib/copy";
 import { GENRES, TARGET_WORDS, type BookHeart, type Genre } from "@/lib/db/schema";
 
@@ -89,46 +89,95 @@ export function BookDetailsFields({ value, onChange, variant, autoFocus = false 
         onChange={(event) => setHeart("why", event.target.value)}
       />
 
-      <div className={`${gap} flex flex-wrap gap-x-6 gap-y-4`}>
-        <div>
-          <label htmlFor={`${id}-genre`} className={label}>
-            {copy.book.genre}
-          </label>
-          <select
-            id={`${id}-genre`}
-            className={`book-select mt-1 ${page ? "" : "text-sm"}`}
-            value={value.genre ?? ""}
-            onChange={(event) => onChange({ ...value, genre: (event.target.value || undefined) as Genre | undefined })}
-          >
-            <option value="">{copy.book.noGenre}</option>
-            {GENRES.map((genre) => (
-              <option key={genre} value={genre}>
-                {copy.book.genres[genre]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor={`${id}-length`} className={label}>
-            {copy.book.length}
-          </label>
-          <select
-            id={`${id}-length`}
-            className={`book-select mt-1 ${page ? "" : "text-sm"}`}
-            value={value.targetWords ?? ""}
-            onChange={(event) =>
-              onChange({ ...value, targetWords: event.target.value ? Number(event.target.value) : undefined })
-            }
-          >
-            <option value="">{copy.book.lengthUnknown}</option>
-            {TARGET_WORDS.map((words) => (
-              <option key={words} value={words}>
-                {copy.book.lengths[words]}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      {/* POL4: tags instead of the system's drop-down menus. */}
+      <p id={`${id}-genre`} className={`${label} ${gap}`}>
+        {copy.book.genre}
+      </p>
+      <ChipChoice
+        labelledBy={`${id}-genre`}
+        options={GENRES.map((genre) => ({ value: genre as Genre | undefined, label: copy.book.genres[genre] }))}
+        value={value.genre}
+        // The genre can be taken back: a click on the chosen one clears it.
+        clearable
+        onChange={(genre) => onChange({ ...value, genre })}
+      />
+      <p id={`${id}-length`} className={`${label} ${page ? "mt-6" : "mt-3"}`}>
+        {copy.book.length}
+      </p>
+      <ChipChoice
+        labelledBy={`${id}-length`}
+        options={[
+          ...TARGET_WORDS.map((words) => ({ value: words as number | undefined, label: copy.book.lengthChips[words]! })),
+          { value: undefined, label: copy.book.lengthUnknownChip },
+        ]}
+        value={value.targetWords}
+        onChange={(targetWords) => onChange({ ...value, targetWords })}
+      />
     </>
+  );
+}
+
+interface ChipOption<T> {
+  value: T;
+  label: string;
+}
+
+/**
+ * A radio group drawn as tags: Tab reaches the chosen one (or the first), the
+ * arrows move and choose, Space/Enter or a click chooses.
+ */
+function ChipChoice<T>({
+  labelledBy,
+  options,
+  value,
+  onChange,
+  clearable = false,
+}: {
+  labelledBy: string;
+  options: ChipOption<T | undefined>[];
+  value: T | undefined;
+  onChange: (value: T | undefined) => void;
+  clearable?: boolean;
+}) {
+  const groupRef = useRef<HTMLDivElement>(null);
+  const chosen = options.findIndex((option) => option.value === value);
+  const tabStop = chosen === -1 ? 0 : chosen;
+
+  const pick = (index: number) => {
+    const option = options[index];
+    if (!option) return;
+    onChange(clearable && option.value === value ? undefined : option.value);
+  };
+
+  return (
+    <div
+      ref={groupRef}
+      role="radiogroup"
+      aria-labelledby={labelledBy}
+      className="mt-1.5 flex flex-wrap gap-1.5"
+      onKeyDown={(event) => {
+        const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
+        if (!step) return;
+        event.preventDefault();
+        const current = options.findIndex((_, i) => groupRef.current?.children[i] === document.activeElement);
+        const next = ((current === -1 ? tabStop : current) + step + options.length) % options.length;
+        onChange(options[next]!.value);
+        (groupRef.current?.children[next] as HTMLElement | undefined)?.focus();
+      }}
+    >
+      {options.map((option, i) => (
+        <button
+          key={option.label}
+          type="button"
+          role="radio"
+          aria-checked={i === chosen}
+          tabIndex={i === tabStop ? 0 : -1}
+          className="choice-chip"
+          onClick={() => pick(i)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
   );
 }

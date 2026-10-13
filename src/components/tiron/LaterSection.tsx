@@ -37,11 +37,11 @@ export function LaterSection({ notes, onGoTo, onTickOff }: LaterSectionProps) {
   };
 
   return (
-    <section className="mt-8 border-t border-muted/20 pt-4">
+    <section className="panel-section">
       <button
         type="button"
         aria-expanded={!!open}
-        className="ui-button flex w-full items-center gap-2 text-left text-xs uppercase tracking-wider"
+        className="panel-heading ui-button"
         onClick={toggle}
       >
         {copy.later.sectionCount(notes.length)}

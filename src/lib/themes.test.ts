@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { THEME_PAPER, THEMES } from "./themes";
+import { THEME_SWATCH, THEMES } from "./themes";
 
 // Reads the real stylesheet so the test checks what the browser gets.
 const css = readFileSync(new URL("../styles/themes.css", import.meta.url), "utf8");
@@ -45,8 +45,26 @@ describe.each(THEMES)("theme %s", (theme) => {
     expect(on("--underline-grammar")).toBeGreaterThanOrEqual(3);
   });
 
-  it("the menu swatch matches the stylesheet", () => {
-    expect(vars["--paper"]).toBe(THEME_PAPER[theme]);
+  it("the accent (links like „pokaži”) is readable on the paper and on its own soft ground (≥ 4.5)", () => {
+    expect(on("--accent")).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(vars["--accent"]!, vars["--accent-soft"]!)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("the accent is never red — it never means an error", () => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(vars["--accent"]!.slice(i, i + 2), 16));
+    expect(r! > g! * 1.4 && r! > b! * 1.4).toBe(false);
+  });
+
+  it("the soft accent is the accent mixed 14% into the paper", () => {
+    const mix = [1, 3, 5]
+      .map((i) => Math.round(parseInt(vars["--accent"]!.slice(i, i + 2), 16) * 0.14 + parseInt(vars["--paper"]!.slice(i, i + 2), 16) * 0.86))
+      .map((n) => n.toString(16).padStart(2, "0"))
+      .join("");
+    expect(vars["--accent-soft"]).toBe(`#${mix}`);
+  });
+
+  it("the theme picker draws the stylesheet's colors", () => {
+    expect(THEME_SWATCH[theme]).toMatchObject({ paper: vars["--paper"], ink: vars["--ink"], accent: vars["--accent"] });
   });
 
   it("sets its own font", () => {

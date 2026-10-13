@@ -6,10 +6,13 @@ import { updateStoryMemory } from "@/components/tiron/updateMemory";
 import { compactMemory, getMemory } from "@/lib/db/memory";
 import { chapterNumber, listParts, partLabel } from "@/lib/db/parts";
 import type { ID, StoryMemory } from "@/lib/db/schema";
+import { toRoman } from "@/lib/text/toRoman";
 
 export interface PartSummary {
   id: ID;
   label: string;
+  /** "IV" for a chapter, the name for front and back matter — small on the left of the summary. */
+  short: string;
   summary: string;
 }
 
@@ -37,7 +40,10 @@ export function useStoryMemory(bookId: ID | null, partId: ID, flush: () => Promi
         setSummaries(
           parts
             .filter((part) => part.summary)
-            .map((part) => ({ id: part.id, label: partLabel(part, chapterNumber(parts, part.id)), summary: part.summary! })),
+            .map((part) => {
+              const number = chapterNumber(parts, part.id);
+              return { id: part.id, label: partLabel(part, number), short: number ? toRoman(number) : partLabel(part, undefined), summary: part.summary! };
+            }),
         );
       },
       error: (error) => console.error("Failed to read the story memory", error),

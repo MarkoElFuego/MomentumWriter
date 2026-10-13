@@ -1,18 +1,22 @@
 /*
- * Vizuelne teme (v0.2 Faza 7): tema menja SAMO boje i font.
- * Vrednosti za paper/ink/font su iz ZADATAK_v0.2.md; ink-muted i ghost su
- * malo potamnjeni da pređu kontrast (≥ 4.5 i ≥ 3.0 — proverava themes.test.ts).
+ * Vizuelne teme (v0.2 Faza 7, POL1): tema menja SAMO boje i font.
+ * Kontrast proverava themes.test.ts: ink ≥ 7, ink-muted ≥ 4,5, ghost ≥ 3,
+ * podvlake ≥ 3, naglasak ≥ 4,5 na papiru i na svojoj mekoj podlozi.
+ * --accent-soft je izračunat (14% naglaska na papiru) da bi test mogao da ga meri.
+ * Naglasak nikad ne znači grešku ni upozorenje i nikad nije crven.
  * Tema se postavlja na <html data-theme="…"> pre prvog prikaza (layout.tsx).
  */
 
 :root,
 [data-theme="papir"] {
-  --paper: #f7f3ea;
-  --ink: #2b2a26;
-  --ink-muted: #746f64;
-  --ghost: #928c7f;
+  --paper: #f4f4f2;
+  --ink: #26272a;
+  --ink-muted: #67686c;
+  --ghost: #8a8b8f;
   --underline-diacritic: #5f7c99;
   --underline-grammar: #9a6b3c;
+  --accent: #2a6763;
+  --accent-soft: #d8e0de;
   --font-text: var(--font-literata), Georgia, "Times New Roman", serif;
   color-scheme: light;
 }
@@ -26,6 +30,8 @@
     --ghost: #696763;
     --underline-diacritic: #8ea6bf;
     --underline-grammar: #c9a27a;
+    --accent: #d4a35a;
+    --accent-soft: #352f27;
     color-scheme: dark;
   }
 }
@@ -37,6 +43,8 @@
   --ghost: #696763;
   --underline-diacritic: #8ea6bf;
   --underline-grammar: #c9a27a;
+  --accent: #d4a35a;
+  --accent-soft: #352f27;
   --font-text: var(--font-literata), Georgia, "Times New Roman", serif;
   color-scheme: dark;
 }
@@ -48,17 +56,47 @@
   --ghost: #8b8477;
   --underline-diacritic: #5f7c99;
   --underline-grammar: #9a6b3c;
+  --accent: #2e4a7a;
+  --accent-soft: #d2d2ce;
   --font-text: var(--font-courier-prime), "Courier New", monospace;
   color-scheme: light;
 }
 
 [data-theme="magla"] {
-  --paper: #e8ebed;
-  --ink: #2b3237;
-  --ink-muted: #626b71;
-  --ghost: #7f888e;
+  --paper: #e3e8ec;
+  --ink: #263038;
+  --ink-muted: #5b6770;
+  --ghost: #79838a;
   --underline-diacritic: #5a7894;
   --underline-grammar: #95683a;
+  --accent: #365b7a;
+  --accent-soft: #cbd4dc;
   --font-text: var(--font-inter), system-ui, sans-serif;
   color-scheme: light;
+}
+
+/* Izvedeno iz mastila — isto u svakoj temi: tanke linije i podloga reda na hover. */
+:root {
+  --rule: color-mix(in srgb, var(--ink) 12%, transparent);
+  --hover: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+/* Trake za pomeranje: tanke, u boji mastila, bez staze — i u Noći tamne (color-scheme gore). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ink) 25%, transparent) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--ink) 25%, transparent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }

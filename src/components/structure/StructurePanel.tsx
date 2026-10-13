@@ -189,7 +189,7 @@ export function StructurePanel({
         ) : (
           <button
             type="button"
-            title={copy.structure.renameHint}
+            title={copy.structure.bookTitleHint}
             className="ui-button truncate px-1 text-left font-serif text-ink"
             onDoubleClick={() => book && setEditing({ kind: "book", id: book.id })}
             onKeyDown={(event) => {
@@ -247,8 +247,8 @@ export function StructurePanel({
                         title={copy.structure.renameHint}
                         aria-current={isCurrent ? "page" : undefined}
                         aria-keyshortcuts="F2"
-                        className={`ui-button min-w-0 flex-1 truncate px-1 py-1 text-left ${
-                          isCurrent ? "font-semibold text-ink" : ""
+                        className={`part-link ui-button min-w-0 flex-1 truncate px-1 py-1 text-left ${
+                          isCurrent ? "part-link-current" : ""
                         }`}
                         onClick={() => {
                           if (!isCurrent) onNavigate(part.id);

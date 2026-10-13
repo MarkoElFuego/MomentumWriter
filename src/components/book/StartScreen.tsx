@@ -75,17 +75,22 @@ export function StartScreen({ bookId }: { bookId: ID }) {
         }}
         onKeyDown={(event) => handleFieldKeys(event, () => void start())}
       >
+        <p className="mb-10 text-sm text-muted">{copy.book.intro}</p>
         <input
           type="text"
           autoFocus
           lang="sr-Latn"
           spellCheck
           aria-label={copy.book.titleLabel}
+          aria-describedby="start-title-hint"
           placeholder={copy.book.titlePlaceholder}
-          className="book-field book-title-input mb-12 font-serif"
+          className="book-field book-title-input font-serif"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
         />
+        <p id="start-title-hint" className="mb-12 mt-1 text-xs text-muted">
+          {copy.book.titleHint}
+        </p>
         <BookDetailsFields value={details} onChange={setDetails} variant="page" />
         <div className="mt-12">
           <button

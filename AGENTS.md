@@ -14,7 +14,7 @@ Detalji: `docs/PRODUCT.md` (izvor istine za raspored ekrana i listu funkcija) ·
 2. **Editor je svetinja.** Raspored je tačno onaj iz `docs/PRODUCT.md` → „Raspored ekrana”: gornja traka koja bledi dok kucaš, tekst, „reči danas”, levi panel (sadržaj) i desni panel (Tiron, 4 sekcije) — oba panela podrazumevano zatvorena. Ništa više bez eksplicitnog odobrenja.
 3. **Tekst korisnika se nikad ne gubi.** Autosave (debounce ~800 ms) + save na `visibilitychange`/`beforeunload`. Svaka izmena modela podataka = nova Dexie verzija + migracija + test migracije.
 4. **Bez gamifikacije u Duolingo stilu.** Nema streak-ova, plamenčića, kažnjavanja, crvenih upozorenja.
-5. **Radi samo trenutnu fazu** iz `docs/PROGRESS.md` (planovi: `docs/ZADATAK_UI.md`, pa `docs/ZADATAK_Tiron.md`, pa `docs/ZADATAK_IZVOZ.md`, pa `docs/ZADATAK_UVOZ.md`). Ne dodaj funkcije iz kasnijih faza ili verzija (email, sync, auth…) čak i ako „izgleda lako”.
+5. **Radi samo trenutnu fazu** iz `docs/PROGRESS.md` (planovi: `docs/ZADATAK_UI.md`, pa `docs/ZADATAK_Tiron.md`, pa `docs/ZADATAK_IZVOZ.md`, pa `docs/ZADATAK_UVOZ.md`, pa `docs/ZADATAK_POLISH.md`). Ne dodaj funkcije iz kasnijih faza ili verzija (email, sync, auth…) čak i ako „izgleda lako”.
 6. **Minimalizam.** Editor je tekst, kursor i tišina. Sve je nevidljivo dok ne zatreba. Nema novih dugmadi, panela ni funkcija van trenutne faze.
 7. **Ne diraj ono što radi.** Sivi tekst (dopune), provera jezika, Resume i autosave zadržavaju postojeće ponašanje osim ako faza kaže drugačije.
 
@@ -22,7 +22,7 @@ Detalji: `docs/PRODUCT.md` (izvor istine za raspored ekrana i listu funkcija) ·
 
 Kad nisi siguran da li nešto sme: **„Da li bi Tiron ovo uradio?”** Tiron zapisuje, pamti, pita, podseća, ohrabruje ✅ — ne piše tekst umesto autora, ne ocenjuje kvalitet nacrta, ne prekida dok autor kuca, ne prebacuje ❌.
 
-1. **Minimalizam:** Tiron živi samo u desnom panelu i na Resume ekranu. Desni panel ima **najviše 4 sekcije** — Tiron, Knjiga, Za kasnije, Jezik; nove sekcije se ne dodaju, sve što Tiron pamti ide u „Knjiga” kao podsekcija; prazna sekcija se ne prikazuje. U editoru se pojavljuje samo tačkica pored `T` u traci kad ima novi šapat. Nema iskačućih prozora, zvukova ni teksta preko rukopisa.
+1. **Minimalizam:** Tiron živi samo u desnom panelu i na Resume ekranu. Desni panel ima **najviše 4 sekcije** — Tiron, Knjiga, Za kasnije, Jezik; nove sekcije se ne dodaju, sve što Tiron pamti ide u „Knjiga” kao podsekcija; prazna sekcija se ne prikazuje. U editoru se pojavljuje samo tačkica pored „Tiron” u traci kad ima novi šapat. Nema iskačućih prozora, zvukova ni teksta preko rukopisa.
 2. **Nikad dok autor kuca.** Šapati se generišu i prikazuju samo u pauzama i na prelomnim trenucima (ulazak, kraj poglavlja, kraj sesije).
 3. **Najviše 2 šapata po sesiji** (ne računajući ulazak i kraj sesije).
 4. **Ton (obavezno u svakom promptu):** kratko (max 2 rečenice), toplo, više pita nego tvrdi, pohvaljuje konkretno, nikad ne broji propuste, nikad „trebalo bi”, nikad poređenje sa drugim piscima, nikad ocena kvaliteta nacrta. Savremeni srpski, bez latinskih fraza i bez „gospodaru”.

@@ -49,13 +49,13 @@ describe("bookLanguageScore", () => {
 
 describe("Jezik — counts in Serbian", () => {
   it("uses the right plural (1, 2–4, 5+, 11–14, 21)", () => {
-    expect(copy.tiron.languageHere(1, 0)).toBe("ovde: 1 kvačica");
-    expect(copy.tiron.languageHere(4, 1)).toBe("ovde: 4 kvačice · 1 gramatika");
-    expect(copy.tiron.languageHere(5, 2)).toBe("ovde: 5 kvačica · 2 gramatike");
-    expect(copy.tiron.languageHere(11, 0)).toBe("ovde: 11 kvačica");
-    expect(copy.tiron.languageHere(12, 0)).toBe("ovde: 12 kvačica");
-    expect(copy.tiron.languageHere(21, 0)).toBe("ovde: 21 kvačica");
-    expect(copy.tiron.languageHere(22, 0)).toBe("ovde: 22 kvačice");
-    expect(copy.tiron.languageHere(0, 3)).toBe("ovde: 3 gramatike");
+    expect(copy.tiron.languageHere(1, 0)).toBe("1 kvačica u ovom poglavlju");
+    expect(copy.tiron.languageHere(4, 1)).toBe("4 kvačice · 1 gramatika u ovom poglavlju");
+    expect(copy.tiron.languageHere(5, 2)).toBe("5 kvačica · 2 gramatike u ovom poglavlju");
+    expect(copy.tiron.languageHere(11, 0)).toBe("11 kvačica u ovom poglavlju");
+    expect(copy.tiron.languageHere(12, 0)).toBe("12 kvačica u ovom poglavlju");
+    expect(copy.tiron.languageHere(21, 0)).toBe("21 kvačica u ovom poglavlju");
+    expect(copy.tiron.languageHere(22, 0)).toBe("22 kvačice u ovom poglavlju");
+    expect(copy.tiron.languageHere(0, 3)).toBe("3 gramatike u ovom poglavlju");
   });
 });

@@ -699,6 +699,7 @@ export function WriteScreen({ partId }: { partId: ID }) {
           refreshState={storyMemory.refreshState}
           onRefresh={() => void storyMemory.refresh()}
           countdown={countdown}
+          hasText={bookTotal > 0}
           laterNotes={laterNotes.notes}
           onGoToNote={(note) => void laterNotes.goTo(note)}
           onTickOffNote={laterNotes.tickOff}
